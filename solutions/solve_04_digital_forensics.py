@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import base64
 import contextlib
+import hashlib
 import json
 import os
 import re
@@ -23,6 +24,10 @@ from typing import BinaryIO, Iterator
 
 DEFAULT_MODEL_ZIP = Path("4_raw/TinyLlama-1.1B-Chat-v1.0.zip")
 DEFAULT_SERVER_ZIP = Path("4_raw/server.zip")
+OFFICIAL_SHA256 = {
+    "TinyLlama-1.1B-Chat-v1.0.zip": "144155ad4b55ecf4e14f08457d4d8874ef656ea69e29632cc55bb97057269fa7",
+    "server.zip": "1a0ecbdcb1ed4e3e51069643690659002612fbccc5a7a27919df17b7ab49dd5c",
+}
 FLAG_RE = re.compile(rb"CRYPTO\{[^}]+\}")
 CHAT_RE = re.compile(
     rb"model=(?P<model>\S+)\s+"
@@ -30,6 +35,45 @@ CHAT_RE = re.compile(
     rb"q1=(?P<q>[A-Za-z0-9+/]+)\s+"
     rb"a1=(?P<a>[A-Za-z0-9+/]+)"
 )
+
+
+def require_input(path: Path, label: str) -> None:
+    if path.is_file():
+        return
+    expected = OFFICIAL_SHA256.get(path.name)
+    digest_hint = f"\nExpected SHA-256: {expected}" if expected else ""
+    raise SystemExit(
+        f"{label} input not found: {path}\n"
+        "Large challenge inputs are intentionally excluded from Git. "
+        "Obtain the original contest asset and place it at that path, or "
+        f"pass an explicit path.{digest_hint}"
+    )
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as fp:
+        while chunk := fp.read(8 * 1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def verify_official_sha256(path: Path, label: str) -> None:
+    expected = OFFICIAL_SHA256.get(path.name)
+    if expected is None:
+        raise SystemExit(
+            f"No official archive digest is recorded for {path.name!r}; "
+            f"cannot verify {label}. Use the original contest archive name "
+            "or omit --verify-sha256."
+        )
+    actual = sha256_file(path)
+    if actual != expected:
+        raise SystemExit(
+            f"{label} SHA-256 mismatch for {path}\n"
+            f"expected: {expected}\n"
+            f"actual:   {actual}"
+        )
+    print(f"{label} SHA-256 verified: {actual}")
 
 
 def caesar_shift(text: str, shift: int = 11) -> str:
@@ -76,9 +120,14 @@ def skip_bytes(fp: BinaryIO, size: int) -> None:
 
 @contextlib.contextmanager
 def open_model_safetensors(path: Path) -> Iterator[BinaryIO]:
-    if path.suffix == ".zip":
+    if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
-            member = next(name for name in archive.namelist() if name.endswith("model.safetensors"))
+            members = [name for name in archive.namelist() if name.endswith("model.safetensors")]
+            if len(members) != 1:
+                raise ValueError(
+                    f"expected one model.safetensors in {path}, found {len(members)}"
+                )
+            member = members[0]
             with archive.open(member) as fp:
                 yield fp
     else:
@@ -90,7 +139,12 @@ def extract_payload(model_path: Path) -> tuple[str, str]:
     with open_model_safetensors(model_path) as fp:
         header_size = struct.unpack("<Q", read_exact(fp, 8))[0]
         header = json.loads(read_exact(fp, header_size))
-        tensor = header["model.embed_tokens.weight"]
+        tensor_name = "model.embed_tokens.weight"
+        if tensor_name not in header:
+            raise ValueError(f"tensor {tensor_name!r} not found; is this the TinyLlama asset?")
+        tensor = header[tensor_name]
+        if tensor.get("dtype") != "F32":
+            raise ValueError(f"unexpected embedding dtype: {tensor.get('dtype')!r}")
         start, _end = tensor["data_offsets"]
         rows, cols = tensor["shape"]
         if rows < 1 or cols < 2:
@@ -116,7 +170,10 @@ def extract_payload(model_path: Path) -> tuple[str, str]:
 def scan_server_log(server_zip: Path) -> list[tuple[str, str, str, str]]:
     chats: list[tuple[str, str, str, str]] = []
     with zipfile.ZipFile(server_zip) as archive:
-        with archive.open("server.log") as fp:
+        members = [name for name in archive.namelist() if name.endswith("server.log")]
+        if len(members) != 1:
+            raise ValueError(f"expected one server.log in {server_zip}, found {len(members)}")
+        with archive.open(members[0]) as fp:
             for line in fp:
                 for match in CHAT_RE.finditer(line):
                     chats.append(
@@ -131,7 +188,13 @@ def scan_server_log(server_zip: Path) -> list[tuple[str, str, str, str]]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Extract the challenge-4 payload without loading PyTorch or Transformers.",
+        epilog=(
+            "The original large archives are not tracked. By default place them under "
+            "4_raw/; use --verify-sha256 to check their official contest digests."
+        ),
+    )
     parser.add_argument("--model", type=Path, default=DEFAULT_MODEL_ZIP)
     parser.add_argument(
         "--scan-log",
@@ -140,9 +203,21 @@ def main() -> None:
         type=Path,
         help="optionally scan server.zip and print decoded q1/a1 chat clues",
     )
+    parser.add_argument(
+        "--verify-sha256",
+        action="store_true",
+        help="stream and verify any original ZIP inputs against hashes from the problem PDF",
+    )
     args = parser.parse_args()
 
+    require_input(args.model, "model")
+    if args.verify_sha256:
+        verify_official_sha256(args.model, "model")
+
     if args.scan_log:
+        require_input(args.scan_log, "server log")
+        if args.verify_sha256:
+            verify_official_sha256(args.scan_log, "server log")
         for model, chat_id, question, answer in scan_server_log(args.scan_log):
             print(f"[{chat_id}] {model}")
             print(f"  Q: {question}")

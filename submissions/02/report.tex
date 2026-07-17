@@ -1,0 +1,216 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[margin=25mm]{geometry}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  columns=fullflexible,
+  breaklines=true,
+  keywordstyle=\color{blue!70!black}
+}
+
+\title{Challenge 2: Reconstruction and Optimization of a 256-bit Permutation}
+\author{Crypto Contest Submission}
+\date{17 July 2026}
+
+\begin{document}
+\maketitle
+
+\section{Summary}
+
+The recovered one-round permutation is
+
+\begin{center}
+rotate $\rightarrow$ XOR $\rightarrow$ reverse all 32 bytes $\rightarrow$ add,
+\end{center}
+
+with word rotations
+
+\begin{center}
+\texttt{rot = \{43, 7, 29, 14\}}.
+\end{center}
+
+The submitted C implementation passes all 1,000 supplied one-round vectors and
+the supplied 20-round vector.  It replaces the generic byte-map loop with four
+64-bit byte swaps and specializes the four rotations.  A separate differential
+test compared the generic reference and optimized implementations on 100,000
+deterministically generated states for both one and twenty rounds.
+
+\section{Recovering the structure}
+
+The four component operations are invertible.  Word addition is inverted by
+subtraction modulo $2^{64}$; XOR is self-inverse; the map
+\texttt{shuffle\_map[i] = 31-i} is also self-inverse; and only 63 non-zero
+rotation values are permitted.
+
+For each supplied input/output pair, I computed
+
+\begin{lstlisting}
+t0 = output - constants1       // modulo 2^64 per word
+t1 = reverse_all_32_bytes(t0)
+t2 = t1 XOR constants2
+\end{lstlisting}
+
+and tested every $r$ in $1,\ldots,63$ for
+
+\begin{lstlisting}
+ROTL64(input[i], r) == t2[i].
+\end{lstlisting}
+
+The recovery script intersects the candidate sets from all 1,000 vectors rather
+than relying on one possibly degenerate input word.  Each word has exactly one
+candidate: 43, 7, 29, and 14.  Forward evaluation then confirms the stated
+operation order on every supplied vector.
+
+\section{Reference implementation}
+
+The direct restoration calls the four supplied operations in sequence:
+
+\begin{lstlisting}[language=C]
+rotate_words_left_64wise(state, rot);
+xor_constants_256wise(state, constants2);
+shuffle_bytes_256(state, shuffle_map);
+add_constants_64wise(state, constants1);
+\end{lstlisting}
+
+The generic shuffle copies the state into a 32-byte temporary array, performs
+32 indexed byte loads and stores, and copies the result back.  This is correct
+for an arbitrary map but unnecessarily general for the fixed contest map.
+
+\section{Optimized implementation}
+
+\subsection{Replacing the byte map}
+
+Reversing all bytes of four 64-bit words is equivalent to reversing the word
+order and byte-swapping each word:
+
+\begin{lstlisting}
+reverse32(x0,x1,x2,x3) =
+    (BSWAP64(x3), BSWAP64(x2), BSWAP64(x1), BSWAP64(x0)).
+\end{lstlisting}
+
+The submission uses \texttt{\_\_builtin\_bswap64} with GCC or Clang.  It also
+contains a portable shift-and-mask fallback.  This removes the temporary arrays,
+the map lookups, and most of the shuffle memory traffic.
+
+\subsection{Constant rotations and scalar registers}
+
+Combining the recovered rotations with the word reversal gives the complete
+round directly:
+
+\begin{lstlisting}
+y0 = BSWAP64(ROTL64(x3,14) ^ C2[3]) + C1[0]
+y1 = BSWAP64(ROTL64(x2,29) ^ C2[2]) + C1[1]
+y2 = BSWAP64(ROTL64(x1, 7) ^ C2[1]) + C1[2]
+y3 = BSWAP64(ROTL64(x0,43) ^ C2[0]) + C1[3]
+\end{lstlisting}
+
+The fixed shift counts permit immediate-count rotate/shift instructions.  The
+four state words remain scalar locals across the round calculation.  The code
+is portable C and does not require AVX2.  A single state is only four words,
+each lane uses a different rotation, and rounds are serially dependent, so the
+scalar transformation avoids SIMD setup and lane-handling overhead.
+
+The problem statement allows external helper functions.  The original test and
+timing code is unchanged.  The one-round TODO uses the four restored generic
+operations, the rotation TODO sets the recovered array, and the performance-
+critical 20-round TODO invokes the specialized helper in its loop.
+
+\section{Correctness testing}
+
+The following tests passed:
+
+\begin{itemize}
+  \item all 1,000 supplied one-round input/output pairs;
+  \item the supplied 20-round input/output pair;
+  \item 100,000 deterministic random states, comparing reference and optimized
+        output after one round and after twenty rounds; and
+  \item the original contest test harness compiled with the final submission.
+\end{itemize}
+
+The supplied 20-round test is
+
+\begin{lstlisting}
+input
+0011223344556677 8899aabbccddeeff
+0123456789abcdef fedcba9876543210
+output
+7527ddf4dcac1a6c c16754941f41bbba
+5f35b110c1dc4504 2d6663801ac4aae8
+\end{lstlisting}
+
+Observed validation output was:
+
+\begin{lstlisting}
+one_round_vectors=1000
+twenty_round_vector=PASS
+random_differential_cases=100000
+selftest=PASS
+\end{lstlisting}
+
+\section{Benchmark methodology and results}
+
+The reproducible benchmark compiles the generic reference and optimized scalar
+implementation in the same translation unit with
+
+\begin{lstlisting}
+gcc -O3 -std=c11 -Wall -Wextra -Wpedantic -DNDEBUG
+\end{lstlisting}
+
+No \texttt{-march=native} option was used.  The timer is
+\texttt{clock\_gettime(CLOCK\_MONOTONIC)}.  After a warm-up, each sample performs
+1,000,000 calls of the 20-round function.  Reference-first and optimized-first
+order alternates between samples.  Nine samples are collected and the median
+wall-clock time of each implementation is reported.  The final state is consumed
+through a volatile sink.
+
+The measurement host was a Linux x86-64 VM with an AMD EPYC 7B12 and GCC 12.2.0.
+Results measured on 17 July 2026 were:
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Implementation & ns per 20 rounds & Relative performance \\
+\midrule
+Generic reference & 834.819 & 1.000x \\
+Optimized scalar  &  44.101 & 18.930x \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The unmodified contest timing harness reported 0.049428 microseconds per
+20-round call in one additional run.  The table uses the more robust alternating
+nine-sample median.  These numbers compare implementations on this VM; the
+absolute time and speedup may change on the contest Intel Core Ultra 7 255H with
+GCC 13.3.0.
+
+\section{Reproduction}
+
+From the repository root, reconstruction and Python verification use:
+
+\begin{lstlisting}
+python3 solutions/solve_02_permutation.py
+\end{lstlisting}
+
+The C differential test and benchmark use:
+
+\begin{lstlisting}
+python3 solutions/benchmark_02_permutation.py \
+  --iterations 1000000 --repeats 9 --random-cases 100000
+\end{lstlisting}
+
+For submission testing, place \texttt{contest.c} beside the two supplied vector
+files and run:
+
+\begin{lstlisting}
+gcc -O3 -Wall -Wextra -o contest contest.c
+./contest
+\end{lstlisting}
+
+\end{document}

@@ -1,0 +1,60 @@
+\documentclass[9.5pt,a4paper]{article}
+\usepackage[margin=14mm]{geometry}
+\usepackage{fontspec}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+
+\setmainfont{Noto Sans CJK KR}
+\setsansfont{Noto Sans CJK KR}
+\setmonofont{D2Coding}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\setlist{nosep,leftmargin=5mm}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{center}
+  {\Large\bfseries 5번 비밀 다항식 및 고정 보고문 복원}\par
+\end{center}
+\vspace{-2mm}
+
+\textbf{핵심 취약점.}
+암호문은 $R_q=\mathbb Z_q[x]/(x^{64}+1)$에서
+$c_1=c_0s+te+m\pmod q$를 만족한다. 두 연속 날짜의 암호문을 빼면
+\[
+  \Delta c_1=\Delta c_0s+t\Delta e+\Delta m\pmod q
+\]
+이다. 주어진 모듈러스는 $\gcd(q,t)=257$이므로, 이 식을
+$\mathbb F_{257}$로 줄이면 $t\Delta e$와 modulo-$q$ 배수가 모두 사라져
+\[
+  \Delta c_1=\Delta c_0s+\Delta m\pmod {257}
+\]
+라는 noise 없는 선형식을 얻는다.
+
+\textbf{비밀 다항식 복원.}
+두 평문의 \texttt{State}와 0 padding은 같으므로 $\Delta m$의 앞 56개
+계수는 0이고, 마지막 8개 계수만 \texttt{YYYYMMDD}가 하루 증가할 때의
+digit 차분이다. 2025--2027년의 유효 날짜에서 서로 다른 하루 증가
+pattern을 열거했다. 각 pattern마다 $\Delta c_0$와의 negacyclic
+convolution을 나타내는 $64\times64$ 행렬 $A$를 만들고
+$As=\Delta c_1-\Delta m$을 $\mathbb F_{257}$에서 Gauss 소거했다.
+
+정답 pattern $[0,0,0,0,0,0,0,1]$에서 $A$의 rank는 63이고 해공간의
+차원은 1이다. 따라서 257개 affine 해만 순회하면 된다. 모든 계수가
+$\{256,0,1\}$인 유일한 해를 선택하고 256을 $-1$로 해석하여 ternary
+secret $s$를 복원했다. 계수 64개는 \texttt{02\_secret\_s.txt}에
+$x^0$부터 $x^{63}$까지 기록했다.
+
+\textbf{복호화 및 검증.}
+복원한 $s$로 각 날의 $c_1-c_0s$를 centered lift한 뒤 modulo $t$로
+줄였다. 두 평문의 앞 56개 계수는 완전히 같고 날짜만
+\texttt{20260410}에서 \texttt{20260411}로 증가했다. 두 날의 error
+계수 범위도 모두 $1\ldots4$로 암호화 식과 일치한다. 복구한 고정
+보고문은 다음과 같으며, ASCII 계수는 \texttt{03\_state.txt}에
+$x^0$부터 $x^{55}$까지 기록했다.
+\[
+  \boxed{\text{BGV DAILY STATUS CORE-A LINK OK TEMP NORMAL POWER STABLE}}
+\]
+
+\end{document}

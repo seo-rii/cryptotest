@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recover challenge 2 permutation order and rotations from test vectors."""
+"""Recover and independently verify the challenge 2 permutation."""
 
 from __future__ import annotations
 
@@ -63,17 +63,30 @@ def main() -> None:
         vectors = parse_vectors(archive.read("code/testvector.txt").decode())
         tv20 = archive.read("code/testvector_20round.txt").decode().split()
 
-    first_in, first_out = vectors[0]
-    before_add = [(first_out[i] - CONSTANTS1[i]) & MASK for i in range(4)]
-    before_shuffle = reverse_bytes(before_add)
-    before_xor = [before_shuffle[i] ^ CONSTANTS2[i] for i in range(4)]
-    rotations = [
-        next(r for r in range(1, 64) if rotl64(first_in[i], r) == before_xor[i])
-        for i in range(4)
-    ]
+    if len(vectors) != 1000:
+        raise RuntimeError(f"expected 1000 one-round vectors, got {len(vectors)}")
+
+    # Intersect the rotation candidates from every vector.  This avoids
+    # accidentally selecting an equivalent rotation for a degenerate word.
+    rotation_candidates = [set(range(1, 64)) for _ in range(4)]
+    for vector_input, vector_output in vectors:
+        before_add = [(vector_output[i] - CONSTANTS1[i]) & MASK for i in range(4)]
+        before_shuffle = reverse_bytes(before_add)
+        before_xor = [before_shuffle[i] ^ CONSTANTS2[i] for i in range(4)]
+        for word_index in range(4):
+            rotation_candidates[word_index] &= {
+                rotation
+                for rotation in range(1, 64)
+                if rotl64(vector_input[word_index], rotation) == before_xor[word_index]
+            }
+
+    if any(len(candidates) != 1 for candidates in rotation_candidates):
+        raise RuntimeError(f"rotations are not unique: {rotation_candidates}")
+    rotations = [next(iter(candidates)) for candidates in rotation_candidates]
 
     print("round order: rotate -> xor -> reverse-byte shuffle -> add")
     print(f"rot = {{{rotations[0]}, {rotations[1]}, {rotations[2]}, {rotations[3]}}}")
+    print(f"one-round vectors checked: {len(vectors)}")
     print(f"all one-round vectors pass: {all(one_round(inp, rotations) == out for inp, out in vectors)}")
 
     state = [int(x, 16) for x in tv20[1:5]]
@@ -83,10 +96,11 @@ def main() -> None:
     print(f"20-round output: {' '.join(f'{x:016x}' for x in state)}")
     print(f"20-round vector passes: {state == expected}")
 
-    print("\ncontest.c patch points:")
+    print("\ncontest.c reconstruction points:")
     print("const unsigned int rot[4] = { 43, 7, 29, 14 };")
     print("permute_one_round: rotate_words_left_64wise -> xor_constants_256wise -> shuffle_bytes_256 -> add_constants_64wise")
-    print("permute_20rounds: call permute_one_round inside the loop")
+    print("optimized reverse shuffle: word reversal plus four BSWAP64 operations")
+    print("permute_20rounds: apply the same optimized round 20 times")
 
 
 if __name__ == "__main__":
