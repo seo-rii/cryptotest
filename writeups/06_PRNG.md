@@ -137,9 +137,8 @@ predicted r3 = 0x2443c8daf1a9d52b09
 - `submissions/06/01_answer.txt`: 요구된 16진수 `r3` 한 줄
 - `submissions/06/02_method.md`: 분석 아이디어, 구현과 복잡도를 압축한 제출 원고
 
-## 참고 자료
+## 참고 자료와 활용
 
-- Dual_EC_DRBG design
-- Elliptic curve scalar multiplication
-- Hidden point relation backdoor
-- Truncated x-coordinate state recovery
+- [NIST SP 800-90 Rev. 1 (2007, withdrawn), “Recommendation for Random Number Generation Using Deterministic Random Bit Generators”](https://csrc.nist.gov/pubs/sp/800/90/r1/final) — `배경지식`의 Dual_EC_DRBG 상태 갱신, elliptic-curve point 사용, truncated output이라는 역사적 표준 구조를 대조하는 데 사용했다.
+- [Shumow and Ferguson, “On the Possibility of a Back Door in the NIST SP800-90 Dual EC PRNG”](https://rump2007.cr.yp.to/15-shumow.pdf) — `r0 lift`와 `내부 상태 복원`에서 누락된 16비트를 열거해 curve point를 복원하고 비밀 점 관계로 다음 상태를 얻는 공격의 원형을 사용했다.
+- [NIST, “SP 800-90 Historical Information”](https://csrc.nist.gov/projects/random-bit-generation/rbg-archive/nist-sp-800-90-historical-information) — 숨겨진 점 관계가 예측 공격으로 이어진다는 보안 맥락과 Dual_EC_DRBG가 이후 권고에서 제거되었다는 사실을 `Dual_EC_DRBG 백도어` 설명의 역사적 주의사항으로 사용했다.
