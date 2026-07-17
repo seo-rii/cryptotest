@@ -1,0 +1,27 @@
+# Downloaded or generated assets
+/4_raw/
+/tmp/
+
+# Python caches and local environments
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Generated solver inputs, logs, and binaries
+*.cnf
+*.cnf.gz
+*.jsonl
+*.log
+*.o
+*.a
+*.so
+*.out
+
+# Editor and operating-system files
+.DS_Store
+*.swp
+*~
