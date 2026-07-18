@@ -1,0 +1,312 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=20mm]{geometry}
+\usepackage{fontspec}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+
+\setmainfont{Noto Sans CJK KR}[AutoFakeSlant=0.2]
+\setsansfont{Noto Sans CJK KR}
+\setmonofont{D2Coding}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  pdftitle={3번 네트워크보안: TLS 1.2 AES-GCM Nonce 재사용을 이용한 Record 위조},
+  pdfauthor={암호분석경진대회 제출 보고서},
+  pdfsubject={TLS 1.2 AES-GCM nonce reuse and GHASH forgery},
+  pdfkeywords={TLS 1.2, AES-GCM, nonce reuse, GHASH, forgery}
+}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlist{nosep,leftmargin=6mm}
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  columns=fullflexible,
+  breaklines=true,
+  keepspaces=true
+}
+
+\title{3번 네트워크보안\\TLS 1.2 AES-GCM Nonce 재사용을 이용한 Record 위조}
+\author{암호분석경진대회 제출 보고서}
+\date{2026년 7월 17일}
+
+\begin{document}
+\maketitle
+
+\section{결과 요약}
+
+제공된 \texttt{tls\_live.pcap}의 서버 방향 TLS 1.2 통신은
+\texttt{TLS\_ECDHE\_RSA\_WITH\_AES\_128\_GCM\_SHA256}을 사용한다.
+서버 application data 1--3번이 같은 8바이트 explicit nonce를
+재사용하므로, 같은 write key와 4바이트 fixed salt 아래에서 전체
+96비트 GCM nonce가 충돌한다. 이 충돌로 CTR keystream을 재사용해
+\texttt{amt=0100}을 \texttt{amt=0500}으로 바꾸고, tag 차분에서
+GHASH subkey를 복원해 유효한 새 tag를 계산했다.
+
+최종 제출 record는 77바이트이다. 아래 네 줄을 개행 없이 연결한 값을 제출한다.
+
+\begin{lstlisting}
+17030300489c269a9f29810ab0
+a99141d1d84c3df6bfdcdb7dec7cf30462db203fbc36a29772edbf159643b468
+f1f1e520e7341daee867a49665542cd9
+f01f5a9c906b73ba3e13bbfea0e98a18
+\end{lstlisting}
+
+\section{PCAP 분석과 취약점 식별}
+
+\subsection{TCP/TLS record 복원}
+
+pcap의 link type은 \texttt{DLT\_IPV4(228)}이다. 서버 방향 flow는
+다음과 같다.
+
+\begin{center}
+\texttt{10.0.0.1:443 -> 10.0.0.2:54321}
+\end{center}
+
+TCP segment를 sequence number 순으로 정렬하고 overlap을 제거해 byte stream을 재조립했다.
+5바이트 TLS header의 길이 필드로 record를 분리하고 ServerHello에서
+cipher suite \texttt{0xc02f}를 확인했다.
+
+ChangeCipherSpec 뒤 새 server write state의 TLS sequence number는
+0으로 초기화된다. encrypted Finished가 \texttt{seq=0}이고, 이어지는
+application data의 sequence number는 1--4이다.
+
+\begin{center}
+\small
+\begin{tabular}{rrrrl}
+\toprule
+App record & TLS seq & Ciphertext & Fragment & Explicit nonce \\
+\midrule
+1 & 1 & 34 & 58 & \texttt{9c269a9f29810ab0} \\
+2 & 2 & 50 & 74 & \texttt{9c269a9f29810ab0} \\
+3 (target) & 3 & 48 & 72 & \texttt{9c269a9f29810ab0} \\
+4 & 4 & 40 & 64 & \texttt{9c269a9f29810ab1} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{TLS 1.2 GCM nonce와 AAD}
+
+TLS 1.2 AES-GCM nonce는 write state의 4바이트 fixed salt와 record의
+8바이트 explicit nonce를 연결한 값이다.
+
+\[
+  \mathit{nonce}=\mathit{write\_salt}[4]\parallel
+  \mathit{nonce\_explicit}[8].
+\]
+
+세 record는 같은 연결, 방향, cipher epoch에 있으므로 key와 salt가
+같다. 따라서 같은 explicit nonce는 같은 전체 nonce, 같은 CTR
+keystream, 같은 $S=E_K(J_0)$를 뜻한다.
+
+TLS AEAD additional data는 다음 13바이트다.
+
+\[
+  A=\mathit{seq}[8]\parallel\mathit{type}[1]\parallel
+  \mathit{version}[2]\parallel\mathit{plaintext\_length}[2].
+\]
+
+목표 record의 AAD는 다음과 같다.
+
+\begin{lstlisting}
+0000000000000003 || 17 || 0303 || 0030
+= 00000000000000031703030030
+\end{lstlisting}
+
+AAD의 \texttt{0030}은 48바이트 평문 길이이다. record header의
+\texttt{0048}은 explicit nonce 8바이트, ciphertext 48바이트, tag
+16바이트를 합한 72바이트 wire fragment 길이이므로 서로 다르다.
+GCM에는 CBC식 TLS padding이나 별도 HMAC이 없다. GHASH 계산 과정의
+zero padding만 존재하며 wire에는 전송되지 않는다.
+
+\section{GHASH Authentication Subkey 복원}
+
+\subsection{Nonce 재사용 방정식}
+
+GCM에서
+
+\[
+  H=E_K(0^{128}),\qquad
+  T_i=S\oplus\operatorname{GHASH}_H(A_i,C_i)
+\]
+
+이다. 같은 nonce인 record 두 개의 tag를 XOR하면 $S$가 제거된다.
+
+\[
+ T_1\oplus T_2=
+ \operatorname{GHASH}_H(A_1,C_1)\oplus
+ \operatorname{GHASH}_H(A_2,C_2).
+\]
+
+GHASH는
+
+\[
+\mathbb F_{2^{128}}=
+\mathbb F_2[x]/(x^{128}+x^7+x^2+x+1)
+\]
+
+에서 계산한다. block을 $X_1,\ldots,X_m$이라 하면
+
+\[
+Y_0=0,\qquad Y_i=(Y_{i-1}\oplus X_i)H
+\]
+
+이므로 각 GHASH는 $H$에 대한 다항식 $P_i(H)$이다. 2번 ciphertext는
+50바이트라서 AAD 1 block, ciphertext 4 blocks, length 1 block을
+사용한다. 따라서 1번과 2번 record로 만든
+
+\[
+F_{12}(H)=P_1(H)\oplus P_2(H)\oplus T_1\oplus T_2=0
+\]
+
+은 6차 방정식이다.
+
+\subsection{유한체 근 분리와 검증}
+
+solver는
+
+\[
+\gcd\!\left(F_{12}(X),X^{2^{128}}-X\right)
+\]
+
+로 $\mathbb F_{2^{128}}$ 안의 선형 인수만 분리한 뒤 근을 나눈다.
+NIST GCM은 field element를 MSB-first로 표현하고 구현의 일반 다항식
+연산은 bit 0을 상수항 계수로 사용하므로, 표현 경계에서 128비트
+bit reverse를 적용했다.
+
+각 후보는 재사용 record 세 개 모두에서
+
+\[
+T_i\oplus P_i(H)=S
+\]
+
+가 같은지 검사했다. 유일하게 남은 값은 다음과 같다.
+
+\begin{lstlisting}
+H        = 112332a84132bc0c5c23a61037723683
+E_K(J0)  = 1e023d8461003896981f1441c5feab90
+\end{lstlisting}
+
+$H$는 AES session key가 아니라 GCM authentication subkey이다. 하지만
+재사용 nonce의 $H$와 $S$를 모두 얻었으므로 그 nonce에 대한 새
+ciphertext와 tag를 만들 수 있다.
+
+\section{평문 및 Tag 위조}
+
+\subsection{Ciphertext 변경}
+
+두 평문은 모두 48바이트이고 0-based offset 32의 한 바이트만 다르다.
+
+\begin{lstlisting}
+old: action=set_salary&uid=0007&amt=0100&month=202603
+new: action=set_salary&uid=0007&amt=0500&month=202603
+\end{lstlisting}
+
+\texttt{'1'=0x31}, \texttt{'5'=0x35}이므로 delta는 \texttt{0x04}다.
+CTR에서 $C=P\oplus KS$이므로
+
+\[
+C'=C\oplus P\oplus P'
+\]
+
+로 바꾸면 된다. ciphertext의 해당 byte는
+\texttt{f5 xor 04 = f1}이 된다.
+
+\begin{lstlisting}
+old C = a99141d1d84c3df6bfdcdb7dec7cf30462db203fbc36a29772edbf159643b468f5f1e520e7341daee867a49665542cd9
+new C = a99141d1d84c3df6bfdcdb7dec7cf30462db203fbc36a29772edbf159643b468f1f1e520e7341daee867a49665542cd9
+\end{lstlisting}
+
+\subsection{Tag 재계산}
+
+nonce, AAD, 길이가 그대로이므로 $S$도 같다.
+
+\[
+\begin{aligned}
+S&=T_{\rm old}\oplus\operatorname{GHASH}_H(A,C_{\rm old}),\\
+T_{\rm new}&=S\oplus\operatorname{GHASH}_H(A,C_{\rm new}).
+\end{aligned}
+\]
+
+\begin{lstlisting}
+old tag   = b0d6e0ac2be205621f7ea4a034519f95
+GHASH old = aed4dd284ae23df48761b0e1f1af3405
+S         = 1e023d8461003896981f1441c5feab90
+GHASH new = ee1d6718f16b4b2ca60cafbf65172188
+new tag   = f01f5a9c906b73ba3e13bbfea0e98a18
+\end{lstlisting}
+
+\section{최종 Record 구조}
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{rrlX}
+\toprule
+Offset & Size & Field & Value \\
+\midrule
+0 & 1 & ContentType & \texttt{17} \\
+1--2 & 2 & TLS version & \texttt{0303} \\
+3--4 & 2 & Fragment length & \texttt{0048} \\
+5--12 & 8 & Explicit nonce & \texttt{9c269a9f29810ab0} \\
+13--60 & 48 & Forged ciphertext & \texttt{a99141...5542cd9} \\
+61--76 & 16 & GCM tag & \texttt{f01f5a9c906b73ba3e13bbfea0e98a18} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+fragment는 $8+48+16=72$바이트이고 header를 포함한 record는
+$5+72=77$바이트, 즉 개행을 제외한 hex 154문자다.
+
+\section{구현과 재현 검증}
+
+구현 파일은 \texttt{solve\_03\_tls\_gcm\_nonce\_reuse.py}다. Python 표준
+라이브러리만 사용하며 pcap magic/endian/link type과 packet 길이를 검사하고,
+TCP segment를 sequence number로 재조립하며, TLS record 경계를
+검증한다. GF($2^{128}$) 곱셈, 역원, 다항식 GCD와 인수분해도 직접
+구현했다. 인수분해 난수 seed는 3으로 고정하고 최종 후보는 세 tag
+방정식으로 결정론적으로 검증한다.
+
+저장소 루트에서 다음을 실행한다.
+
+\begin{lstlisting}
+python3 solutions/solve_03_tls_gcm_nonce_reuse.py
+\end{lstlisting}
+
+코드는 다음 조건을 모두 assertion으로 검사한다.
+
+\begin{itemize}
+  \item cipher suite, TLS sequence number, nonce 재사용 pattern;
+  \item 유일한 $H$와 세 record에서 동일한 $S$;
+  \item 새 ciphertext가 재사용 keystream 아래 목표 평문으로 복원됨;
+  \item $T_{\rm new}\oplus\operatorname{GHASH}_H(A,C_{\rm new})=S$;
+  \item fragment/record 길이와 최종 예상 hex; 그리고
+  \item 생성값과 \texttt{submissions/03/forged\_record.txt}의 일치.
+\end{itemize}
+
+\section{참고 자료}
+
+\begin{itemize}
+  \item \href{https://www.rfc-editor.org/rfc/rfc5246.html#section-6.2.3.3}
+        {IETF RFC 5246, \emph{The Transport Layer Security (TLS) Protocol
+        Version 1.2}}, Section 6.2.3.3.
+  \item \href{https://www.rfc-editor.org/rfc/rfc5288.html#section-3}
+        {IETF RFC 5288, \emph{AES Galois Counter Mode (GCM) Cipher Suites for
+        TLS}}, Section 3.
+  \item \href{https://doi.org/10.6028/NIST.SP.800-38D}
+        {NIST SP 800-38D, \emph{Recommendation for Block Cipher Modes of
+        Operation: Galois/Counter Mode (GCM) and GMAC}}.
+  \item \href{https://eprint.iacr.org/2004/193}
+        {David A. McGrew and John Viega, \emph{The Security and Performance of
+        the Galois/Counter Mode (GCM) of Operation}}, 2004.
+  \item \href{https://csrc.nist.gov/CSRC/media/Projects/Block-Cipher-Techniques/documents/BCM/Comments/800-38-series-drafts/GCM/Joux_comments.pdf}
+        {Antoine Joux, \emph{Authentication Failures in NIST version of GCM}},
+        2006.
+\end{itemize}
+
+\end{document}

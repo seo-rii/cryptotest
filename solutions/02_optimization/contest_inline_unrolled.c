@@ -86,10 +86,9 @@ static inline uint64_t bswap64_portable(uint64_t x) {
 
 #if defined(__GNUC__) && !defined(__clang__)
 #define PERMUTE20_ATTRIBUTE                                                   \
-    __attribute__((noinline, noclone, target("bmi2"),                       \
-                   optimize("no-tree-vectorize"), aligned(64)))
+    __attribute__((always_inline, optimize("no-tree-vectorize"))) inline
 #elif defined(__GNUC__) || defined(__clang__)
-#define PERMUTE20_ATTRIBUTE __attribute__((noinline, target("bmi2"), aligned(64)))
+#define PERMUTE20_ATTRIBUTE __attribute__((always_inline)) inline
 #else
 #define PERMUTE20_ATTRIBUTE
 #endif

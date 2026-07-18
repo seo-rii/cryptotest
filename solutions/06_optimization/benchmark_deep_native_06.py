@@ -1,0 +1,549 @@
+#!/usr/bin/env python3
+"""Repeated, verified benchmark for challenge-6 GMP and native-field solvers.
+
+Build time and the native randomized self-test are outside the timed region.
+Each timed sample is a fresh complete process, follows at least one discarded
+warm-up, and must reproduce d, s2, r3, P=dQ (where reported), and lift bits.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import os
+import platform
+import re
+import shutil
+import statistics
+import subprocess
+import sys
+import tempfile
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+
+EXPECTED = {
+    "d": int("1c3cdd6b221806db0a7b28", 16),
+    "state": int("638d9d631ab436da51e640", 16),
+    "r3": int("2443c8daf1a9d52b09", 16),
+    "lift_low_bits": 21304,
+}
+
+
+@dataclass(frozen=True)
+class Contender:
+    name: str
+    family: str
+    threads: int
+    command: tuple[str, ...]
+
+
+def cpu_model() -> str:
+    try:
+        for line in Path("/proc/cpuinfo").read_text(encoding="utf-8").splitlines():
+            if line.lower().startswith("model name"):
+                return line.split(":", 1)[1].strip()
+    except OSError:
+        pass
+    return platform.processor() or "unknown"
+
+
+def compiler_version(compiler: str) -> str:
+    process = subprocess.run(
+        [compiler, "--version"], check=True, capture_output=True, text=True
+    )
+    return process.stdout.splitlines()[0]
+
+
+def compile_source(
+    compiler: str,
+    source: Path,
+    output: Path,
+    libraries: tuple[str, ...] = (),
+) -> tuple[str, ...]:
+    command = (
+        compiler,
+        "-O3",
+        "-DNDEBUG",
+        "-march=native",
+        "-std=c++20",
+        "-fopenmp",
+        str(source),
+        *libraries,
+        "-o",
+        str(output),
+    )
+    process = subprocess.run(command, check=False, capture_output=True, text=True)
+    if process.returncode != 0:
+        raise RuntimeError(
+            f"build failed for {source.name}:\n"
+            f"stdout:\n{process.stdout}\nstderr:\n{process.stderr}"
+        )
+    return command
+
+
+def parse_integer(value: Any) -> int:
+    if isinstance(value, int):
+        return value
+    return int(value, 0)
+
+
+def validate_result(contender: Contender, stdout: str) -> dict[str, Any]:
+    if contender.family == "python-original":
+        if "P == d*Q: True" not in stdout:
+            raise RuntimeError("original Python solver failed P=dQ validation")
+        patterns = {
+            "d": r"backdoor scalar d = (0x[0-9a-f]+)",
+            "state": r"recovered state s1 = (0x[0-9a-f]+)",
+            "r3": r"predicted r3 = (0x[0-9a-f]+)",
+        }
+        result: dict[str, Any] = {
+            "implementation": "python-original",
+            "state_label": "s2",
+        }
+        for key, pattern in patterns.items():
+            match = re.search(pattern, stdout)
+            if match is None:
+                raise RuntimeError(
+                    f"could not parse {key} from original Python output"
+                )
+            result[key] = int(match.group(1), 16)
+            if result[key] != EXPECTED[key]:
+                raise RuntimeError(
+                    f"original Python {key} mismatch: "
+                    f"observed={result[key]:#x}, expected={EXPECTED[key]:#x}"
+                )
+        return result
+
+    try:
+        result = json.loads(stdout)
+    except json.JSONDecodeError as error:
+        raise RuntimeError(
+            f"{contender.name} returned invalid JSON: {stdout!r}"
+        ) from error
+    observed = {key: parse_integer(result[key]) for key in EXPECTED}
+    if observed != EXPECTED:
+        raise RuntimeError(
+            f"{contender.name} known-answer mismatch: "
+            f"observed={observed}, expected={EXPECTED}"
+        )
+    if result.get("state_label") != "s2":
+        raise RuntimeError(f"{contender.name} did not label state as s2")
+    if "p_equals_dq" in result and result["p_equals_dq"] is not True:
+        raise RuntimeError(f"{contender.name} failed P=dQ validation")
+    return result
+
+
+def run_once(
+    contender: Contender, timeout: float, environment: dict[str, str]
+) -> tuple[float, dict[str, Any]]:
+    started = time.perf_counter()
+    process = subprocess.run(
+        contender.command,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        env=environment,
+    )
+    elapsed = time.perf_counter() - started
+    if process.returncode != 0:
+        raise RuntimeError(
+            f"{contender.name} exited {process.returncode}:\n"
+            f"stdout:\n{process.stdout}\nstderr:\n{process.stderr}"
+        )
+    return elapsed, validate_result(contender, process.stdout)
+
+
+def percentile(ordered: list[float], fraction: float) -> float:
+    if len(ordered) == 1:
+        return ordered[0]
+    position = fraction * (len(ordered) - 1)
+    lower = math.floor(position)
+    upper = math.ceil(position)
+    if lower == upper:
+        return ordered[lower]
+    weight = position - lower
+    return ordered[lower] * (1.0 - weight) + ordered[upper] * weight
+
+
+def summarize(values: list[float]) -> dict[str, float | int]:
+    ordered = sorted(values)
+    median = statistics.median(ordered)
+    deviations = [abs(value - median) for value in ordered]
+    mad = statistics.median(deviations)
+    return {
+        "samples": len(values),
+        "median_seconds": median,
+        "mean_seconds": statistics.fmean(values),
+        "stdev_seconds": statistics.stdev(values) if len(values) > 1 else 0.0,
+        "mad_seconds": mad,
+        "mad_percent": 100.0 * mad / median,
+        "min_seconds": ordered[0],
+        "p05_seconds": percentile(ordered, 0.05),
+        "p95_seconds": percentile(ordered, 0.95),
+        "max_seconds": ordered[-1],
+    }
+
+
+def parse_positive_csv(text: str, label: str) -> list[int]:
+    try:
+        values = [int(item.strip()) for item in text.split(",") if item.strip()]
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(f"{label} must be comma-separated integers") from error
+    if not values or any(value < 1 for value in values) or len(set(values)) != len(values):
+        raise argparse.ArgumentTypeError(
+            f"{label} must be unique positive comma-separated integers"
+        )
+    return values
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--warmup", type=int, default=1)
+    parser.add_argument("--repetitions", type=int, default=7)
+    parser.add_argument("--threads", default="1,8")
+    parser.add_argument(
+        "--native-schedules",
+        default="block,scalar",
+        help="comma-separated adaptive, block, scalar, and/or static",
+    )
+    parser.add_argument(
+        "--native-inverses",
+        default="binary",
+        help="comma-separated binary and/or fermat",
+    )
+    parser.add_argument(
+        "--native-sqrts",
+        default="window4",
+        help="comma-separated window4 and/or binary",
+    )
+    parser.add_argument("--block-size", type=int, default=64)
+    parser.add_argument("--timeout", type=float, default=60.0)
+    parser.add_argument("--compiler", default="g++")
+    parser.add_argument(
+        "--include-original-python",
+        action="store_true",
+        help="include the slow unmodified Python attack in the same rounds",
+    )
+    parser.add_argument("--output", type=Path)
+    args = parser.parse_args()
+
+    if args.warmup < 1 or args.repetitions < 5:
+        parser.error("warmup must be positive and repetitions must be at least 5")
+    if not 1 <= args.block_size <= 256:
+        parser.error("block size must be in 1..256")
+    try:
+        thread_counts = parse_positive_csv(args.threads, "threads")
+    except argparse.ArgumentTypeError as error:
+        parser.error(str(error))
+    schedules = [
+        item.strip() for item in args.native_schedules.split(",") if item.strip()
+    ]
+    if (
+        not schedules
+        or len(set(schedules)) != len(schedules)
+        or any(
+            schedule not in {"adaptive", "block", "scalar", "static"}
+            for schedule in schedules
+        )
+    ):
+        parser.error(
+            "native schedules must be unique values from adaptive,block,scalar,static"
+        )
+    inverses = [
+        item.strip() for item in args.native_inverses.split(",") if item.strip()
+    ]
+    if (
+        not inverses
+        or len(set(inverses)) != len(inverses)
+        or any(inverse not in {"binary", "fermat"} for inverse in inverses)
+    ):
+        parser.error("native inverses must be unique values from binary,fermat")
+    square_roots = [
+        item.strip() for item in args.native_sqrts.split(",") if item.strip()
+    ]
+    if (
+        not square_roots
+        or len(set(square_roots)) != len(square_roots)
+        or any(square_root not in {"window4", "binary"} for square_root in square_roots)
+    ):
+        parser.error("native square roots must be unique values from window4,binary")
+
+    compiler = shutil.which(args.compiler)
+    if compiler is None:
+        parser.error(f"compiler not found: {args.compiler}")
+    directory = Path(__file__).resolve().parent
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "OMP_DYNAMIC": "FALSE",
+            "OMP_PROC_BIND": "SPREAD",
+            "OMP_PLACES": "THREADS",
+        }
+    )
+
+    with tempfile.TemporaryDirectory(prefix="deep-bench06-") as temporary_text:
+        temporary = Path(temporary_text)
+        native_binary = temporary / "deep_native_06"
+        gmp_binary = temporary / "solve_06_gmp"
+        native_build = compile_source(
+            compiler, directory / "deep_native_06.cpp", native_binary
+        )
+        gmp_build = compile_source(
+            compiler,
+            directory / "solve_06_gmp.cpp",
+            gmp_binary,
+            ("-lgmpxx", "-lgmp"),
+        )
+
+        self_test = subprocess.run(
+            [str(native_binary), "--self-test", "--json"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=args.timeout,
+            env=environment,
+        )
+        expected_self_test = {
+            "self_test": True,
+            "field_vectors": 2000,
+            "point_vectors": 256,
+        }
+        if (
+            self_test.returncode != 0
+            or json.loads(self_test.stdout) != expected_self_test
+        ):
+            raise RuntimeError(
+                "native field self-test failed:\n"
+                f"stdout:\n{self_test.stdout}\nstderr:\n{self_test.stderr}"
+            )
+
+        contenders: list[Contender] = []
+        if args.include_original_python:
+            contenders.append(
+                Contender(
+                    "python-original",
+                    "python-original",
+                    0,
+                    (sys.executable, str(directory / "solve_06_baseline.py")),
+                )
+            )
+        for threads in thread_counts:
+            contenders.append(
+                Contender(
+                    f"gmp-{threads}t",
+                    "gmp",
+                    threads,
+                    (
+                        str(gmp_binary),
+                        "--threads",
+                        str(threads),
+                        "--telemetry",
+                        "analytic",
+                        "--json",
+                    ),
+                )
+            )
+            for inverse in inverses:
+                for square_root in square_roots:
+                    for schedule in schedules:
+                        name = (
+                            f"native-{inverse}-{square_root}-{schedule}-{threads}t"
+                        )
+                        contenders.append(
+                            Contender(
+                                name,
+                                f"native-{inverse}-{square_root}-{schedule}",
+                                threads,
+                                (
+                                    str(native_binary),
+                                    "--threads",
+                                    str(threads),
+                                    "--inverse",
+                                    inverse,
+                                    "--sqrt",
+                                    square_root,
+                                    "--schedule",
+                                    schedule,
+                                    "--block-size",
+                                    str(args.block_size),
+                                    "--json",
+                                ),
+                            )
+                        )
+
+        print(
+            f"environment: {cpu_model()}, logical_cpus={os.cpu_count() or 1}, "
+            f"Python {platform.python_version()}"
+        )
+        print(f"compiler: {compiler_version(compiler)}")
+        print(
+            f"protocol: warmup={args.warmup}, repetitions={args.repetitions}, "
+            "fresh process, cyclic/reversed interleaving, external wall clock, "
+            "known-answer check every sample, native 2000 field + 256 point/table "
+            "vector self-test passed",
+            flush=True,
+        )
+
+        for contender in contenders:
+            for index in range(args.warmup):
+                elapsed, _ = run_once(contender, args.timeout, environment)
+                print(
+                    f"warmup {index + 1}/{args.warmup} {contender.name}: "
+                    f"{elapsed:.6f}s [verified/discarded]",
+                    flush=True,
+                )
+
+        raw: dict[str, list[float]] = {item.name: [] for item in contenders}
+        stage_names = (
+            "telemetry_seconds",
+            "precompute_seconds",
+            "scan_seconds",
+            "state_seconds",
+            "total_seconds",
+        )
+        internal: dict[str, dict[str, list[float]]] = {
+            item.name: {stage: [] for stage in stage_names} for item in contenders
+        }
+        metadata: dict[str, dict[str, Any]] = {}
+        for repetition in range(args.repetitions):
+            offset = repetition % len(contenders)
+            order = contenders[offset:] + contenders[:offset]
+            if (repetition // len(contenders)) % 2:
+                order = list(reversed(order))
+            for contender in order:
+                elapsed, result = run_once(contender, args.timeout, environment)
+                raw[contender.name].append(elapsed)
+                for stage in stage_names:
+                    if stage in result:
+                        internal[contender.name][stage].append(float(result[stage]))
+                metadata[contender.name] = {
+                    key: result[key]
+                    for key in (
+                        "implementation",
+                        "field_bytes",
+                        "jacobian_bytes",
+                        "fixed_table_bytes",
+                        "schedule_requested",
+                        "schedule_effective",
+                    )
+                    if key in result
+                }
+                print(
+                    f"measure {repetition + 1}/{args.repetitions} "
+                    f"{contender.name}: {elapsed:.6f}s [verified]",
+                    flush=True,
+                )
+
+        summary = {name: summarize(samples) for name, samples in raw.items()}
+        stage_summary = {
+            name: {
+                stage: summarize(samples)
+                for stage, samples in stages.items()
+                if samples
+            }
+            for name, stages in internal.items()
+        }
+        paired_speedup: dict[str, dict[str, float | int]] = {}
+        for contender in contenders:
+            if not contender.family.startswith("native-"):
+                continue
+            baseline_name = f"gmp-{contender.threads}t"
+            ratios = [
+                baseline / candidate
+                for baseline, candidate in zip(
+                    raw[baseline_name], raw[contender.name], strict=True
+                )
+            ]
+            ratio_summary = summarize(ratios)
+            paired_speedup[contender.name] = ratio_summary
+            summary[contender.name]["ratio_of_medians_vs_same_thread_gmp"] = (
+                float(summary[baseline_name]["median_seconds"])
+                / float(summary[contender.name]["median_seconds"])
+            )
+
+        paired_vs_original: dict[str, dict[str, float | int]] = {}
+        if "python-original" in raw:
+            original_median = float(
+                summary["python-original"]["median_seconds"]
+            )
+            for contender in contenders:
+                if not contender.family.startswith("native-"):
+                    continue
+                ratios = [
+                    baseline / candidate
+                    for baseline, candidate in zip(
+                        raw["python-original"], raw[contender.name], strict=True
+                    )
+                ]
+                paired_vs_original[contender.name] = summarize(ratios)
+                summary[contender.name]["ratio_of_medians_vs_original_python"] = (
+                    original_median
+                    / float(summary[contender.name]["median_seconds"])
+                )
+
+        print("\nsummary (external end-to-end wall clock)")
+        for contender in contenders:
+            item = summary[contender.name]
+            speedup = item.get("ratio_of_medians_vs_same_thread_gmp")
+            suffix = f", vs GMP={speedup:.2f}x" if speedup is not None else ""
+            original_speedup = item.get("ratio_of_medians_vs_original_python")
+            if original_speedup is not None:
+                suffix += f", vs original Python={original_speedup:.2f}x"
+            print(
+                f"{contender.name:24s} median={item['median_seconds']:.6f}s, "
+                f"MAD={item['mad_seconds']:.6f}s ({item['mad_percent']:.2f}%), "
+                f"p05={item['p05_seconds']:.6f}s, "
+                f"p95={item['p95_seconds']:.6f}s{suffix}"
+            )
+
+        report = {
+            "schema": 1,
+            "environment": {
+                "cpu": cpu_model(),
+                "logical_cpus": os.cpu_count() or 1,
+                "platform": platform.platform(),
+                "python": platform.python_version(),
+                "compiler": compiler_version(compiler),
+                "openmp_environment": {
+                    key: environment[key]
+                    for key in ("OMP_DYNAMIC", "OMP_PROC_BIND", "OMP_PLACES")
+                },
+            },
+            "protocol": {
+                "warmup": args.warmup,
+                "repetitions": args.repetitions,
+                "clock": "time.perf_counter external wall time",
+                "ordering": "cyclic rotations, then reversed rotations",
+                "fresh_process_per_sample": True,
+                "build_excluded": True,
+                "native_self_test_excluded": True,
+                "native_self_test": expected_self_test,
+                "validation": {key: hex(value) for key, value in EXPECTED.items()},
+                "native_build": list(native_build),
+                "gmp_build": list(gmp_build),
+                "block_size": args.block_size,
+            },
+            "metadata": metadata,
+            "raw_seconds": raw,
+            "internal_raw_seconds": internal,
+            "summary": summary,
+            "internal_stage_summary": stage_summary,
+            "paired_speedup_vs_same_thread_gmp": paired_speedup,
+            "paired_speedup_vs_original_python": paired_vs_original,
+        }
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(report, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            print(f"wrote JSON report: {args.output}")
+
+
+if __name__ == "__main__":
+    main()

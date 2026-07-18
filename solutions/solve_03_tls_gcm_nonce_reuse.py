@@ -11,6 +11,12 @@ from zipfile import ZipFile
 
 MOD_POLY = (1 << 128) | (1 << 7) | (1 << 2) | (1 << 1) | 1
 MASK128 = (1 << 128) - 1
+EXPECTED_H = 0x112332A84132BC0C5C23A61037723683
+EXPECTED_RECORD_HEX = (
+    "17030300489c269a9f29810ab0a99141d1d84c3df6bfdcdb7dec7cf30462db203"
+    "fbc36a29772edbf159643b468f1f1e520e7341daee867a49665542cd9f01f5a9c9"
+    "06b73ba3e13bbfea0e98a18"
+)
 
 
 def gf_mul(a: int, b: int) -> int:
@@ -152,11 +158,28 @@ def split_linear_factors(poly: list[int]) -> list[int]:
 
 
 def tls_records_from_pcap(pcap: bytes) -> list[tuple[int, bytes, bytes]]:
+    if len(pcap) < 24:
+        raise RuntimeError("truncated pcap global header")
+    if pcap[:4] in (b"\xd4\xc3\xb2\xa1", b"\x4d\x3c\xb2\xa1"):
+        endian = "<"
+    elif pcap[:4] in (b"\xa1\xb2\xc3\xd4", b"\xa1\xb2\x3c\x4d"):
+        endian = ">"
+    else:
+        raise RuntimeError("unsupported pcap magic")
+    link_type = struct.unpack(f"{endian}I", pcap[20:24])[0]
+    # DLT_RAW and DLT_IPV4 packets both start with an IP header.
+    if link_type not in (101, 228):
+        raise RuntimeError(f"expected DLT_RAW/DLT_IPV4 pcap, got link type {link_type}")
+
     pos = 24
-    payloads: list[bytes] = []
+    segments: list[tuple[int, bytes]] = []
     while pos + 16 <= len(pcap):
-        _, _, captured_len, _ = struct.unpack("<IIII", pcap[pos : pos + 16])
+        _, _, captured_len, _ = struct.unpack(
+            f"{endian}IIII", pcap[pos : pos + 16]
+        )
         pos += 16
+        if pos + captured_len > len(pcap):
+            raise RuntimeError("truncated pcap packet")
         packet = pcap[pos : pos + captured_len]
         pos += captured_len
         if len(packet) < 20:
@@ -170,18 +193,40 @@ def tls_records_from_pcap(pcap: bytes) -> list[tuple[int, bytes, bytes]]:
             continue
         source_port = int.from_bytes(tcp[:2], "big")
         tcp_header_len = (tcp[12] >> 4) * 4
-        if source == bytes([10, 0, 0, 1]) and source_port == 443 and len(tcp) > tcp_header_len:
-            payloads.append(tcp[tcp_header_len:])
+        if (
+            source == bytes([10, 0, 0, 1])
+            and source_port == 443
+            and len(tcp) > tcp_header_len
+        ):
+            tcp_seq = int.from_bytes(tcp[4:8], "big")
+            segments.append((tcp_seq, tcp[tcp_header_len:]))
 
-    stream = b"".join(payloads)
+    if not segments:
+        raise RuntimeError("server-to-client TCP payload was not found")
+    segments.sort()
+    stream = bytearray()
+    next_seq = segments[0][0]
+    for tcp_seq, payload in segments:
+        if tcp_seq > next_seq:
+            raise RuntimeError(f"TCP stream has a gap before sequence {tcp_seq}")
+        overlap = next_seq - tcp_seq
+        if overlap < len(payload):
+            stream.extend(payload[overlap:])
+            next_seq = tcp_seq + len(payload)
+
     records: list[tuple[int, bytes, bytes]] = []
     i = 0
     while i + 5 <= len(stream):
         record_type = stream[i]
         version = stream[i + 1 : i + 3]
         length = int.from_bytes(stream[i + 3 : i + 5], "big")
-        records.append((record_type, version, stream[i + 5 : i + 5 + length]))
-        i += 5 + length
+        end = i + 5 + length
+        if end > len(stream):
+            raise RuntimeError("truncated TLS record")
+        records.append((record_type, bytes(version), bytes(stream[i + 5 : end])))
+        i = end
+    if i != len(stream):
+        raise RuntimeError("trailing bytes after TLS record parsing")
     return records
 
 
@@ -225,17 +270,42 @@ def main() -> None:
         pcap = archive.read("tls_live.pcap")
 
     records = tls_records_from_pcap(pcap)
+    server_hello = next(
+        fragment
+        for record_type, _, fragment in records
+        if record_type == 0x16 and fragment[:1] == b"\x02"
+    )
+    hello_length = int.from_bytes(server_hello[1:4], "big")
+    hello_body = server_hello[4 : 4 + hello_length]
+    session_id_length = hello_body[34]
+    cipher_offset = 35 + session_id_length
+    cipher_suite = int.from_bytes(
+        hello_body[cipher_offset : cipher_offset + 2], "big"
+    )
+    if cipher_suite != 0xC02F:
+        raise RuntimeError(
+            "expected TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, "
+            f"got {cipher_suite:#06x}"
+        )
+    print(
+        f"cipher suite = {cipher_suite:#06x} "
+        "(TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256)"
+    )
+
     apps: list[dict[str, object]] = []
     encrypted = False
-    seq = -1
+    seq = 0
     for record_type, version, fragment in records:
         if record_type == 0x14:
             encrypted = True
-            seq = -1
+            seq = 0
             continue
         if encrypted:
-            seq += 1
             if record_type == 0x17:
+                if len(fragment) < 24:
+                    raise RuntimeError(
+                        "TLS-GCM fragment is shorter than explicit nonce plus tag"
+                    )
                 apps.append(
                     {
                         "seq": seq,
@@ -246,6 +316,18 @@ def main() -> None:
                         "tag": fragment[-16:],
                     }
                 )
+            seq += 1
+
+    if len(apps) != 4 or [int(item["seq"]) for item in apps] != [1, 2, 3, 4]:
+        raise RuntimeError("unexpected server application-record sequence")
+    explicit_nonces = [bytes(item["explicit"]) for item in apps]
+    if (
+        len(set(explicit_nonces[:3])) != 1
+        or explicit_nonces[3] == explicit_nonces[0]
+    ):
+        raise RuntimeError(
+            "expected nonce reuse in records 1-3 and a fresh nonce in record 4"
+        )
 
     reused = apps[:3]
     print("server application records:")
@@ -259,22 +341,40 @@ def main() -> None:
     tags = [reverse_bits_128(int.from_bytes(bytes(item["tag"]), "big")) for item in reused]
     equation = monic(poly_add(poly_add(polys[0], polys[1]), [tags[0] ^ tags[1]]))
 
-    linear_product = poly_gcd(equation, poly_add(poly_powmod([0, 1], 1 << 128, equation), [0, 1]))
+    linear_product = poly_gcd(
+        equation,
+        poly_add(poly_powmod([0, 1], 1 << 128, equation), [0, 1]),
+    )
     roots = split_linear_factors(linear_product)
-    valid = [
-        root
-        for root in roots
-        if all(
-            (poly_eval(polys[i], root) ^ tags[i]) == (poly_eval(polys[j], root) ^ tags[j])
-            for i in range(3)
-            for j in range(i + 1, 3)
-        )
-    ]
+    valid = sorted(
+        {
+            root
+            for root in roots
+            if all(
+                (poly_eval(polys[i], root) ^ tags[i])
+                == (poly_eval(polys[j], root) ^ tags[j])
+                for i in range(3)
+                for j in range(i + 1, 3)
+            )
+        }
+    )
     if len(valid) != 1:
         raise RuntimeError(f"expected one GHASH key, got {len(valid)}")
 
     h = reverse_bits_128(valid[0])
+    if h != EXPECTED_H:
+        raise RuntimeError(f"unexpected GHASH key {h:032x}")
+    authentication_masks = [
+        int.from_bytes(bytes(item["tag"]), "big")
+        ^ ghash(h, ghash_blocks(item))
+        for item in reused
+    ]
+    if len(set(authentication_masks)) != 1:
+        raise RuntimeError("reused-nonce records do not share E_K(J0)")
+    authentication_mask = authentication_masks[0]
+    print(f"GHASH equation degree = {len(equation) - 1}")
     print(f"GHASH H = {h:032x}")
+    print(f"E_K(J0) = {authentication_mask:032x}")
 
     target = reused[2]
     original = b"action=set_salary&uid=0007&amt=0100&month=202603"
@@ -283,11 +383,28 @@ def main() -> None:
     if len(original) != len(ciphertext):
         raise RuntimeError("known plaintext length does not match target ciphertext")
 
-    forged_ciphertext = bytes(c ^ p ^ q for c, p, q in zip(ciphertext, original, wanted))
+    changed_offsets = [
+        i for i, (old, new) in enumerate(zip(original, wanted)) if old != new
+    ]
+    if changed_offsets != [32]:
+        raise RuntimeError(f"unexpected plaintext change offsets: {changed_offsets}")
+    keystream = bytes(c ^ p for c, p in zip(ciphertext, original))
+    forged_ciphertext = bytes(
+        c ^ p ^ q for c, p, q in zip(ciphertext, original, wanted)
+    )
+    if bytes(c ^ k for c, k in zip(forged_ciphertext, keystream)) != wanted:
+        raise RuntimeError(
+            "forged ciphertext does not decrypt to the target under the recovered "
+            "keystream"
+        )
     modified = dict(target)
     modified["ciphertext"] = forged_ciphertext
     old_tag = int.from_bytes(bytes(target["tag"]), "big")
-    new_tag = (old_tag ^ ghash(h, ghash_blocks(target)) ^ ghash(h, ghash_blocks(modified))).to_bytes(16, "big")
+    old_ghash = ghash(h, ghash_blocks(target))
+    new_ghash = ghash(h, ghash_blocks(modified))
+    new_tag = (old_tag ^ old_ghash ^ new_ghash).to_bytes(16, "big")
+    if int.from_bytes(new_tag, "big") ^ new_ghash != authentication_mask:
+        raise RuntimeError("forged tag does not reproduce E_K(J0)")
 
     forged_record = (
         bytes([0x17])
@@ -297,7 +414,34 @@ def main() -> None:
         + forged_ciphertext
         + new_tag
     )
+    if len(forged_record) != 77 or int.from_bytes(forged_record[3:5], "big") != 72:
+        raise RuntimeError("forged TLS record has an invalid encoded length")
+    if forged_record.hex() != EXPECTED_RECORD_HEX:
+        raise RuntimeError("forged TLS record differs from the audited expected value")
+    submission = (root / "submissions" / "03" / "forged_record.txt").read_text(
+        encoding="ascii"
+    ).strip()
+    if submission != forged_record.hex():
+        raise RuntimeError("submissions/03/forged_record.txt is out of sync")
+    target_aad = (
+        int(target["seq"]).to_bytes(8, "big")
+        + bytes([int(target["type"])])
+        + bytes(target["version"])
+        + len(ciphertext).to_bytes(2, "big")
+    )
+    print(f"target AAD = {target_aad.hex()}")
+    print(f"plaintext change offsets = {changed_offsets} (0-based)")
+    print(f"original ciphertext = {ciphertext.hex()}")
+    print(f"original tag = {old_tag:032x}")
+    print(f"GHASH original = {old_ghash:032x}")
+    print(f"forged ciphertext = {forged_ciphertext.hex()}")
+    print(f"GHASH forged = {new_ghash:032x}")
+    print(f"forged tag = {new_tag.hex()}")
     print(f"forged TLS record = {forged_record.hex()}")
+    print(
+        "verification = pcap, nonce reuse, H, E_K(J0), plaintext delta, tag, "
+        "length, and submission checks passed"
+    )
 
 
 if __name__ == "__main__":

@@ -123,21 +123,68 @@ static inline void optimized_one_round(state256_t *state) {
     state->w[3] = x3;
 }
 
-NOINLINE static void optimized_20_rounds(state256_t *state) {
+#if defined(__GNUC__) && !defined(__clang__)
+#define OPTIMIZED20_ATTRIBUTE                                                 \
+    __attribute__((noinline, noclone, target("bmi2"),                       \
+                   optimize("no-tree-vectorize"), aligned(64)))
+#elif defined(__GNUC__) || defined(__clang__)
+#define OPTIMIZED20_ATTRIBUTE __attribute__((noinline, target("bmi2"), aligned(64)))
+#else
+#define OPTIMIZED20_ATTRIBUTE NOINLINE
+#endif
+
+#define APPLY_TWO_OPTIMIZED_ROUNDS()                                          \
+    do {                                                                      \
+        x0 = bswap64_portable(                                                \
+                 rotl64(bswap64_portable(rotl64(x0, 43U) ^ CONSTANTS2[0]) +  \
+                            CONSTANTS1[3],                                    \
+                        14U) ^                                                \
+                 CONSTANTS2[3]) +                                            \
+             CONSTANTS1[0];                                                   \
+        x1 = bswap64_portable(                                                \
+                 rotl64(bswap64_portable(rotl64(x1, 7U) ^ CONSTANTS2[1]) +   \
+                            CONSTANTS1[2],                                    \
+                        29U) ^                                                \
+                 CONSTANTS2[2]) +                                            \
+             CONSTANTS1[1];                                                   \
+        x2 = bswap64_portable(                                                \
+                 rotl64(bswap64_portable(rotl64(x2, 29U) ^ CONSTANTS2[2]) +  \
+                            CONSTANTS1[1],                                    \
+                        7U) ^                                                 \
+                 CONSTANTS2[1]) +                                            \
+             CONSTANTS1[2];                                                   \
+        x3 = bswap64_portable(                                                \
+                 rotl64(bswap64_portable(rotl64(x3, 14U) ^ CONSTANTS2[3]) +  \
+                            CONSTANTS1[0],                                    \
+                        43U) ^                                                \
+                 CONSTANTS2[0]) +                                            \
+             CONSTANTS1[3];                                                   \
+    } while (0)
+
+OPTIMIZED20_ATTRIBUTE static void optimized_20_rounds(state256_t *state) {
     uint64_t x0 = state->w[0];
     uint64_t x1 = state->w[1];
     uint64_t x2 = state->w[2];
     uint64_t x3 = state->w[3];
-    int round;
 
-    for (round = 0; round < 20; ++round) {
-        optimized_round_registers(&x0, &x1, &x2, &x3);
-    }
+    APPLY_TWO_OPTIMIZED_ROUNDS();
+    APPLY_TWO_OPTIMIZED_ROUNDS();
+    APPLY_TWO_OPTIMIZED_ROUNDS();
+    APPLY_TWO_OPTIMIZED_ROUNDS();
+    APPLY_TWO_OPTIMIZED_ROUNDS();
+    APPLY_TWO_OPTIMIZED_ROUNDS();
+    APPLY_TWO_OPTIMIZED_ROUNDS();
+    APPLY_TWO_OPTIMIZED_ROUNDS();
+    APPLY_TWO_OPTIMIZED_ROUNDS();
+    APPLY_TWO_OPTIMIZED_ROUNDS();
     state->w[0] = x0;
     state->w[1] = x1;
     state->w[2] = x2;
     state->w[3] = x3;
 }
+
+#undef APPLY_TWO_OPTIMIZED_ROUNDS
+#undef OPTIMIZED20_ATTRIBUTE
 
 static int states_equal(const state256_t *left, const state256_t *right) {
     return left->w[0] == right->w[0] && left->w[1] == right->w[1] &&

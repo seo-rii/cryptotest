@@ -80,7 +80,7 @@ def select_backend(name: str) -> str:
 
 
 def load_rows() -> list[tuple[Any, Any, Any]]:
-    contest_root = Path(__file__).resolve().parents[1]
+    contest_root = Path(__file__).resolve().parents[2]
     with ZipFile(contest_root / "problems" / "6_PRNG.zip") as archive:
         telemetry = archive.read("telemetry.csv").decode()
     return [

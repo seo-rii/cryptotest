@@ -84,75 +84,20 @@ static inline uint64_t bswap64_portable(uint64_t x) {
 #endif
 }
 
-#if defined(__GNUC__) && !defined(__clang__)
-#define PERMUTE20_ATTRIBUTE                                                   \
-    __attribute__((noinline, noclone, target("bmi2"),                       \
-                   optimize("no-tree-vectorize"), aligned(64)))
-#elif defined(__GNUC__) || defined(__clang__)
-#define PERMUTE20_ATTRIBUTE __attribute__((noinline, target("bmi2"), aligned(64)))
-#else
-#define PERMUTE20_ATTRIBUTE
-#endif
+static inline void permute_round_optimized(state256_t *state,
+                                           const uint64_t constants2[4],
+                                           const uint64_t constants1[4]) {
+    const uint64_t x0 = state->w[0];
+    const uint64_t x1 = state->w[1];
+    const uint64_t x2 = state->w[2];
+    const uint64_t x3 = state->w[3];
 
-static inline uint64_t transform_word(uint64_t value,
-                                      unsigned int rotation,
-                                      uint64_t xor_constant,
-                                      uint64_t add_constant) {
-    return bswap64_portable(rotl64(value, rotation) ^ xor_constant) + add_constant;
+    /* Fixed recovered rotations: w0=43, w1=7, w2=29, w3=14. */
+    state->w[0] = bswap64_portable(rotl64(x3, 14) ^ constants2[3]) + constants1[0];
+    state->w[1] = bswap64_portable(rotl64(x2, 29) ^ constants2[2]) + constants1[1];
+    state->w[2] = bswap64_portable(rotl64(x1, 7) ^ constants2[1]) + constants1[2];
+    state->w[3] = bswap64_portable(rotl64(x0, 43) ^ constants2[0]) + constants1[3];
 }
-
-/*
- * Reversing the four words twice restores their original positions.  Grouping
- * rounds in pairs therefore exposes four independent scalar dependency chains.
- */
-#define APPLY_TWO_ROUNDS()                                                    \
-    do {                                                                      \
-        x0 = transform_word(transform_word(x0, 43U, k0, a3),                 \
-                            14U, k3, a0);                                     \
-        x1 = transform_word(transform_word(x1, 7U, k1, a2),                  \
-                            29U, k2, a1);                                     \
-        x2 = transform_word(transform_word(x2, 29U, k2, a1),                 \
-                            7U, k1, a2);                                      \
-        x3 = transform_word(transform_word(x3, 14U, k3, a0),                 \
-                            43U, k0, a3);                                     \
-    } while (0)
-
-PERMUTE20_ATTRIBUTE static void permute_20rounds_unrolled(
-    state256_t *restrict state,
-    const uint64_t constants1[restrict 4],
-    const uint64_t constants2[restrict 4]) {
-    uint64_t x0 = state->w[0];
-    uint64_t x1 = state->w[1];
-    uint64_t x2 = state->w[2];
-    uint64_t x3 = state->w[3];
-    const uint64_t a0 = constants1[0];
-    const uint64_t a1 = constants1[1];
-    const uint64_t a2 = constants1[2];
-    const uint64_t a3 = constants1[3];
-    const uint64_t k0 = constants2[0];
-    const uint64_t k1 = constants2[1];
-    const uint64_t k2 = constants2[2];
-    const uint64_t k3 = constants2[3];
-
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-
-    state->w[0] = x0;
-    state->w[1] = x1;
-    state->w[2] = x2;
-    state->w[3] = x3;
-}
-
-#undef APPLY_TWO_ROUNDS
-#undef PERMUTE20_ATTRIBUTE
 
 /* -------------------------------------------------
  * 1) One-round permutation:
@@ -177,7 +122,7 @@ void permute_20rounds(state256_t *state,
                      const uint64_t constants1[4],
                      const uint64_t constants2[4]) {
     for (int r = 0; r < 20; r++) {
-        (void)rot; (void)shuffle_map; permute_20rounds_unrolled(state, constants1, constants2); r = 19;
+        (void)rot; (void)shuffle_map; permute_round_optimized(state, constants2, constants1);
     }
 }
 

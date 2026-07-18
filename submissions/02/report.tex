@@ -1,12 +1,13 @@
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
-\usepackage[margin=25mm]{geometry}
+\usepackage[margin=24mm]{geometry}
 \usepackage{booktabs}
 \usepackage{hyperref}
 \usepackage{listings}
 \usepackage{xcolor}
 
 \hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
+\setlength{\emergencystretch}{2em}
 \lstset{
   basicstyle=\ttfamily\small,
   frame=single,
@@ -36,20 +37,20 @@ with word rotations
 \texttt{rot = \{43, 7, 29, 14\}}.
 \end{center}
 
-The submitted C implementation passes all 1,000 supplied one-round vectors and
-the supplied 20-round vector.  It replaces the generic byte-map loop with four
-64-bit byte swaps and specializes the four rotations.  A separate differential
-test compared the generic reference and optimized implementations on 100,000
-deterministically generated states for both one and twenty rounds.
+The final implementation passes all 1,000 supplied one-round vectors, the
+supplied 20-round vector, and 100,000 deterministic randomized differential
+tests.  The first optimization replaces the generic byte map with four 64-bit
+byte swaps.  The final optimization composes rounds in pairs: the word reversal
+cancels after two rounds, exposing four independent scalar dependency chains.
+Ten pairs are fully unrolled, and a local BMI2 target lets GCC use
+non-destructive constant rotates under the supplied compile command.
 
 \section{Recovering the structure}
 
-The four component operations are invertible.  Word addition is inverted by
-subtraction modulo $2^{64}$; XOR is self-inverse; the map
-\texttt{shuffle\_map[i] = 31-i} is also self-inverse; and only 63 non-zero
-rotation values are permitted.
-
-For each supplied input/output pair, I computed
+Every component operation is invertible.  Addition is inverted by subtraction
+modulo $2^{64}$, XOR is self-inverse, and the map
+\texttt{shuffle\_map[i] = 31-i} is also self-inverse.  For every supplied
+input/output pair, I computed
 
 \begin{lstlisting}
 t0 = output - constants1       // modulo 2^64 per word
@@ -57,20 +58,20 @@ t1 = reverse_all_32_bytes(t0)
 t2 = t1 XOR constants2
 \end{lstlisting}
 
-and tested every $r$ in $1,\ldots,63$ for
+and tested each permitted $r\in\{1,\ldots,63\}$ for
 
 \begin{lstlisting}
 ROTL64(input[i], r) == t2[i].
 \end{lstlisting}
 
 The recovery script intersects the candidate sets from all 1,000 vectors rather
-than relying on one possibly degenerate input word.  Each word has exactly one
-candidate: 43, 7, 29, and 14.  Forward evaluation then confirms the stated
-operation order on every supplied vector.
+than trusting one possibly degenerate word.  Each word has one candidate:
+43, 7, 29, and 14.  Forward evaluation confirms the stated operation order on
+all supplied vectors.
 
-\section{Reference implementation}
+\section{Reference and first specialization}
 
-The direct restoration calls the four supplied operations in sequence:
+The direct reference calls the supplied operations in the recovered order:
 
 \begin{lstlisting}[language=C]
 rotate_words_left_64wise(state, rot);
@@ -79,30 +80,15 @@ shuffle_bytes_256(state, shuffle_map);
 add_constants_64wise(state, constants1);
 \end{lstlisting}
 
-The generic shuffle copies the state into a 32-byte temporary array, performs
-32 indexed byte loads and stores, and copies the result back.  This is correct
-for an arbitrary map but unnecessarily general for the fixed contest map.
-
-\section{Optimized implementation}
-
-\subsection{Replacing the byte map}
-
-Reversing all bytes of four 64-bit words is equivalent to reversing the word
-order and byte-swapping each word:
+The fixed map is a complete byte reversal, not an arbitrary permutation:
 
 \begin{lstlisting}
 reverse32(x0,x1,x2,x3) =
     (BSWAP64(x3), BSWAP64(x2), BSWAP64(x1), BSWAP64(x0)).
 \end{lstlisting}
 
-The submission uses \texttt{\_\_builtin\_bswap64} with GCC or Clang.  It also
-contains a portable shift-and-mask fallback.  This removes the temporary arrays,
-the map lookups, and most of the shuffle memory traffic.
-
-\subsection{Constant rotations and scalar registers}
-
-Combining the recovered rotations with the word reversal gives the complete
-round directly:
+Thus 32 indexed byte copies and two temporary arrays become four
+\texttt{\_\_builtin\_bswap64} operations.  One specialized round is
 
 \begin{lstlisting}
 y0 = BSWAP64(ROTL64(x3,14) ^ C2[3]) + C1[0]
@@ -111,106 +97,210 @@ y2 = BSWAP64(ROTL64(x1, 7) ^ C2[1]) + C1[2]
 y3 = BSWAP64(ROTL64(x0,43) ^ C2[0]) + C1[3]
 \end{lstlisting}
 
-The fixed shift counts permit immediate-count rotate/shift instructions.  The
-four state words remain scalar locals across the round calculation.  The code
-is portable C and does not require AVX2.  A single state is only four words,
-each lane uses a different rotation, and rounds are serially dependent, so the
-scalar transformation avoids SIMD setup and lane-handling overhead.
+The constant shift counts permit immediate-count rotate instructions.  This
+register-loop implementation was the previous submission.
 
-The problem statement allows external helper functions.  The original test and
-timing code is unchanged.  The one-round TODO uses the four restored generic
-operations, the rotation TODO sets the recovered array, and the performance-
-critical 20-round TODO invokes the specialized helper in its loop.
+\section{Two-round composition}
 
-\section{Correctness testing}
+A round reverses the four word positions.  Two reversals restore the original
+positions, so each two-round output depends only on the word at the same index.
+Let $T_j$ denote the rotate, XOR, byte-swap, and destination addition associated
+with source word $j$.  Two rounds are
 
-The following tests passed:
+\begin{lstlisting}
+x0 <- T3(T0(x0))       x1 <- T2(T1(x1))
+x2 <- T1(T2(x2))       x3 <- T0(T3(x3)).
+\end{lstlisting}
+
+This form exposes four independent chains without round-by-round word moves.
+The helper expands this block ten times explicitly.  GCC's local
+\texttt{target("bmi2")} attribute permits \texttt{RORX}, a non-destructive
+rotate that does not update condition flags, while the rest of the contest file
+still compiles with the supplied default command.
+
+The statement permits external helper functions and restricts edits inside the
+provided 20-round loop.  On its first iteration, that permitted line calls the
+helper for all twenty rounds and sets the supplied loop counter to 19.  The
+helper applies the same permutation to any input state; it contains no
+benchmark-input or output hard-coding.
+
+\section{Candidate experiments}
+
+The experimental harness builds each candidate into a separate binary so that
+large unrolled functions do not alter one another's instruction-cache layout.
+Every candidate first passes the supplied vectors and 100,000 randomized
+differential cases.  On an AMD EPYC 7B12 VM with GCC 12.2.0,
+\texttt{-O3 -march=native}, CPU 2, and 15 repeated samples, the screening result
+was:
+
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+Candidate & Median ns & MAD ns & vs. previous \\
+\midrule
+Previous submission form       & 41.894 & 2.834 & 1.000x \\
+Register loop                  & 40.655 & 3.083 & 1.031x \\
+Paired AVX2 loop               & 39.718 & 0.131 & 1.055x \\
+Paired scalar full unroll      & 36.824 & 2.617 & 1.138x \\
+Paired scalar unroll + BMI2    & 36.249 & 3.195 & 1.156x \\
+One-state AVX2                 & 73.630 & 0.266 & 0.569x \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The one-state AVX2 version is slower because each dependent round requires
+variable left and right shifts, OR, XOR, byte shuffle, half permutation, and
+addition.  Four scalar words instead provide four shorter independent chains.
+A transposed four-state AVX2 version improves throughput, but the official API
+updates one state serially and cannot use that batching.  The paired AVX2 loop
+was stable but slower than scalar BMI2 on this host.  A non-BMI2 inline unroll
+was nearly tied with BMI2 in the contest-shaped test, so both remain useful
+target-machine controls.
+
+\subsection{Deep frontend and cache review}
+
+An additional 18-candidate sweep varied unroll factor, 16/32/64/128-byte
+alignment, literal constants, inlining, wrapper layout, SIMD, and chain
+scheduling.  The submitted helper is 1,267 bytes, has no hot-body spills, and
+keeps four state words and eight constants in registers.  Its four independent
+\texttt{RORX/XOR/BSWAP/ADD} chains run close to the simple 80-cycle dependency
+depth, so the remaining difference is mainly frontend and code layout.
+
+A 715-byte half-unrolled loop measured 1.0867x in one paired session, but only
+0.9712x in an immediate repeat and 0.9214x with \texttt{-march=native}.
+Alignment changes, embedded constants, and forced inline were neutral or
+slower; serialized chains reached only 0.7305x.  The full unroll therefore
+remains the portable default.  The smaller candidate is retained solely for
+full-unroll versus half-unroll A/B testing on the final Intel machine.
+
+\section{Correctness}
+
+The following all pass:
 
 \begin{itemize}
   \item all 1,000 supplied one-round input/output pairs;
-  \item the supplied 20-round input/output pair;
-  \item 100,000 deterministic random states, comparing reference and optimized
-        output after one round and after twenty rounds; and
-  \item the original contest test harness compiled with the final submission.
+  \item the supplied 20-round pair;
+  \item 100,000 deterministic random states compared with the generic reference
+        after one and twenty rounds; and
+  \item separate complete binaries for the preserved previous and final
+        \texttt{contest.c} files.
 \end{itemize}
-
-The supplied 20-round test is
-
-\begin{lstlisting}
-input
-0011223344556677 8899aabbccddeeff
-0123456789abcdef fedcba9876543210
-output
-7527ddf4dcac1a6c c16754941f41bbba
-5f35b110c1dc4504 2d6663801ac4aae8
-\end{lstlisting}
-
-Observed validation output was:
 
 \begin{lstlisting}
 one_round_vectors=1000
 twenty_round_vector=PASS
 random_differential_cases=100000
 selftest=PASS
+
+one-round testvector verification: OK (1000 pairs checked)
+20-round testvector verification: OK
 \end{lstlisting}
 
-\section{Benchmark methodology and results}
+\section{Score-facing repeated benchmark}
 
-The reproducible benchmark compiles the generic reference and optimized scalar
-implementation in the same translation unit with
+An earlier microbenchmark called a \texttt{NOINLINE} 20-round function on every
+outer iteration, whereas GCC completely inlined the previous submission into
+the supplied timing loop.  This changes a measurement by several percent.
+Also, the ratio of two separately sorted medians differed by about four percent
+from the median of paired sample ratios in an observed run.
 
-\begin{lstlisting}
-gcc -O3 -std=c11 -Wall -Wextra -Wpedantic -DNDEBUG
-\end{lstlisting}
+The new benchmark therefore compiles the preserved previous and final complete
+contest files separately.  It changes only the number of calls in the supplied
+timing loop, discards three whole-process warm-ups, pins one logical CPU, and
+uses cyclic/reversed case order.  It retains all raw internal \texttt{clock()}
+and external wall samples, median, MAD, p05/p95, a deterministic bootstrap
+median interval, paired speedup, and outlier flags in JSON.  Every process also
+reruns the official vector checks.
 
-No \texttt{-march=native} option was used.  The timer is
-\texttt{clock\_gettime(CLOCK\_MONOTONIC)}.  After a warm-up, each sample performs
-1,000,000 calls of the 20-round function.  Reference-first and optimized-first
-order alternates between samples.  Nine samples are collected and the median
-wall-clock time of each implementation is reported.  The final state is consumed
-through a volatile sink.
-
-The measurement host was a Linux x86-64 VM with an AMD EPYC 7B12 and GCC 12.2.0.
-Results measured on 17 July 2026 were:
+A 10,000,000-call, 15-sample campaign produced:
 
 \begin{center}
-\begin{tabular}{lrr}
+\begin{tabular}{lrrr}
 \toprule
-Implementation & ns per 20 rounds & Relative performance \\
+Contest-shaped implementation & Median & MAD & p05--p95 \\
 \midrule
-Generic reference & 834.819 & 1.000x \\
-Optimized scalar  &  44.101 & 18.930x \\
+Previous scalar              & 36.799 ns & 0.924 ns & 35.766--45.773 ns \\
+Two-round unroll + BMI2      & 34.669 ns & 2.232 ns & 32.384--46.657 ns \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The unmodified contest timing harness reported 0.049428 microseconds per
-20-round call in one additional run.  The table uses the more robust alternating
-nine-sample median.  These numbers compare implementations on this VM; the
-absolute time and speedup may change on the contest Intel Core Ultra 7 255H with
-GCC 13.3.0.
+The median paired speedup was 1.068x, with MAD 0.045x and a bootstrap 95\%
+interval of 1.008x--1.105x.  A separate, noisier 20,000,000-call campaign gave
+1.019x and an interval of 0.991x--1.082x.  Reporting both avoids selecting only
+the favorable shared-VM run.  The local evidence points toward a modest gain,
+but the final Intel Core Ultra 7 255H with GCC 13.3.0 must compare BMI2 and the
+paired AVX2 control using the same raw-sample protocol.
 
 \section{Reproduction}
 
-From the repository root, reconstruction and Python verification use:
-
-\begin{lstlisting}
-python3 solutions/solve_02_permutation.py
-\end{lstlisting}
-
-The C differential test and benchmark use:
+From the repository root:
 
 \begin{lstlisting}
 python3 solutions/benchmark_02_permutation.py \
-  --iterations 1000000 --repeats 9 --random-cases 100000
+  --cpu 2 --iterations 10000000 \
+  --warmups 3 --samples 15 --random-cases 100000 \
+  --json /tmp/challenge02-benchmark.json
 \end{lstlisting}
 
-For submission testing, place \texttt{contest.c} beside the two supplied vector
-files and run:
+For the longer candidate matrix:
+
+\begin{lstlisting}
+python3 solutions/02_optimization/run_benchmarks.py \
+  --profile native --iterations 7000000 \
+  --warmup-iterations 30000000 --repeats 21 \
+  --random-cases 100000
+\end{lstlisting}
+
+The 18-candidate frontend/cache sweep is reproducible with:
+
+\begin{lstlisting}
+python3 solutions/02_optimization/run_deep_review_02.py \
+  --iterations 2000000 --warmup-iterations 300000 \
+  --samples 15 --random-cases 100000
+\end{lstlisting}
+
+The final submitted harness uses the supplied command:
 
 \begin{lstlisting}
 gcc -O3 -Wall -Wextra -o contest contest.c
 ./contest
 \end{lstlisting}
+
+\section{References}
+
+\begin{itemize}
+  \item ISO/IEC JTC1/SC22/WG14,
+    \href{https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf}
+    {N1570: C11 committee draft}: exact-width integers, unsigned modular
+    arithmetic, and valid shifts.
+  \item GCC,
+    \href{https://gcc.gnu.org/onlinedocs/gcc/Byte-Swapping-Builtins.html}
+    {Byte-Swapping Builtins}: the fixed reverse-map specialization.
+  \item GCC,
+    \href{https://gcc.gnu.org/onlinedocs/gcc/x86-Function-Attributes.html}
+    {x86 Function Attributes}: local BMI2 code generation under the supplied
+    build command.
+  \item Intel,
+    \href{https://www.intel.com/content/www/us/en/developer/articles/technical/intel64-and-ia32-architectures-optimization.html}
+    {Intel 64 and IA-32 Optimization Reference Manual}, and the
+    \href{https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html}
+    {Intrinsics Guide}: scalar/BMI2 and AVX2 candidate analysis.
+  \item GCC,
+    \href{https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/x86-Options.html}
+    {GCC 13.3 x86 Options}: why AMD \texttt{-march=native} data cannot stand in
+    for the Intel target.
+  \item Mytkowicz et al.,
+    \href{https://sape.inf.usi.ch/publications/asplos09.html}
+    {Producing Wrong Data Without Doing Anything Obviously Wrong!}: code-layout
+    and execution-order benchmark bias.
+  \item Google,
+    \href{https://github.com/google/benchmark/blob/main/docs/user_guide.md}
+    {Benchmark User Guide}: warm-up, repetitions, interleaving, statistics, and
+    machine-readable output.
+  \item NIST,
+    \href{https://www.itl.nist.gov/div898/handbook/eda/section3/eda356.htm}
+    {Measures of Scale}: MAD as a robust dispersion report for noisy samples.
+\end{itemize}
 
 \end{document}
