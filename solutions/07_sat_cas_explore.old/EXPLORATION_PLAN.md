@@ -7,7 +7,7 @@ what to run next.
 ## Corrected PDF Override
 
 Contest HQ published a corrected problem PDF on 2026-06-05.  The corrected
-local file is `cryptotest/7_소인수분해.pdf`.  `N`, `e`, and `ct` are
+local file is `cryptotest/problems/7_소인수분해.pdf`.  `N`, `e`, and `ct` are
 unchanged, but the p-bit mask and `p & mask` changed.  Treat every pre-existing
 old-mask learned clause, q-gap ledger, low-C union coverage number, and ranked
 candidate file as invalid for corrected-PDF proof accounting unless it is

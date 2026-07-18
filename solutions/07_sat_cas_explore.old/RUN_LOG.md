@@ -6,7 +6,7 @@ This log records exploratory attempts that are separate from the older
 ## 2026-06-05 Corrected PDF Checkpoint
 
 Contest HQ published a corrected problem PDF, uploaded locally as
-`cryptotest/7_소인수분해.pdf`.  `N`, `e`, and `ct` are unchanged, but the
+`cryptotest/problems/7_소인수분해.pdf`.  `N`, `e`, and `ct` are unchanged, but the
 p-bit mask and `p & mask` changed.  The old PDF had 613 known p bits and 411
 unknown bits across eight intervals; the corrected PDF has 672 known p bits
 and 352 unknown bits across seven intervals:
