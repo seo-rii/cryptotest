@@ -592,6 +592,88 @@ LLVM-MCA는 LLVM scheduling model로 machine code의 throughput/resource pressur
 ([공식 문서](https://llvm.org/docs/CommandGuide/llvm-mca.html)). 따라서 새 source와
 flag는 target-only A/B 후보로만 manifest에 추가했고 incumbent는 바꾸지 않았다.
 
+### 6차: 부분 언롤 재현, scalar 합성 하한과 lane-wise AVX2
+
+#### 더 작은 pair block의 재확인
+
+`contest_source_order_2103.c`에 `P2_PAIR_BLOCK={1,2,5,10}`을 두어 두 라운드
+block을 1, 2, 5, 10개씩 펼쳤다. compiler가 다시 전부 펼치지 않도록
+register-only barrier를 사용했다. GCC 12의 실제 score loop는 각각
+143/278/646/1,211 bytes, 38/71/167/322 instructions였다. 모든 후보는 공식
+vector와 임의 state/상수 100,000건의 1/20-round 검사를 통과했다.
+
+CPU 1의 첫 21-sample screen에서 가장 작은 loop가 `1.035x`
+(`1.007--1.043`)로 보였지만, warm-up 6회와 6,000,000-call 32 samples로 바로
+재확인하자 `1.0004x (0.9855--1.0176)`가 되었다. 중앙값도 full/loop
+`41.102/40.936 ns`로 사실상 같았다. unroll2는 첫 screen부터 CI가 1을
+가로질렀고 unroll5는 유의하게 느렸다. 따라서 작은 loop는 frontend가 다른
+255H에서 확인할 대조군으로만 남기고 scalar incumbent를 바꾸지 않는다. 원시는
+[`partial_unroll_results_02_cpu1.json`](partial_unroll_results_02_cpu1.json)과
+[`partial_loop_confirm_02_cpu1.json`](partial_loop_confirm_02_cpu1.json)에 있다.
+
+#### 제한된 grammar의 2-round superoptimization
+
+한 word의 한 stage를
+`T(x)=BSWAP64(ROL64(x,r) xor k)+a`로 두고
+[`analyze_two_round_superopt_02.py`](analyze_two_round_superopt_02.py)에서 bit-vector
+CEGIS와 완전탐색을 함께 수행했다. 서로 다른 각 stage에 대해
+`rotate/XOR/BSWAP/ADD` 길이 3의 64개 template는 모두 UNSAT였다. 기존
+8-operation pair에서 연산 하나를 지운 뒤 남은 상수를 다시 합성하는
+`4 chains × 8 positions = 32`개도 모두 UNSAT였다. 선형부는 길이 3 이하
+rotate/BSWAP 구문 4,223개, 중복을 제거한 bit permutation 632개를 전수 검사했지만
+어느 pair와도 같지 않았다. 실제 상수 역시 sign-extended `imm32`에 들어가지
+않는다.
+
+이는 정의한 연산 grammar 안의 stage 하한과 기존 pair의 국소 irredundancy를
+보인 것이지, 임의의 x86 instruction이나 전혀 다른 표현까지 포함하는 전역
+8-operation 하한은 아니다. 그 범위 안에서는 GCC 12가 이미 320개 scalar 핵심
+연산을 spill 없이 내며, Clang 21 후보는 같은 핵심 연산에 stack memory 2개와
+`movabs` 3개를 더해 오히려 열세였다. solver 식, 반례, UNSAT 목록과 exact
+codegen은
+[`two_round_superopt_results_02.json`](two_round_superopt_results_02.json)에
+보존했다.
+
+#### 네 chain을 네 YMM lane에 배치
+
+과거의 one-state SIMD는 한 라운드의 word reversal과 서로 다른 회전 때문에
+긴 dependent path를 만들었다. 새
+[`contest_simd_avx2_lanewise.c`](contest_simd_avx2_lanewise.c)는 두 라운드 뒤
+reversal이 사라진 시점의 네 독립 chain을 각각 YMM lane에 둔다. 열 개의
+2-round block 전체에서 `VPSLLVQ/VPSRLVQ/VPOR/VPXOR/VPSHUFB/VPADDQ`가 정확히
+20개씩 실행된다. tied-register identity helper로 두 forward constant도 timing
+loop 밖에 유지하면 exact GCC 13.3 loop는 124 instructions/587 bytes/hot load
+2개에서 **122 instructions/579 bytes/hot memory 0개**로 줄어든다. 이 micro
+변형 자체의 CPU 2 직접 비교는 `1.0013x (0.9983--1.0039)`로 동률이므로, 속도
+주장보다 더 단순한 exact code stream을 선택한 것이다.
+
+최종 AVX2와 scalar incumbent를 각 3,000,000 calls, warm-up 6회, 균형 순서
+32 samples로 다시 비교했다.
+
+| AMD affinity | scalar | AVX2 | paired median | bootstrap 95% CI |
+|---:|---:|---:|---:|---:|
+| CPU 1 | 46.927 ns | 36.690 ns | **1.275x** | 1.260--1.292x |
+| CPU 2 | 34.354 ns | 36.569 ns | **0.940x** | 0.923--0.950x |
+| CPU 3 | 45.938 ns | 36.724 ns | **1.248x** | 1.222--1.269x |
+
+세 physical affinity에서 CPU 2만 순위가 완전히 뒤집힌 사실은 이 AMD/GCC12
+VM의 affinity/frequency 조건을 255H 성능의 대용물로 쓸 수 없다는 직접적인
+증거다. 공식 vector와 임의 state/상수 100,000건, exact 122-instruction
+감사는 두 campaign 모두 통과했다. 원시는
+[`avx2_confirm_02_cpu1.json`](avx2_confirm_02_cpu1.json),
+[`avx2_confirm_02_cpu3.json`](avx2_confirm_02_cpu3.json), 전체 12변형과 초기
+CPU/SSE2 대조군은 [`simd_results_02.json`](simd_results_02.json)에 있다.
+SSE2는 781-instruction/4,064-byte loop와 약 `0.40x`여서 기각했다.
+
+마지막으로 [`screen_255h_toolchains_02.py`](screen_255h_toolchains_02.py)는 host
+timing 없이 exact GCC 13.3 추가 47조합과 Clang 21의 53조합을 검사했다. GCC는
+기존 120.06-cycle Alder proxy를 넘지 못했다. Clang Arrow Lake의 hidden
+`ilpmax/ilpmin`은 1,208-byte, 322-instruction, 무스필 stream을 만들었지만 같은
+근사 모델에서 133.79 cycles로 열세였다. GCC 13.3은 Arrow/Lunar/Panther target
+이름을 받지 않고 LLVM-MCA 16에도 Lion Cove/Skymont model이 없다. 결과는
+[`255h_toolchain_screen_02.json`](255h_toolchain_screen_02.json)에 있다. 따라서
+scalar는 안전한 incumbent, lane-wise AVX2는 255H에서 가장 먼저 비교할
+target-only 후보다.
+
 ### 255H용 보수적 판정 절차
 
 [`autotune_02_255h.py`](autotune_02_255h.py)는 `probe -> screen -> confirm ->
@@ -627,7 +709,10 @@ traceback 없이 fail-closed 오류로 돌려준다. 초기 8개 manifest case�
 15개 직접 검증과 15개 exact-binary audit가 모두 통과했다. 의도적으로 작은
 두 AMD/GCC12 confirm을 `decide`에 연결했을 때에도 255H, GCC13.3, sample,
 warm-up, iteration, random-case 최소치를 각각 열거하고 incumbent를 유지했다.
-이 1,000-call smoke의 timing 값은 성능 근거로 사용하지 않는다.
+부분 언롤 세 개와 lane-wise AVX2까지 넣은 최신 19-case smoke도 직접 검증
+19/19, 실측 binary audit 19/19를 통과했다. AVX2 audit은 122 instructions,
+579 bytes, hot memory 0을 정확히 확인했다. 두 1,000-call smoke의 timing 값은
+성능 근거가 아니라 통합 회귀 검사다.
 P-core 모든 campaign에서 paired median `>= 1.010`, 보정된 lower bound
 `> 1.005`이고 E/LP-E 안전성도 지킨 후보만 통과시킨다. 여러 후보가 동시에 통과하면
 자동으로 임의의 하나를 고르지 않고 별도 head-to-head를 요구한다. 따라서 현재
@@ -712,6 +797,7 @@ tuning을 적용하는 편이 안전하다.
 | order `2,1,0,3` full-unroll | generic/Alder/Alder+IRA | source schedule 후보 |
 | adaptive/order `2,1,0,3` | Alder+IRA + selective scheduling 2 | 120.06-cycle 정적 후보 |
 | adaptive/order `2,1,0,3` | Alder+IRA + post-reload scheduling off | 120.07-cycle 정적 후보 |
+| four-lane two-round AVX2 | `-mavx2 -DCH2_SIMD_INLINE -finline-limit=2000` | 122-instruction target 최우선 후보 |
 | adaptive full-unroll | 위 flag + `-mtune=native` | target compiler 진단용 |
 
 `autotune_02_candidates.json`은 이 후보와 portable/partial-unroll 대조군을
@@ -729,8 +815,8 @@ python3 solutions/02_optimization/autotune_02_255h.py screen \
 각 performance binary의 `main` timing loop가 선언한 assembly contract를
 통과해야 하고, 서로 다른 session과 physical core representative의 결과가
 모두 있어야 한다. 현재 증거로는 full-unroll + cross-call inline이 기본
-score안이며, 실제 255H 결과 없이 source 순서나 tune/IRA/scheduler
-flag를 더하지 않는다.
+score안이며, 실제 255H 결과 없이 AVX2 source나 source 순서,
+tune/IRA/scheduler flag를 더하지 않는다.
 
 ## 참고 자료
 
@@ -738,7 +824,10 @@ flag를 더하지 않는다.
 - [GCC, x86 Function Attributes](https://gcc.gnu.org/onlinedocs/gcc/x86-Function-Attributes.html) — 서로 다른 target option을 가진 함수의 inlining 제한을 확인했다.
 - [GCC 13.3, Optimize Options](https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/Optimize-Options.html) — `-finline-limit`, `-fira-algorithm`, scheduling과 PGO/LTO 후보의 정확한 의미 및 release별 heuristic 의존성을 확인했다.
 - [GCC 13.3, x86 Options](https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/x86-Options.html) — `-mtune`은 ISA를 넓히지 않는다는 의미와 `alderlake` target의 존재, `arrowlake` 전용 target 부재를 확인했다.
+- [de Moura and Bjørner, *Z3: An Efficient SMT Solver*, TACAS 2008](https://doi.org/10.1007/978-3-540-78800-3_24)와 [Z3 공식 publication 목록](https://www.microsoft.com/en-us/research/project/z3-3/publications/) — 64-bit bit-vector 동치와 연산 삭제 후보의 SAT/UNSAT 판정 근거다.
+- [Solar-Lezama et al., *Combinatorial Sketching for Finite Programs*, ASPLOS 2006](https://people.csail.mit.edu/asolar/papers/asplos06-final.pdf) — 연산 template의 빈칸을 반례로 반복 보강하는 CEGIS식 합성 절차의 배경이다.
 - [LLVM, *llvm-mca Machine Code Analyzer*](https://llvm.org/docs/CommandGuide/llvm-mca.html) — scheduling model 기반 throughput/resource-pressure 분석의 용도와 모델 정확도 한계를 확인했다.
+- [Intel, Intrinsics Guide](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html) — AVX2 variable shift, byte shuffle와 packed addition 후보의 ISA 형태를 확인했다.
 - [Intel, Intel® 64 and IA-32 Architectures Optimization Reference Manual](https://www.intel.com/content/www/us/en/content-details/671488/intel-64-and-ia-32-architectures-optimization-reference-manual-volume-1.html) — loop unrolling, instruction frontend, code layout은 microarchitecture별 실측으로 결정해야 한다는 분석 기준으로 사용했다.
 - [Intel, Core™ Ultra 7 Processor 255H specifications](https://www.intel.com/content/www/us/en/products/sku/241751/intel-core-ultra-7-processor-255h-24m-cache-up-to-5-10-ghz/specifications.html) — 최종 CPU가 AVX2를 지원함을 확인했다.
 - [Intel, *Game Dev Guide for 12th Gen Intel® Core™ Processor*](https://www.intel.com/content/www/us/en/developer/articles/guide/12th-gen-intel-core-processor-gamedev-guide.html) — hybrid flag와 logical CPU별 CPUID leaf `0x1a` core type, probe 중 affinity 고정이 필요한 이유를 확인했다.

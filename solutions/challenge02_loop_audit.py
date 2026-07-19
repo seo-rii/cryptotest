@@ -16,6 +16,26 @@ AUDIT_MODES = {
     "default-call-allowed",
     "full-inline-320",
     "portable-inline-320",
+    "bmi2-inline-pair-loop",
+    "bmi2-inline-pair-unroll2",
+    "bmi2-inline-pair-unroll5",
+    "avx2-inline-lanewise",
+}
+
+CORE_COUNTS_BY_MODE = {
+    "full-inline-320": 80,
+    "portable-inline-320": 80,
+    "bmi2-inline-pair-loop": 8,
+    "bmi2-inline-pair-unroll2": 16,
+    "bmi2-inline-pair-unroll5": 40,
+}
+
+MEMORY_OPERANDS_BY_MODE = {
+    "full-inline-320": 0,
+    "portable-inline-320": 0,
+    "bmi2-inline-pair-loop": 0,
+    "bmi2-inline-pair-unroll2": 1,
+    "bmi2-inline-pair-unroll5": 1,
 }
 
 
@@ -102,6 +122,11 @@ def audit_main_timing_loop(
         "(" in str(instruction["operands"])
         for instruction in loop
         if instruction["mnemonic"] != "lea"
+        and re.search(
+            r"(?:^|\s)nop[wlq]?(?:\s|$)",
+            f"{instruction['mnemonic']} {instruction['operands']}",
+        )
+        is None
     )
     rotate_count = mnemonics["rorx"] + mnemonics["rol"] + mnemonics["ror"]
     core_counts = {
@@ -170,25 +195,64 @@ def validate_loop_audit(report: dict[str, Any], mode: str) -> list[str]:
         return []
 
     errors: list[str] = []
+    if mode == "avx2-inline-lanewise":
+        for key in ("calls", "push_pop", "memory_operands_excluding_lea"):
+            actual = report.get(key)
+            if actual != 0:
+                errors.append(f"{key}: expected 0, got {actual}")
+        expected_mnemonics = {
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpor": 20,
+            "vpxor": 20,
+            "vpshufb": 20,
+            "vpaddq": 20,
+        }
+        mnemonics = report.get("mnemonics", {})
+        for mnemonic, expected in expected_mnemonics.items():
+            actual = mnemonics.get(mnemonic, 0)
+            if actual != expected:
+                errors.append(
+                    f"mnemonics.{mnemonic}: expected {expected}, got {actual}"
+                )
+        expected_instructions = sum(expected_mnemonics.values()) + 2
+        actual_instructions = report.get("loop_instructions")
+        if actual_instructions != expected_instructions:
+            errors.append(
+                "loop_instructions: "
+                f"expected {expected_instructions}, got {actual_instructions}"
+            )
+        return errors
+
+    expected_core_count = CORE_COUNTS_BY_MODE[mode]
     expected_counts = {
-        "rotate": 80,
-        "xor": 80,
-        "bswap": 80,
-        "add_or_lea": 80,
+        "rotate": expected_core_count,
+        "xor": expected_core_count,
+        "bswap": expected_core_count,
+        "add_or_lea": expected_core_count,
     }
     for key, expected in expected_counts.items():
         actual = report.get("core_counts", {}).get(key)
         if actual != expected:
             errors.append(f"core_counts.{key}: expected {expected}, got {actual}")
-    for key in ("calls", "push_pop", "memory_operands_excluding_lea"):
+    for key in ("calls", "push_pop"):
         actual = report.get(key)
         if actual != 0:
             errors.append(f"{key}: expected 0, got {actual}")
+    expected_memory = MEMORY_OPERANDS_BY_MODE[mode]
+    actual_memory = report.get("memory_operands_excluding_lea")
+    if actual_memory != expected_memory:
+        errors.append(
+            "memory_operands_excluding_lea: "
+            f"expected {expected_memory}, got {actual_memory}"
+        )
 
     mnemonics = report.get("mnemonics", {})
     rorx = mnemonics.get("rorx", 0)
-    if mode == "full-inline-320" and rorx != 80:
-        errors.append(f"mnemonics.rorx: expected 80, got {rorx}")
+    if mode != "portable-inline-320" and rorx != expected_core_count:
+        errors.append(
+            f"mnemonics.rorx: expected {expected_core_count}, got {rorx}"
+        )
     if mode == "portable-inline-320" and rorx != 0:
         errors.append(f"mnemonics.rorx: expected 0, got {rorx}")
     return errors

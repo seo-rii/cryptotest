@@ -218,6 +218,70 @@
       }
     },
     {
+      "name": "order_2103_pair_loop",
+      "source": "solutions/02_optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-DP2_PAIR_BLOCK=1"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "compact-pair-loop-frontend-candidate",
+      "expected_audit": {
+        "mode": "bmi2-inline-pair-loop"
+      }
+    },
+    {
+      "name": "order_2103_pair_unroll2",
+      "source": "solutions/02_optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-DP2_PAIR_BLOCK=2"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "two-pair-block-frontend-candidate",
+      "expected_audit": {
+        "mode": "bmi2-inline-pair-unroll2"
+      }
+    },
+    {
+      "name": "order_2103_pair_unroll5",
+      "source": "solutions/02_optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-DP2_PAIR_BLOCK=5"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "five-pair-block-frontend-candidate",
+      "expected_audit": {
+        "mode": "bmi2-inline-pair-unroll5"
+      }
+    },
+    {
+      "name": "avx2_lanewise",
+      "source": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-two-round-avx2-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
       "name": "inline_native",
       "source": "submissions/02/contest.c",
       "cflags": [

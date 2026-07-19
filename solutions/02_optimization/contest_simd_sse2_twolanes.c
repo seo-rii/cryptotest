@@ -1,3 +1,4 @@
+#include <immintrin.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -84,7 +85,7 @@ static inline uint64_t bswap64_portable(uint64_t x) {
 #endif
 }
 
-#if defined(__GNUC__) && !defined(__clang__) && defined(__BMI2__)
+#if defined(__GNUC__) && !defined(__clang__) && (defined(__BMI2__) || defined(CH2_SIMD_INLINE))
 #define PERMUTE20_ATTRIBUTE                                                   \
     __attribute__((always_inline, optimize("no-tree-vectorize"))) inline
 #elif defined(__GNUC__) && !defined(__clang__)
@@ -107,84 +108,86 @@ static inline uint64_t transform_word(uint64_t value,
 }
 
 /*
- * Reversing the four words twice restores their original positions.  Grouping
- * rounds in pairs therefore exposes four independent scalar dependency chains.
+ * SSE2 has no per-lane variable shift.  Split the four chains across two XMM
+ * vectors, compute both immediate rotates for each vector, and select one
+ * 64-bit lane from each result with SHUFPD.
  */
-#define APPLY_TWO_ROUNDS()                                                    \
+#define ROTL64_ALL_SSE2(value, amount)                                        \
+    _mm_or_si128(_mm_slli_epi64((value), (amount)),                           \
+                 _mm_srli_epi64((value), 64 - (amount)))
+#define ROTL64_TWO_SSE2(value, low_amount, high_amount)                       \
+    _mm_castpd_si128(_mm_shuffle_pd(                                          \
+        _mm_castsi128_pd(ROTL64_ALL_SSE2((value), (low_amount))),             \
+        _mm_castsi128_pd(ROTL64_ALL_SSE2((value), (high_amount))), 2))
+
+static inline __m128i bswap64_lanes_sse2(__m128i value) {
+    value = _mm_or_si128(_mm_slli_epi16(value, 8), _mm_srli_epi16(value, 8));
+    value = _mm_shufflelo_epi16(value, _MM_SHUFFLE(0, 1, 2, 3));
+    return _mm_shufflehi_epi16(value, _MM_SHUFFLE(0, 1, 2, 3));
+}
+
+#define APPLY_TWO_ROUNDS_SSE2()                                               \
     do {                                                                      \
-        x2 = transform_word(transform_word(x2, 29U, k2, a1), 7U, k1, a2);    \
-        x1 = transform_word(transform_word(x1, 7U, k1, a2), 29U, k2, a1);    \
-        x0 = transform_word(transform_word(x0, 43U, k0, a3), 14U, k3, a0);   \
-        x3 = transform_word(transform_word(x3, 14U, k3, a0), 43U, k0, a3);   \
+        low = ROTL64_TWO_SSE2(low, 43, 7);                                    \
+        high = ROTL64_TWO_SSE2(high, 29, 14);                                 \
+        low = _mm_xor_si128(low, xor_forward_low);                            \
+        high = _mm_xor_si128(high, xor_forward_high);                         \
+        low = bswap64_lanes_sse2(low);                                        \
+        high = bswap64_lanes_sse2(high);                                      \
+        low = _mm_add_epi64(low, add_reverse_low);                            \
+        high = _mm_add_epi64(high, add_reverse_high);                         \
+        low = ROTL64_TWO_SSE2(low, 14, 29);                                   \
+        high = ROTL64_TWO_SSE2(high, 7, 43);                                  \
+        low = _mm_xor_si128(low, xor_reverse_low);                            \
+        high = _mm_xor_si128(high, xor_reverse_high);                         \
+        low = bswap64_lanes_sse2(low);                                        \
+        high = bswap64_lanes_sse2(high);                                      \
+        low = _mm_add_epi64(low, add_forward_low);                            \
+        high = _mm_add_epi64(high, add_forward_high);                         \
     } while (0)
 
 PERMUTE20_ATTRIBUTE static void permute_20rounds_unrolled(
     state256_t *restrict state,
     const uint64_t constants1[restrict 4],
     const uint64_t constants2[restrict 4]) {
-    uint64_t x0 = state->w[0];
-    uint64_t x1 = state->w[1];
-    uint64_t x2 = state->w[2];
-    uint64_t x3 = state->w[3];
-    const uint64_t a0 = constants1[0];
-    const uint64_t a1 = constants1[1];
-    const uint64_t a2 = constants1[2];
-    const uint64_t a3 = constants1[3];
-    const uint64_t k0 = constants2[0];
-    const uint64_t k1 = constants2[1];
-    const uint64_t k2 = constants2[2];
-    const uint64_t k3 = constants2[3];
+    __m128i low = _mm_loadu_si128((const __m128i *)(const void *)(state->w));
+    __m128i high =
+        _mm_loadu_si128((const __m128i *)(const void *)(state->w + 2));
+    const __m128i add_forward_low =
+        _mm_loadu_si128((const __m128i *)(const void *)constants1);
+    const __m128i add_forward_high =
+        _mm_loadu_si128((const __m128i *)(const void *)(constants1 + 2));
+    const __m128i xor_forward_low =
+        _mm_loadu_si128((const __m128i *)(const void *)constants2);
+    const __m128i xor_forward_high =
+        _mm_loadu_si128((const __m128i *)(const void *)(constants2 + 2));
+    const __m128i add_reverse_low =
+        _mm_shuffle_epi32(add_forward_high, _MM_SHUFFLE(1, 0, 3, 2));
+    const __m128i add_reverse_high =
+        _mm_shuffle_epi32(add_forward_low, _MM_SHUFFLE(1, 0, 3, 2));
+    const __m128i xor_reverse_low =
+        _mm_shuffle_epi32(xor_forward_high, _MM_SHUFFLE(1, 0, 3, 2));
+    const __m128i xor_reverse_high =
+        _mm_shuffle_epi32(xor_forward_low, _MM_SHUFFLE(1, 0, 3, 2));
 
-#ifndef P2_PAIR_BLOCK
-#define P2_PAIR_BLOCK 10
-#endif
+    APPLY_TWO_ROUNDS_SSE2();
+    APPLY_TWO_ROUNDS_SSE2();
+    APPLY_TWO_ROUNDS_SSE2();
+    APPLY_TWO_ROUNDS_SSE2();
+    APPLY_TWO_ROUNDS_SSE2();
+    APPLY_TWO_ROUNDS_SSE2();
+    APPLY_TWO_ROUNDS_SSE2();
+    APPLY_TWO_ROUNDS_SSE2();
+    APPLY_TWO_ROUNDS_SSE2();
+    APPLY_TWO_ROUNDS_SSE2();
 
-#if P2_PAIR_BLOCK == 1
-    unsigned int blocks = 10U;
-    __asm__ __volatile__("" : "+r"(blocks));
-    do {
-        APPLY_TWO_ROUNDS();
-    } while (--blocks != 0U);
-#elif P2_PAIR_BLOCK == 2
-    unsigned int blocks = 5U;
-    __asm__ __volatile__("" : "+r"(blocks));
-    do {
-        APPLY_TWO_ROUNDS();
-        APPLY_TWO_ROUNDS();
-    } while (--blocks != 0U);
-#elif P2_PAIR_BLOCK == 5
-    unsigned int blocks = 2U;
-    __asm__ __volatile__("" : "+r"(blocks));
-    do {
-        APPLY_TWO_ROUNDS();
-        APPLY_TWO_ROUNDS();
-        APPLY_TWO_ROUNDS();
-        APPLY_TWO_ROUNDS();
-        APPLY_TWO_ROUNDS();
-    } while (--blocks != 0U);
-#elif P2_PAIR_BLOCK == 10
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-#else
-#error "P2_PAIR_BLOCK must be one of 1, 2, 5, or 10"
-#endif
-
-    state->w[0] = x0;
-    state->w[1] = x1;
-    state->w[2] = x2;
-    state->w[3] = x3;
+    _mm_storeu_si128((__m128i *)(void *)(state->w), low);
+    _mm_storeu_si128((__m128i *)(void *)(state->w + 2), high);
 }
 
-#undef APPLY_TWO_ROUNDS
-#undef P2_PAIR_BLOCK
+#undef APPLY_TWO_ROUNDS_SSE2
+#undef ROTL64_TWO_SSE2
+#undef ROTL64_ALL_SSE2
 #undef PERMUTE20_ATTRIBUTE
 
 /* -------------------------------------------------

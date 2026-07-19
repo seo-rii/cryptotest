@@ -1,0 +1,2869 @@
+{
+  "all_checks_passed": true,
+  "checks": {
+    "all_gcc_candidates_pass_full_inline_audit": true,
+    "clang21_accepts_all_probed_target_names": true,
+    "clang_audited_streams_do_not_beat_existing_static_best": true,
+    "clang_expected_status_partition": true,
+    "clang_internal_scheduler_hashes_reproduce": true,
+    "clang_verification_shortlist_passes": true,
+    "gcc13_target_support_matches_probe_expectation": true,
+    "gcc_image_is_digest_pinned": true,
+    "gcc_is_exact_13_3_0": true,
+    "gcc_new_combinations_do_not_beat_existing_static_best": true,
+    "gcc_reference_and_new_hashes_reproduce": true,
+    "gcc_verification_shortlist_passes": true,
+    "no_host_timing_samples_collected": true,
+    "source_and_harness_hashes_match": true
+  },
+  "clang_screen": {
+    "clang_alderlake_misched_ilpmax": {
+      "flags": [
+        "-march=alderlake",
+        "-mllvm",
+        "-misched=ilpmax"
+      ],
+      "group": "target_scheduler_cross_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_align64": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=arrowlake",
+        "-falign-loops=64"
+      ],
+      "group": "layout",
+      "loop": {
+        "bytes": 1236,
+        "calls": 0,
+        "instructions": 326,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "4c3696ce77928c0fa96ff5b606d336b2ccde0514322c01f72574acbebcea7a1a",
+        "start_mod_64": 0
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_arrow_greedy_reverse": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-greedy-reverse-local-assignment"
+      ],
+      "group": "register_allocation_internal",
+      "loop": {
+        "bytes": 1236,
+        "calls": 0,
+        "instructions": 326,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "a22f511957ac00161cad889a9d2a727ffe01c568ae5e2bead992fee25cb4b78c",
+        "start_mod_64": 0
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_arrow_ilpmax_function64": {
+      "flags": [
+        "-march=arrowlake",
+        "-falign-functions=64",
+        "-mllvm",
+        "-misched=ilpmax"
+      ],
+      "group": "function_placement",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 0
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_ilpmax_greedy_reverse": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax",
+        "-mllvm",
+        "-greedy-reverse-local-assignment"
+      ],
+      "group": "scheduler_register_cross_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_ilpmax_lto": {
+      "diagnostic": "/usr/bin/x86_64-linux-gnu-ld.bfd: /home/seorii/.local/share/swiftly/toolchains/6.3.3/usr/bin/../lib/LLVMgold.so: error loading plugin: /home/seorii/.local/share/swiftly/toolchains/6.3.3/usr/bin/../lib/LLVMgold.so: cannot open shared object file: No such file or directory\nclang-21: error: linker command failed with exit code 1 (use -v to see invocation)",
+      "flags": [
+        "-march=arrowlake",
+        "-flto",
+        "-mllvm",
+        "-misched=ilpmax"
+      ],
+      "group": "function_placement",
+      "status": "COMPILE_FAIL"
+    },
+    "clang_arrow_ilpmax_no_cluster": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax",
+        "-mllvm",
+        "-misched-cluster=false"
+      ],
+      "group": "scheduler_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_ilpmax_no_fusion": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax",
+        "-mllvm",
+        "-misched-fusion=false"
+      ],
+      "group": "scheduler_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_ilpmax_no_post": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax",
+        "-mllvm",
+        "-enable-post-misched=false"
+      ],
+      "group": "scheduler_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_ilpmax_no_regpressure": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax",
+        "-mllvm",
+        "-misched-regpressure=false"
+      ],
+      "group": "scheduler_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_ilpmax_postra_bidirectional": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax",
+        "-mllvm",
+        "-misched-postra-direction=bidirectional"
+      ],
+      "group": "scheduler_direction_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_ilpmax_postra_bottomup": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax",
+        "-mllvm",
+        "-misched-postra-direction=bottomup"
+      ],
+      "group": "scheduler_direction_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_ilpmax_postra_topdown": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax",
+        "-mllvm",
+        "-misched-postra-direction=topdown"
+      ],
+      "group": "scheduler_direction_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_ilpmax_prera_bidirectional": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax",
+        "-mllvm",
+        "-misched-prera-direction=bidirectional"
+      ],
+      "group": "scheduler_direction_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_ilpmax_prera_bottomup": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax",
+        "-mllvm",
+        "-misched-prera-direction=bottomup"
+      ],
+      "group": "scheduler_direction_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_ilpmax_prera_topdown": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax",
+        "-mllvm",
+        "-misched-prera-direction=topdown"
+      ],
+      "group": "scheduler_direction_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_ilpmax_regalloc_basic": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax",
+        "-mllvm",
+        "-regalloc=basic"
+      ],
+      "group": "scheduler_register_cross_internal",
+      "loop": {
+        "bytes": 2608,
+        "calls": 0,
+        "instructions": 462,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "5f5dbe3147787bf0b67183e373a782527faae6d1406ec778def3c2a7059a526f",
+        "start_mod_64": 16
+      },
+      "static_model_key": "5f5dbe3147787bf0b67183e373a782527faae6d1406ec778def3c2a7059a526f",
+      "status": "PASS"
+    },
+    "clang_arrow_ilpmax_regalloc_pbqp": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 1"
+      ],
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax",
+        "-mllvm",
+        "-regalloc=pbqp"
+      ],
+      "group": "scheduler_register_cross_internal",
+      "loop": {
+        "bytes": 2409,
+        "calls": 0,
+        "instructions": 442,
+        "memory_operands_excluding_lea": 1,
+        "normalized_sha256": "82d214f4904f20aaecec285aa4c193e492d1db7bec81b4de00b28370101e90b8",
+        "start_mod_64": 0
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_arrow_ilpmax_sections": {
+      "flags": [
+        "-march=arrowlake",
+        "-ffunction-sections",
+        "-fdata-sections",
+        "-Wl,--gc-sections",
+        "-mllvm",
+        "-misched=ilpmax"
+      ],
+      "group": "function_placement",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 0
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_misched_converge": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=converge"
+      ],
+      "group": "scheduler_internal",
+      "loop": {
+        "bytes": 1236,
+        "calls": 0,
+        "instructions": 326,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "4c3696ce77928c0fa96ff5b606d336b2ccde0514322c01f72574acbebcea7a1a",
+        "start_mod_64": 32
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_arrow_misched_ilpmax": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax"
+      ],
+      "group": "scheduler_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_misched_ilpmax_align128": {
+      "flags": [
+        "-march=arrowlake",
+        "-falign-loops=128",
+        "-mllvm",
+        "-misched=ilpmax"
+      ],
+      "group": "layout_scheduler_cross_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 0
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_misched_ilpmax_align32": {
+      "flags": [
+        "-march=arrowlake",
+        "-falign-loops=32",
+        "-mllvm",
+        "-misched=ilpmax"
+      ],
+      "group": "layout_scheduler_cross_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_misched_ilpmax_align64": {
+      "flags": [
+        "-march=arrowlake",
+        "-falign-loops=64",
+        "-mllvm",
+        "-misched=ilpmax"
+      ],
+      "group": "layout_scheduler_cross_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 0
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_arrow_misched_ilpmin": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-misched=ilpmin"
+      ],
+      "group": "scheduler_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "dcaaeed0f6fb137f45e6349291a164d6d321d441e3821f7bd0c78cbf09f48d9c",
+        "start_mod_64": 0
+      },
+      "static_model_key": "dcaaeed0f6fb137f45e6349291a164d6d321d441e3821f7bd0c78cbf09f48d9c",
+      "status": "PASS"
+    },
+    "clang_arrow_no_misched": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-enable-misched=false"
+      ],
+      "group": "scheduler_internal",
+      "loop": {
+        "bytes": 1246,
+        "calls": 0,
+        "instructions": 327,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "f0b49878033770fa8ea0b87f249102f5079bea4c13678e7d89801f5606cdbc84",
+        "start_mod_64": 0
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_arrow_no_post_misched": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-enable-post-misched=false"
+      ],
+      "group": "scheduler_internal",
+      "loop": {
+        "bytes": 1236,
+        "calls": 0,
+        "instructions": 326,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "4c3696ce77928c0fa96ff5b606d336b2ccde0514322c01f72574acbebcea7a1a",
+        "start_mod_64": 32
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_arrow_regalloc_basic": {
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-regalloc=basic"
+      ],
+      "group": "register_allocation_internal",
+      "loop": {
+        "bytes": 2538,
+        "calls": 0,
+        "instructions": 455,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "b9fdddfea29c52e5cc845ab5b1dd91fc4369546f711d20dc0e8d33e9f8a4a520",
+        "start_mod_64": 16
+      },
+      "static_model_key": "b9fdddfea29c52e5cc845ab5b1dd91fc4369546f711d20dc0e8d33e9f8a4a520",
+      "status": "PASS"
+    },
+    "clang_arrow_regalloc_fast": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 10"
+      ],
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-regalloc=fast"
+      ],
+      "group": "register_allocation_internal",
+      "loop": {
+        "bytes": 1256,
+        "calls": 0,
+        "instructions": 332,
+        "memory_operands_excluding_lea": 10,
+        "normalized_sha256": "f7a14d1834d81e3b9785fa767bc59d4c38d79957790c34b2d9c81c862168771d",
+        "start_mod_64": 32
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_arrow_regalloc_pbqp": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 1"
+      ],
+      "flags": [
+        "-march=arrowlake",
+        "-mllvm",
+        "-regalloc=pbqp"
+      ],
+      "group": "register_allocation_internal",
+      "loop": {
+        "bytes": 2249,
+        "calls": 0,
+        "instructions": 426,
+        "memory_operands_excluding_lea": 1,
+        "normalized_sha256": "1d60290208901cd602354be1834f495e28b2f1b273abeb764b134d738b69142d",
+        "start_mod_64": 16
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_arrow_s_align64": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=arrowlake-s",
+        "-falign-loops=64"
+      ],
+      "group": "layout",
+      "loop": {
+        "bytes": 1236,
+        "calls": 0,
+        "instructions": 326,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "4c3696ce77928c0fa96ff5b606d336b2ccde0514322c01f72574acbebcea7a1a",
+        "start_mod_64": 0
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_arrowlake_s_misched_ilpmax": {
+      "flags": [
+        "-march=arrowlake-s",
+        "-mllvm",
+        "-misched=ilpmax"
+      ],
+      "group": "target_scheduler_cross_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_lunar_align64": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=lunarlake",
+        "-falign-loops=64"
+      ],
+      "group": "layout",
+      "loop": {
+        "bytes": 1246,
+        "calls": 0,
+        "instructions": 327,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "adcd2cb5e72ff461e7a1ea84698409f1bb77c73d7aab57394b3bc17b42b02834",
+        "start_mod_64": 0
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_lunarlake_misched_ilpmax": {
+      "flags": [
+        "-march=lunarlake",
+        "-mllvm",
+        "-misched=ilpmax"
+      ],
+      "group": "target_scheduler_cross_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_march_alderlake": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=alderlake"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1236,
+        "calls": 0,
+        "instructions": 326,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "4c3696ce77928c0fa96ff5b606d336b2ccde0514322c01f72574acbebcea7a1a",
+        "start_mod_64": 32
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_march_arrowlake": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=arrowlake"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1236,
+        "calls": 0,
+        "instructions": 326,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "4c3696ce77928c0fa96ff5b606d336b2ccde0514322c01f72574acbebcea7a1a",
+        "start_mod_64": 32
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_march_arrowlake_s": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=arrowlake-s"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1236,
+        "calls": 0,
+        "instructions": 326,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "4c3696ce77928c0fa96ff5b606d336b2ccde0514322c01f72574acbebcea7a1a",
+        "start_mod_64": 32
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_march_lunarlake": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=lunarlake"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1246,
+        "calls": 0,
+        "instructions": 327,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "adcd2cb5e72ff461e7a1ea84698409f1bb77c73d7aab57394b3bc17b42b02834",
+        "start_mod_64": 16
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_march_meteorlake": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=meteorlake"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1236,
+        "calls": 0,
+        "instructions": 326,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "4c3696ce77928c0fa96ff5b606d336b2ccde0514322c01f72574acbebcea7a1a",
+        "start_mod_64": 32
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_march_pantherlake": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=pantherlake"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1236,
+        "calls": 0,
+        "instructions": 326,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "4c3696ce77928c0fa96ff5b606d336b2ccde0514322c01f72574acbebcea7a1a",
+        "start_mod_64": 32
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_march_raptorlake": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=raptorlake"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1236,
+        "calls": 0,
+        "instructions": 326,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "4c3696ce77928c0fa96ff5b606d336b2ccde0514322c01f72574acbebcea7a1a",
+        "start_mod_64": 32
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_meteorlake_misched_ilpmax": {
+      "flags": [
+        "-march=meteorlake",
+        "-mllvm",
+        "-misched=ilpmax"
+      ],
+      "group": "target_scheduler_cross_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_panther_align64": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-march=pantherlake",
+        "-falign-loops=64"
+      ],
+      "group": "layout",
+      "loop": {
+        "bytes": 1236,
+        "calls": 0,
+        "instructions": 326,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "4c3696ce77928c0fa96ff5b606d336b2ccde0514322c01f72574acbebcea7a1a",
+        "start_mod_64": 0
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_pantherlake_misched_ilpmax": {
+      "flags": [
+        "-march=pantherlake",
+        "-mllvm",
+        "-misched=ilpmax"
+      ],
+      "group": "target_scheduler_cross_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_ref_bmi2": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [],
+      "group": "reference_only",
+      "loop": {
+        "bytes": 1246,
+        "calls": 0,
+        "instructions": 327,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "83a0f74b779054fda453c9d89f4ba5e9c3354cfd3a2a0194e1f55669b99049aa",
+        "start_mod_64": 32
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_tune_alderlake": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 1"
+      ],
+      "flags": [
+        "-mtune=alderlake"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1220,
+        "calls": 0,
+        "instructions": 323,
+        "memory_operands_excluding_lea": 1,
+        "normalized_sha256": "c15e81c09d780b472bd2ab24fb2d2d5db36958d2dea3727b0dd261188c0c33cd",
+        "start_mod_64": 48
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_tune_arrow_misched_ilpmax": {
+      "flags": [
+        "-mtune=arrowlake",
+        "-mllvm",
+        "-misched=ilpmax"
+      ],
+      "group": "target_scheduler_cross_internal",
+      "loop": {
+        "bytes": 1208,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "start_mod_64": 0
+      },
+      "static_model_key": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+      "status": "PASS"
+    },
+    "clang_tune_arrowlake": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 1"
+      ],
+      "flags": [
+        "-mtune=arrowlake"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1220,
+        "calls": 0,
+        "instructions": 323,
+        "memory_operands_excluding_lea": 1,
+        "normalized_sha256": "c15e81c09d780b472bd2ab24fb2d2d5db36958d2dea3727b0dd261188c0c33cd",
+        "start_mod_64": 48
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_tune_arrowlake_s": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 1"
+      ],
+      "flags": [
+        "-mtune=arrowlake-s"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1220,
+        "calls": 0,
+        "instructions": 323,
+        "memory_operands_excluding_lea": 1,
+        "normalized_sha256": "c15e81c09d780b472bd2ab24fb2d2d5db36958d2dea3727b0dd261188c0c33cd",
+        "start_mod_64": 48
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_tune_lunarlake": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2"
+      ],
+      "flags": [
+        "-mtune=lunarlake"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1246,
+        "calls": 0,
+        "instructions": 327,
+        "memory_operands_excluding_lea": 2,
+        "normalized_sha256": "cca59c9754898145a5ffc33decc0797cd45292d9cf3c16fbb65a940cf2841e78",
+        "start_mod_64": 32
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_tune_meteorlake": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 1"
+      ],
+      "flags": [
+        "-mtune=meteorlake"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1220,
+        "calls": 0,
+        "instructions": 323,
+        "memory_operands_excluding_lea": 1,
+        "normalized_sha256": "c15e81c09d780b472bd2ab24fb2d2d5db36958d2dea3727b0dd261188c0c33cd",
+        "start_mod_64": 48
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_tune_pantherlake": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 1"
+      ],
+      "flags": [
+        "-mtune=pantherlake"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1220,
+        "calls": 0,
+        "instructions": 323,
+        "memory_operands_excluding_lea": 1,
+        "normalized_sha256": "c15e81c09d780b472bd2ab24fb2d2d5db36958d2dea3727b0dd261188c0c33cd",
+        "start_mod_64": 48
+      },
+      "status": "AUDIT_FAIL"
+    },
+    "clang_tune_raptorlake": {
+      "audit_errors": [
+        "memory_operands_excluding_lea: expected 0, got 1"
+      ],
+      "flags": [
+        "-mtune=raptorlake"
+      ],
+      "group": "target_codegen",
+      "loop": {
+        "bytes": 1220,
+        "calls": 0,
+        "instructions": 323,
+        "memory_operands_excluding_lea": 1,
+        "normalized_sha256": "c15e81c09d780b472bd2ab24fb2d2d5db36958d2dea3727b0dd261188c0c33cd",
+        "start_mod_64": 48
+      },
+      "status": "AUDIT_FAIL"
+    }
+  },
+  "decision": {
+    "reason": "No new GCC combination beats the existing 120.06-cycle Alder proxy. Clang's only compact no-spill internal-scheduler streams are 1208 bytes but score 133.79 cycles on that proxy.",
+    "submission_change": "none",
+    "target_measurement_candidates": [
+      {
+        "name": "clang_arrow_misched_ilpmax",
+        "why": "Arrow Lake target accepted, full-inline/no-spill, 1208-byte loop; retain only as an experimental negative/control because the available proxy is worse"
+      },
+      {
+        "name": "gcc_selective2_tune_graniterapids",
+        "why": "new 1209-byte encoding with unchanged 120.06 proxy; the tune model is not 255H, so it needs actual target evidence"
+      }
+    ]
+  },
+  "experiment": "challenge02_core_ultra_7_255h_toolchain_static_followup",
+  "gcc_screen": {
+    "critical_align64": {
+      "flags": [
+        "-fno-sched-critical-path-heuristic",
+        "-falign-loops=64"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "d1a3915712cf023180e004ac886b9020a3c8c90d71379697aa3bbbf74c81bf15",
+        "start_mod_64": 0
+      },
+      "static_model_key": "d1a3915712cf023180e004ac886b9020a3c8c90d71379697aa3bbbf74c81bf15",
+      "status": "PASS"
+    },
+    "no_sched2_align128": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-falign-loops=128"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 0
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_align64": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-falign-loops=64"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 0
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_function64": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-falign-functions=64"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_gc": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-ffunction-sections",
+        "-fdata-sections"
+      ],
+      "group": "followup",
+      "ldflags": [
+        "-Wl,--gc-sections"
+      ],
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_gc_sort_name": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-ffunction-sections",
+        "-fdata-sections"
+      ],
+      "group": "followup",
+      "ldflags": [
+        "-Wl,--gc-sections",
+        "-Wl,--sort-section=name"
+      ],
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_ira_all": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-fira-region=all"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_ira_all_pressure": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-fira-region=all",
+        "-fira-loop-pressure"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_ira_mixed": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-fira-region=mixed"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_lto": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-flto"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 0
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_lto_align64": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-flto",
+        "-falign-loops=64"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 0
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_march_alderlake": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-march=alderlake"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c7d2e567ad03b3591947acf985443087f523c548351c2053344dcefe3502bdbf",
+        "start_mod_64": 48
+      },
+      "static_model_key": "c7d2e567ad03b3591947acf985443087f523c548351c2053344dcefe3502bdbf",
+      "status": "PASS"
+    },
+    "no_sched2_march_meteor_tune_meteor": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-march=meteorlake",
+        "-mtune=meteorlake"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c7d2e567ad03b3591947acf985443087f523c548351c2053344dcefe3502bdbf",
+        "start_mod_64": 48
+      },
+      "static_model_key": "c7d2e567ad03b3591947acf985443087f523c548351c2053344dcefe3502bdbf",
+      "status": "PASS"
+    },
+    "no_sched2_march_meteorlake": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-march=meteorlake"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c7d2e567ad03b3591947acf985443087f523c548351c2053344dcefe3502bdbf",
+        "start_mod_64": 48
+      },
+      "static_model_key": "c7d2e567ad03b3591947acf985443087f523c548351c2053344dcefe3502bdbf",
+      "status": "PASS"
+    },
+    "no_sched2_march_x86_64_v3": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-march=x86-64-v3"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c7d2e567ad03b3591947acf985443087f523c548351c2053344dcefe3502bdbf",
+        "start_mod_64": 48
+      },
+      "static_model_key": "c7d2e567ad03b3591947acf985443087f523c548351c2053344dcefe3502bdbf",
+      "status": "PASS"
+    },
+    "no_sched2_no_critical": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-fno-sched-critical-path-heuristic"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_no_plt": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-fno-plt"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_rename": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-frename-registers"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 40
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_reorder_simple": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-freorder-blocks-algorithm=simple"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 48
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_selective2": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-fselective-scheduling2"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_tune_gracemont": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-mtune=gracemont"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_tune_grandridge": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-mtune=grandridge"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_tune_graniterapids": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-mtune=graniterapids"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1209,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "29b8f267fa8436ccfcccaecfa95eb8556cb93d15288bfdd8f1e7d81090ccd4d9",
+        "start_mod_64": 32
+      },
+      "static_model_key": "29b8f267fa8436ccfcccaecfa95eb8556cb93d15288bfdd8f1e7d81090ccd4d9",
+      "status": "PASS"
+    },
+    "no_sched2_tune_icelake_client": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-mtune=icelake-client"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1209,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "29b8f267fa8436ccfcccaecfa95eb8556cb93d15288bfdd8f1e7d81090ccd4d9",
+        "start_mod_64": 32
+      },
+      "static_model_key": "29b8f267fa8436ccfcccaecfa95eb8556cb93d15288bfdd8f1e7d81090ccd4d9",
+      "status": "PASS"
+    },
+    "no_sched2_tune_meteorlake": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-mtune=meteorlake"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_tune_raptorlake": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-mtune=raptorlake"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_tune_rocketlake": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-mtune=rocketlake"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1209,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "29b8f267fa8436ccfcccaecfa95eb8556cb93d15288bfdd8f1e7d81090ccd4d9",
+        "start_mod_64": 32
+      },
+      "static_model_key": "29b8f267fa8436ccfcccaecfa95eb8556cb93d15288bfdd8f1e7d81090ccd4d9",
+      "status": "PASS"
+    },
+    "no_sched2_tune_sapphirerapids": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-mtune=sapphirerapids"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1209,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "29b8f267fa8436ccfcccaecfa95eb8556cb93d15288bfdd8f1e7d81090ccd4d9",
+        "start_mod_64": 32
+      },
+      "static_model_key": "29b8f267fa8436ccfcccaecfa95eb8556cb93d15288bfdd8f1e7d81090ccd4d9",
+      "status": "PASS"
+    },
+    "no_sched2_tune_sierraforest": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-mtune=sierraforest"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_tune_tremont": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-mtune=tremont"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "no_sched2_whole_program": {
+      "flags": [
+        "-fno-schedule-insns2",
+        "-fwhole-program"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 0
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "ref_ira": {
+      "flags": [],
+      "group": "reference_only",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "e0e62e1b598890734db04f0983d66c6121a8fb8b4d12cc456f15b7d5c0740d52",
+        "start_mod_64": 32
+      },
+      "static_model_key": "e0e62e1b598890734db04f0983d66c6121a8fb8b4d12cc456f15b7d5c0740d52",
+      "status": "PASS"
+    },
+    "ref_no_sched2": {
+      "flags": [
+        "-fno-schedule-insns2"
+      ],
+      "group": "reference_only",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "start_mod_64": 32
+      },
+      "static_model_key": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+      "status": "PASS"
+    },
+    "ref_selective2": {
+      "flags": [
+        "-fselective-scheduling2"
+      ],
+      "group": "reference_only",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+        "start_mod_64": 16
+      },
+      "static_model_key": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+      "status": "PASS"
+    },
+    "selective2_align32": {
+      "flags": [
+        "-fselective-scheduling2",
+        "-falign-loops=32"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+        "start_mod_64": 32
+      },
+      "static_model_key": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+      "status": "PASS"
+    },
+    "selective2_align64": {
+      "flags": [
+        "-fselective-scheduling2",
+        "-falign-loops=64"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+        "start_mod_64": 0
+      },
+      "static_model_key": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+      "status": "PASS"
+    },
+    "selective2_function64": {
+      "flags": [
+        "-fselective-scheduling2",
+        "-falign-functions=64"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+        "start_mod_64": 16
+      },
+      "static_model_key": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+      "status": "PASS"
+    },
+    "selective2_gc": {
+      "flags": [
+        "-fselective-scheduling2",
+        "-ffunction-sections",
+        "-fdata-sections"
+      ],
+      "group": "followup",
+      "ldflags": [
+        "-Wl,--gc-sections"
+      ],
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+        "start_mod_64": 16
+      },
+      "static_model_key": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+      "status": "PASS"
+    },
+    "selective2_ira_all": {
+      "flags": [
+        "-fselective-scheduling2",
+        "-fira-region=all"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+        "start_mod_64": 16
+      },
+      "static_model_key": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+      "status": "PASS"
+    },
+    "selective2_lto": {
+      "flags": [
+        "-fselective-scheduling2",
+        "-flto"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+        "start_mod_64": 8
+      },
+      "static_model_key": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+      "status": "PASS"
+    },
+    "selective2_march_meteor": {
+      "flags": [
+        "-fselective-scheduling2",
+        "-march=meteorlake"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "a27a17506ef20495ea4650a6f766a124089a31347375c249c6976cc3b0ae9a76",
+        "start_mod_64": 0
+      },
+      "static_model_key": "a27a17506ef20495ea4650a6f766a124089a31347375c249c6976cc3b0ae9a76",
+      "status": "PASS"
+    },
+    "selective2_no_critical": {
+      "flags": [
+        "-fselective-scheduling2",
+        "-fno-sched-critical-path-heuristic"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+        "start_mod_64": 16
+      },
+      "static_model_key": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+      "status": "PASS"
+    },
+    "selective2_rename": {
+      "flags": [
+        "-fselective-scheduling2",
+        "-frename-registers"
+      ],
+      "group": "followup",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+        "start_mod_64": 40
+      },
+      "static_model_key": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+      "status": "PASS"
+    },
+    "selective2_tune_gracemont": {
+      "flags": [
+        "-fselective-scheduling2",
+        "-mtune=gracemont"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+        "start_mod_64": 16
+      },
+      "static_model_key": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+      "status": "PASS"
+    },
+    "selective2_tune_graniterapids": {
+      "flags": [
+        "-fselective-scheduling2",
+        "-mtune=graniterapids"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1209,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "91f4aab962f8f436480d52e8b8b5096a90913873b19aca747bc447bb79da39cd",
+        "start_mod_64": 48
+      },
+      "static_model_key": "91f4aab962f8f436480d52e8b8b5096a90913873b19aca747bc447bb79da39cd",
+      "status": "PASS"
+    },
+    "selective2_tune_meteorlake": {
+      "flags": [
+        "-fselective-scheduling2",
+        "-mtune=meteorlake"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+        "start_mod_64": 16
+      },
+      "static_model_key": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+      "status": "PASS"
+    },
+    "selective2_tune_tremont": {
+      "flags": [
+        "-fselective-scheduling2",
+        "-mtune=tremont"
+      ],
+      "group": "target_proxy",
+      "loop": {
+        "bytes": 1210,
+        "calls": 0,
+        "instructions": 322,
+        "memory_operands_excluding_lea": 0,
+        "normalized_sha256": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+        "start_mod_64": 16
+      },
+      "static_model_key": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+      "status": "PASS"
+    }
+  },
+  "model_limitations": [
+    "GCC 13.3 rejects arrowlake, arrowlake-s, lunarlake, and pantherlake in the exact probes; Alder/Meteor/E-core-like names are only proxies for this 255H.",
+    "llvm-mca 16 has no Lion Cove, Skymont, or Arrow Lake model here; Alder Lake and Tremont results are directional proxies only.",
+    "llvm-mca assumes decoded instructions are already queued and does not model fetch, decode, or branch prediction, so loop and function alignment cannot be ranked by these cycle estimates.",
+    "The Clang ilpmax/ilpmin/regalloc switches are hidden -mllvm options. Their output is reproducible for the pinned executable but is not a stable compiler interface.",
+    "No result in this file is an actual Core Ultra 7 255H timing. Promotion requires repeated, core-type-pinned target data."
+  ],
+  "primary_sources": [
+    {
+      "title": "Intel ARK: Core Ultra 7 255H specifications",
+      "url": "https://www.intel.com/content/www/us/en/products/sku/241751/intel-core-ultra-7-processor-255h-24m-cache-up-to-5-10-ghz/specifications.html",
+      "used_for": "Arrow Lake Series 2 identity, 6 P + 8 E + 2 LP-E cores, 16 threads, AVX2"
+    },
+    {
+      "title": "Intel PerfMon: Arrow Lake P-core events",
+      "url": "https://perfmon-events.intel.com/platforms/arrowlake/core-events/p-core/",
+      "used_for": "Lion Cove P-core, Skymont E-core, Crestmont LP-E identity"
+    },
+    {
+      "title": "Intel consolidated product CPU model table",
+      "url": "https://www.intel.com/content/www/us/en/developer/topic-technology/software-security-guidance/processors-affected-consolidated-product-cpu-model.html",
+      "used_for": "Arrow Lake H microarchitecture cross-check"
+    },
+    {
+      "title": "GCC 13 release changes",
+      "url": "https://gcc.gnu.org/gcc-13/changes.html",
+      "used_for": "GCC 13 Raptor Lake and Meteor Lake support scope"
+    },
+    {
+      "title": "GCC 13.3 x86 options",
+      "url": "https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/x86-Options.html",
+      "used_for": "-march versus -mtune semantics"
+    },
+    {
+      "title": "GCC patch archive: Arrow Lake target definitions",
+      "url": "https://gcc.gnu.org/pipermail/gcc-patches/2023-August/628312.html",
+      "used_for": "later Arrow Lake/Arrow Lake-S/Lunar Lake target relationships"
+    },
+    {
+      "title": "LLVM current X86 target parser",
+      "url": "https://github.com/llvm/llvm-project/blob/main/llvm/include/llvm/TargetParser/X86TargetParser.def",
+      "used_for": "current Arrow Lake family CPU names and aliases"
+    },
+    {
+      "title": "LLVM 16 X86 target parser",
+      "url": "https://github.com/llvm/llvm-project/blob/release/16.x/llvm/include/llvm/TargetParser/X86TargetParser.def",
+      "used_for": "LLVM 16 predates Arrow Lake CPU names"
+    },
+    {
+      "title": "LLVM llvm-mca command guide",
+      "url": "https://llvm.org/docs/CommandGuide/llvm-mca.html",
+      "used_for": "model-quality caveat and absence of fetch, decode, and branch prediction modeling"
+    }
+  ],
+  "schema_version": 1,
+  "scope": {
+    "actual_255h_measurements": 0,
+    "host_timing_samples_collected": 0,
+    "result_kind": "static_screen_only",
+    "source": "submissions/02/contest.c",
+    "source_sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+  },
+  "summary": {
+    "clang_arrow_internal_scheduler": {
+      "ilpmax_alder_proxy_cycles": 133.79,
+      "ilpmax_loop_bytes": 1208,
+      "ilpmin_alder_proxy_cycles": 133.79,
+      "ilpmin_loop_bytes": 1208
+    },
+    "clang_candidates": 53,
+    "clang_statuses": {
+      "AUDIT_FAIL": 26,
+      "COMPILE_FAIL": 1,
+      "PASS": 26
+    },
+    "clang_unique_audited_streams": 4,
+    "existing_gcc_selective2_alder_proxy_cycles": 120.06,
+    "gcc_candidates": 47,
+    "gcc_reference_controls": 3,
+    "gcc_statuses": {
+      "PASS": 47
+    },
+    "gcc_unique_audited_streams": 8,
+    "new_gcc_graniterapids_streams": {
+      "no_sched2": {
+        "alder_proxy_cycles": 120.07,
+        "loop_bytes": 1209
+      },
+      "selective2": {
+        "alder_proxy_cycles": 120.06,
+        "loop_bytes": 1209
+      }
+    },
+    "promotion": "none from static evidence"
+  },
+  "target": {
+    "cores": {
+      "crestmont_lp_e": 2,
+      "lion_cove_p": 6,
+      "skymont_e": 8
+    },
+    "family": "Arrow Lake H / Core Ultra Series 2",
+    "processor": "Intel Core Ultra 7 255H",
+    "required_target_measurement": "pin separate repeated campaigns to a verified Lion Cove P-core and Skymont E-core on the actual 255H",
+    "threads": 16
+  },
+  "target_name_probes": {
+    "clang21": {
+      "march": {
+        "alderlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "arrowlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "arrowlake-s": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "lunarlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "meteorlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "pantherlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "raptorlake": {
+          "accepted": true,
+          "diagnostic": ""
+        }
+      },
+      "mtune": {
+        "alderlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "arrowlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "arrowlake-s": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "lunarlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "meteorlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "pantherlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "raptorlake": {
+          "accepted": true,
+          "diagnostic": ""
+        }
+      }
+    },
+    "gcc13_3": {
+      "march": {
+        "alderlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "arrowlake": {
+          "accepted": false,
+          "diagnostic": "cc1: error: bad value \u2018arrowlake\u2019 for \u2018-march=\u2019 switch"
+        },
+        "arrowlake-s": {
+          "accepted": false,
+          "diagnostic": "cc1: error: bad value \u2018arrowlake-s\u2019 for \u2018-march=\u2019 switch"
+        },
+        "lunarlake": {
+          "accepted": false,
+          "diagnostic": "cc1: error: bad value \u2018lunarlake\u2019 for \u2018-march=\u2019 switch"
+        },
+        "meteorlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "pantherlake": {
+          "accepted": false,
+          "diagnostic": "cc1: error: bad value \u2018pantherlake\u2019 for \u2018-march=\u2019 switch"
+        },
+        "raptorlake": {
+          "accepted": true,
+          "diagnostic": ""
+        }
+      },
+      "mtune": {
+        "alderlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "arrowlake": {
+          "accepted": false,
+          "diagnostic": "cc1: error: bad value \u2018arrowlake\u2019 for \u2018-mtune=\u2019 switch"
+        },
+        "arrowlake-s": {
+          "accepted": false,
+          "diagnostic": "cc1: error: bad value \u2018arrowlake-s\u2019 for \u2018-mtune=\u2019 switch"
+        },
+        "lunarlake": {
+          "accepted": false,
+          "diagnostic": "cc1: error: bad value \u2018lunarlake\u2019 for \u2018-mtune=\u2019 switch"
+        },
+        "meteorlake": {
+          "accepted": true,
+          "diagnostic": ""
+        },
+        "pantherlake": {
+          "accepted": false,
+          "diagnostic": "cc1: error: bad value \u2018pantherlake\u2019 for \u2018-mtune=\u2019 switch"
+        },
+        "raptorlake": {
+          "accepted": true,
+          "diagnostic": ""
+        }
+      }
+    },
+    "llvm_mca16_mcpu_help": {
+      "alderlake": true,
+      "arrowlake": false,
+      "arrowlake-s": false,
+      "lunarlake": false,
+      "meteorlake": true,
+      "pantherlake": false,
+      "raptorlake": true,
+      "tremont": true
+    }
+  },
+  "toolchains": {
+    "clang": {
+      "base_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-mllvm",
+        "-inline-threshold=2000",
+        "--ld-path=/usr/bin/x86_64-linux-gnu-ld.bfd"
+      ],
+      "internal_flag_warning": "all -mllvm scheduling/register-allocation flags are hidden implementation details and may change without compatibility",
+      "path": "/home/seorii/.local/share/swiftly/toolchains/6.3.3/usr/bin/clang-21",
+      "provenance_note": "Swift toolchain build at the recorded llvm-project commit; the executable hash, not a release label, is authoritative",
+      "sha256": "fef5a56e4278a403fcaa23ad46513769dba1e020b0a8a2ce1a6af7eb99d09d9b",
+      "version": "clang version 21.0.0 (https://github.com/swiftlang/llvm-project.git 82cdc19fa54d566969527b56f587ea8ea30bef51)"
+    },
+    "gcc": {
+      "base_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "binutils": "GNU ld (GNU Binutils for Debian) 2.40",
+      "compiler": "gcc (GCC) 13.3.0",
+      "image": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818"
+    },
+    "host_static_tools": {
+      "ld": {
+        "path": "/usr/bin/x86_64-linux-gnu-ld.bfd",
+        "sha256": "f6d71a1bcd45764550a42dfaa179bc43b63ee879ec6f875bfd39fca013515da7",
+        "version": "GNU ld (GNU Binutils for Debian) 2.40"
+      },
+      "llvm_mca": {
+        "path": "/usr/lib/llvm-16/bin/llvm-mca",
+        "sha256": "e7f38b12a3c228c8b0bcea0bf63cc56939286adf9ae5397a43d408322e3c6fbf",
+        "version": "Debian LLVM version 16.0.6"
+      },
+      "objdump": {
+        "path": "/usr/bin/x86_64-linux-gnu-objdump",
+        "sha256": "19717049e8ecd98cfbb17fd9eb25e9fd896ecec2fc4af6b931f3dd0bc4e903de",
+        "version": "GNU objdump (GNU Binutils for Debian) 2.40"
+      },
+      "size": {
+        "path": "/usr/bin/x86_64-linux-gnu-size",
+        "sha256": "d2dc6eb962bfc841403cc8b72191bfd829b50d8796b611689e92cfb051cf10ee",
+        "version": "GNU size (GNU Binutils for Debian) 2.40"
+      }
+    }
+  },
+  "unique_streams": {
+    "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e": {
+      "audit": {
+        "binary_sha256": "ee3532c81b4a8478a8edd8cfa939836631f715b6ccd07b2d67baa4aeda9692e8",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "loop_bytes": 1208,
+        "loop_instructions": 322,
+        "loop_start": "0x29b0",
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "normalized_loop_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+        "push_pop": 0,
+        "text_bytes": 10814
+      },
+      "family": "clang21",
+      "llvm_mca_16_proxies": {
+        "e_core_proxy_tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 214.28,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "tremont"
+        },
+        "p_core_proxy_alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 133.79,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake"
+        }
+      },
+      "members": [
+        "clang_alderlake_misched_ilpmax",
+        "clang_arrow_ilpmax_function64",
+        "clang_arrow_ilpmax_greedy_reverse",
+        "clang_arrow_ilpmax_no_cluster",
+        "clang_arrow_ilpmax_no_fusion",
+        "clang_arrow_ilpmax_no_post",
+        "clang_arrow_ilpmax_no_regpressure",
+        "clang_arrow_ilpmax_postra_bidirectional",
+        "clang_arrow_ilpmax_postra_bottomup",
+        "clang_arrow_ilpmax_postra_topdown",
+        "clang_arrow_ilpmax_prera_bidirectional",
+        "clang_arrow_ilpmax_prera_bottomup",
+        "clang_arrow_ilpmax_prera_topdown",
+        "clang_arrow_ilpmax_sections",
+        "clang_arrow_misched_ilpmax",
+        "clang_arrow_misched_ilpmax_align128",
+        "clang_arrow_misched_ilpmax_align32",
+        "clang_arrow_misched_ilpmax_align64",
+        "clang_arrowlake_s_misched_ilpmax",
+        "clang_lunarlake_misched_ilpmax",
+        "clang_meteorlake_misched_ilpmax",
+        "clang_pantherlake_misched_ilpmax",
+        "clang_tune_arrow_misched_ilpmax"
+      ],
+      "representative": "clang_arrow_misched_ilpmax"
+    },
+    "29b8f267fa8436ccfcccaecfa95eb8556cb93d15288bfdd8f1e7d81090ccd4d9": {
+      "audit": {
+        "binary_sha256": "913afd1b9280ad8959337a6022080b91cedab99eb4ac1b43358706291036b67a",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "loop_bytes": 1209,
+        "loop_instructions": 322,
+        "loop_start": "0x401520",
+        "loop_start_mod_64": 32,
+        "memory_operands_excluding_lea": 0,
+        "normalized_loop_sha256": "29b8f267fa8436ccfcccaecfa95eb8556cb93d15288bfdd8f1e7d81090ccd4d9",
+        "push_pop": 0,
+        "text_bytes": 7199
+      },
+      "family": "gcc13.3",
+      "llvm_mca_16_proxies": {
+        "e_core_proxy_tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.08,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "tremont"
+        },
+        "p_core_proxy_alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 120.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake"
+        }
+      },
+      "members": [
+        "no_sched2_tune_graniterapids",
+        "no_sched2_tune_icelake_client",
+        "no_sched2_tune_rocketlake",
+        "no_sched2_tune_sapphirerapids"
+      ],
+      "representative": "no_sched2_tune_graniterapids"
+    },
+    "5f5dbe3147787bf0b67183e373a782527faae6d1406ec778def3c2a7059a526f": {
+      "audit": {
+        "binary_sha256": "12e511dc4ef5da8a8d8cd8a37512777121ba8f82a4ff09711319c598a07548c9",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "loop_bytes": 2608,
+        "loop_instructions": 462,
+        "loop_start": "0x2dd0",
+        "loop_start_mod_64": 16,
+        "memory_operands_excluding_lea": 0,
+        "normalized_loop_sha256": "5f5dbe3147787bf0b67183e373a782527faae6d1406ec778def3c2a7059a526f",
+        "push_pop": 0,
+        "text_bytes": 13271
+      },
+      "family": "clang21",
+      "llvm_mca_16_proxies": {
+        "e_core_proxy_tremont": {
+          "block_rthroughput": 231.0,
+          "cycles_per_iteration": 269.14,
+          "instructions_per_iteration": 462.0,
+          "iterations": 100,
+          "model": "tremont"
+        },
+        "p_core_proxy_alderlake": {
+          "block_rthroughput": 90.3,
+          "cycles_per_iteration": 136.92,
+          "instructions_per_iteration": 462.0,
+          "iterations": 100,
+          "model": "alderlake"
+        }
+      },
+      "members": [
+        "clang_arrow_ilpmax_regalloc_basic"
+      ],
+      "representative": "clang_arrow_ilpmax_regalloc_basic"
+    },
+    "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e": {
+      "audit": {
+        "binary_sha256": "621787e3b4b7ab10eeee43ac0e0d4c11f4a0dfc1f15a62e933acc2e5244e9277",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "loop_bytes": 1210,
+        "loop_instructions": 322,
+        "loop_start": "0x401580",
+        "loop_start_mod_64": 0,
+        "memory_operands_excluding_lea": 0,
+        "normalized_loop_sha256": "76e114da82da8a44cae3c5b11e0851263a0ba222e6816a2ef352a729bc44502e",
+        "push_pop": 0,
+        "text_bytes": 7503
+      },
+      "family": "gcc13.3",
+      "llvm_mca_16_proxies": {
+        "e_core_proxy_tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.08,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "tremont"
+        },
+        "p_core_proxy_alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 120.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake"
+        }
+      },
+      "members": [
+        "no_sched2_align128",
+        "no_sched2_align64",
+        "no_sched2_function64",
+        "no_sched2_gc",
+        "no_sched2_gc_sort_name",
+        "no_sched2_ira_all",
+        "no_sched2_ira_all_pressure",
+        "no_sched2_ira_mixed",
+        "no_sched2_lto",
+        "no_sched2_lto_align64",
+        "no_sched2_no_critical",
+        "no_sched2_no_plt",
+        "no_sched2_rename",
+        "no_sched2_reorder_simple",
+        "no_sched2_selective2",
+        "no_sched2_tune_gracemont",
+        "no_sched2_tune_grandridge",
+        "no_sched2_tune_meteorlake",
+        "no_sched2_tune_raptorlake",
+        "no_sched2_tune_sierraforest",
+        "no_sched2_tune_tremont",
+        "no_sched2_whole_program",
+        "ref_no_sched2"
+      ],
+      "representative": "no_sched2_align128"
+    },
+    "91f4aab962f8f436480d52e8b8b5096a90913873b19aca747bc447bb79da39cd": {
+      "audit": {
+        "binary_sha256": "64362f261ab163d66e8329d01a058ad9c6675611fc84d03d4aacac93fe1b1607",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "loop_bytes": 1209,
+        "loop_instructions": 322,
+        "loop_start": "0x401530",
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "normalized_loop_sha256": "91f4aab962f8f436480d52e8b8b5096a90913873b19aca747bc447bb79da39cd",
+        "push_pop": 0,
+        "text_bytes": 7231
+      },
+      "family": "gcc13.3",
+      "llvm_mca_16_proxies": {
+        "e_core_proxy_tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.13,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "tremont"
+        },
+        "p_core_proxy_alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 120.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake"
+        }
+      },
+      "members": [
+        "selective2_tune_graniterapids"
+      ],
+      "representative": "selective2_tune_graniterapids"
+    },
+    "a27a17506ef20495ea4650a6f766a124089a31347375c249c6976cc3b0ae9a76": {
+      "audit": {
+        "binary_sha256": "153e41786a97fb62dcc763b9cac3adeaa6c7318be7cd0e2b8bfc50fc17233bc8",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "loop_bytes": 1210,
+        "loop_instructions": 322,
+        "loop_start": "0x401540",
+        "loop_start_mod_64": 0,
+        "memory_operands_excluding_lea": 0,
+        "normalized_loop_sha256": "a27a17506ef20495ea4650a6f766a124089a31347375c249c6976cc3b0ae9a76",
+        "push_pop": 0,
+        "text_bytes": 7004
+      },
+      "family": "gcc13.3",
+      "llvm_mca_16_proxies": {
+        "e_core_proxy_tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.13,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "tremont"
+        },
+        "p_core_proxy_alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 120.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake"
+        }
+      },
+      "members": [
+        "selective2_march_meteor"
+      ],
+      "representative": "selective2_march_meteor"
+    },
+    "b9fdddfea29c52e5cc845ab5b1dd91fc4369546f711d20dc0e8d33e9f8a4a520": {
+      "audit": {
+        "binary_sha256": "1afcdee096309c4aa1922bf605dd42233c2f0b1bf0719f9cccaaea3c12a7ff21",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "loop_bytes": 2538,
+        "loop_instructions": 455,
+        "loop_start": "0x2b50",
+        "loop_start_mod_64": 16,
+        "memory_operands_excluding_lea": 0,
+        "normalized_loop_sha256": "b9fdddfea29c52e5cc845ab5b1dd91fc4369546f711d20dc0e8d33e9f8a4a520",
+        "push_pop": 0,
+        "text_bytes": 12561
+      },
+      "family": "clang21",
+      "llvm_mca_16_proxies": {
+        "e_core_proxy_tremont": {
+          "block_rthroughput": 227.5,
+          "cycles_per_iteration": 227.57,
+          "instructions_per_iteration": 455.0,
+          "iterations": 100,
+          "model": "tremont"
+        },
+        "p_core_proxy_alderlake": {
+          "block_rthroughput": 89.2,
+          "cycles_per_iteration": 134.07,
+          "instructions_per_iteration": 455.0,
+          "iterations": 100,
+          "model": "alderlake"
+        }
+      },
+      "members": [
+        "clang_arrow_regalloc_basic"
+      ],
+      "representative": "clang_arrow_regalloc_basic"
+    },
+    "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3": {
+      "audit": {
+        "binary_sha256": "c53e5488c118a5181cb23eae8f8ac964c4dc442ee5bb79def5b55af2ca9278ed",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "loop_bytes": 1210,
+        "loop_instructions": 322,
+        "loop_start": "0x401550",
+        "loop_start_mod_64": 16,
+        "memory_operands_excluding_lea": 0,
+        "normalized_loop_sha256": "c097e02f5e4eefb00aa802ce9a29ecb4210eb16a38bb5880ce1b9ea48d2f56d3",
+        "push_pop": 0,
+        "text_bytes": 7263
+      },
+      "family": "gcc13.3",
+      "llvm_mca_16_proxies": {
+        "e_core_proxy_tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.13,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "tremont"
+        },
+        "p_core_proxy_alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 120.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake"
+        }
+      },
+      "members": [
+        "ref_selective2",
+        "selective2_align32",
+        "selective2_align64",
+        "selective2_function64",
+        "selective2_gc",
+        "selective2_ira_all",
+        "selective2_lto",
+        "selective2_no_critical",
+        "selective2_rename",
+        "selective2_tune_gracemont",
+        "selective2_tune_meteorlake",
+        "selective2_tune_tremont"
+      ],
+      "representative": "ref_selective2"
+    },
+    "c7d2e567ad03b3591947acf985443087f523c548351c2053344dcefe3502bdbf": {
+      "audit": {
+        "binary_sha256": "fbf1a983bff61f9788f9a280a6f17039d88a00a1991a35899ddb0240206c6af9",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "loop_bytes": 1210,
+        "loop_instructions": 322,
+        "loop_start": "0x401530",
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "normalized_loop_sha256": "c7d2e567ad03b3591947acf985443087f523c548351c2053344dcefe3502bdbf",
+        "push_pop": 0,
+        "text_bytes": 6948
+      },
+      "family": "gcc13.3",
+      "llvm_mca_16_proxies": {
+        "e_core_proxy_tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.08,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "tremont"
+        },
+        "p_core_proxy_alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 120.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake"
+        }
+      },
+      "members": [
+        "no_sched2_march_alderlake",
+        "no_sched2_march_meteor_tune_meteor",
+        "no_sched2_march_meteorlake",
+        "no_sched2_march_x86_64_v3"
+      ],
+      "representative": "no_sched2_march_alderlake"
+    },
+    "d1a3915712cf023180e004ac886b9020a3c8c90d71379697aa3bbbf74c81bf15": {
+      "audit": {
+        "binary_sha256": "2bdf7628375875c0bddf359e5aa5afea86feaae9e68f315c78b594534c16469a",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "loop_bytes": 1210,
+        "loop_instructions": 322,
+        "loop_start": "0x401540",
+        "loop_start_mod_64": 0,
+        "memory_operands_excluding_lea": 0,
+        "normalized_loop_sha256": "d1a3915712cf023180e004ac886b9020a3c8c90d71379697aa3bbbf74c81bf15",
+        "push_pop": 0,
+        "text_bytes": 7311
+      },
+      "family": "gcc13.3",
+      "llvm_mca_16_proxies": {
+        "e_core_proxy_tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.14,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "tremont"
+        },
+        "p_core_proxy_alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 120.14,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake"
+        }
+      },
+      "members": [
+        "critical_align64"
+      ],
+      "representative": "critical_align64"
+    },
+    "dcaaeed0f6fb137f45e6349291a164d6d321d441e3821f7bd0c78cbf09f48d9c": {
+      "audit": {
+        "binary_sha256": "ba303f0deab47c8ad30fe6ae2a6f605622e0a2f6563c7b16f4809a25a24db3b9",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "loop_bytes": 1208,
+        "loop_instructions": 322,
+        "loop_start": "0x2640",
+        "loop_start_mod_64": 0,
+        "memory_operands_excluding_lea": 0,
+        "normalized_loop_sha256": "dcaaeed0f6fb137f45e6349291a164d6d321d441e3821f7bd0c78cbf09f48d9c",
+        "push_pop": 0,
+        "text_bytes": 9918
+      },
+      "family": "clang21",
+      "llvm_mca_16_proxies": {
+        "e_core_proxy_tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 214.28,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "tremont"
+        },
+        "p_core_proxy_alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 133.79,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake"
+        }
+      },
+      "members": [
+        "clang_arrow_misched_ilpmin"
+      ],
+      "representative": "clang_arrow_misched_ilpmin"
+    },
+    "e0e62e1b598890734db04f0983d66c6121a8fb8b4d12cc456f15b7d5c0740d52": {
+      "audit": {
+        "binary_sha256": "35adefa3154778f36bb8a0b93630c7bac90bd348550ffb4ab868cf59e30597af",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "loop_bytes": 1210,
+        "loop_instructions": 322,
+        "loop_start": "0x401520",
+        "loop_start_mod_64": 32,
+        "memory_operands_excluding_lea": 0,
+        "normalized_loop_sha256": "e0e62e1b598890734db04f0983d66c6121a8fb8b4d12cc456f15b7d5c0740d52",
+        "push_pop": 0,
+        "text_bytes": 7199
+      },
+      "family": "gcc13.3",
+      "llvm_mca_16_proxies": {
+        "e_core_proxy_tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "tremont"
+        },
+        "p_core_proxy_alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake"
+        }
+      },
+      "members": [
+        "ref_ira"
+      ],
+      "representative": "ref_ira"
+    }
+  },
+  "verification_shortlist": {
+    "clang21": {
+      "clang_arrow_misched_ilpmax": {
+        "candidate_random_differential": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "round_counts": [
+            1,
+            20
+          ],
+          "seed": "0x243f6a8885a308d3",
+          "status": "PASS"
+        },
+        "flags": [
+          "-march=arrowlake",
+          "-mllvm",
+          "-misched=ilpmax"
+        ],
+        "full_inline_audit": {
+          "binary_sha256": "ee3532c81b4a8478a8edd8cfa939836631f715b6ccd07b2d67baa4aeda9692e8",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "loop_bytes": 1208,
+          "loop_instructions": 322,
+          "loop_start": "0x29b0",
+          "loop_start_mod_64": 48,
+          "memory_operands_excluding_lea": 0,
+          "normalized_loop_sha256": "0b44d9df1677c73a419a2eafdeaf93b904907ddcaeb1729ef009c5f5bf37685e",
+          "push_pop": 0,
+          "text_bytes": 10814
+        },
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "status": "PASS",
+          "twenty_round_vector": "PASS"
+        },
+        "timing_samples_collected": 0,
+        "validation_timing_loop_iterations": 1
+      },
+      "clang_arrow_misched_ilpmin": {
+        "candidate_random_differential": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "round_counts": [
+            1,
+            20
+          ],
+          "seed": "0x243f6a8885a308d3",
+          "status": "PASS"
+        },
+        "flags": [
+          "-march=arrowlake",
+          "-mllvm",
+          "-misched=ilpmin"
+        ],
+        "full_inline_audit": {
+          "binary_sha256": "ba303f0deab47c8ad30fe6ae2a6f605622e0a2f6563c7b16f4809a25a24db3b9",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "loop_bytes": 1208,
+          "loop_instructions": 322,
+          "loop_start": "0x2640",
+          "loop_start_mod_64": 0,
+          "memory_operands_excluding_lea": 0,
+          "normalized_loop_sha256": "dcaaeed0f6fb137f45e6349291a164d6d321d441e3821f7bd0c78cbf09f48d9c",
+          "push_pop": 0,
+          "text_bytes": 9918
+        },
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "status": "PASS",
+          "twenty_round_vector": "PASS"
+        },
+        "timing_samples_collected": 0,
+        "validation_timing_loop_iterations": 1
+      }
+    },
+    "gcc13_3": {
+      "gcc_nosched_graniterapids": {
+        "candidate_random_differential": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "round_counts": [
+            1,
+            20
+          ],
+          "seed": "0x243f6a8885a308d3",
+          "status": "PASS"
+        },
+        "flags": [
+          "-fno-schedule-insns2",
+          "-mtune=graniterapids"
+        ],
+        "full_inline_audit": {
+          "binary_sha256": "913afd1b9280ad8959337a6022080b91cedab99eb4ac1b43358706291036b67a",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "loop_bytes": 1209,
+          "loop_instructions": 322,
+          "loop_start": "0x401520",
+          "loop_start_mod_64": 32,
+          "memory_operands_excluding_lea": 0,
+          "normalized_loop_sha256": "29b8f267fa8436ccfcccaecfa95eb8556cb93d15288bfdd8f1e7d81090ccd4d9",
+          "push_pop": 0,
+          "text_bytes": 7199
+        },
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "status": "PASS",
+          "twenty_round_vector": "PASS"
+        },
+        "timing_samples_collected": 0,
+        "validation_timing_loop_iterations": 1
+      },
+      "gcc_selective_graniterapids": {
+        "candidate_random_differential": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "round_counts": [
+            1,
+            20
+          ],
+          "seed": "0x243f6a8885a308d3",
+          "status": "PASS"
+        },
+        "flags": [
+          "-fselective-scheduling2",
+          "-mtune=graniterapids"
+        ],
+        "full_inline_audit": {
+          "binary_sha256": "64362f261ab163d66e8329d01a058ad9c6675611fc84d03d4aacac93fe1b1607",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "loop_bytes": 1209,
+          "loop_instructions": 322,
+          "loop_start": "0x401530",
+          "loop_start_mod_64": 48,
+          "memory_operands_excluding_lea": 0,
+          "normalized_loop_sha256": "91f4aab962f8f436480d52e8b8b5096a90913873b19aca747bc447bb79da39cd",
+          "push_pop": 0,
+          "text_bytes": 7231
+        },
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "status": "PASS",
+          "twenty_round_vector": "PASS"
+        },
+        "timing_samples_collected": 0,
+        "validation_timing_loop_iterations": 1
+      }
+    }
+  }
+}

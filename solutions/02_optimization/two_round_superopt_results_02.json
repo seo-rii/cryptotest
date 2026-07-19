@@ -1,0 +1,1204 @@
+{
+  "analysis": "challenge02_two_round_scalar_superoptimization",
+  "chains": [
+    {
+      "first": {
+        "add": "0x5d0f3a8e2c6b4197",
+        "rotation": 43,
+        "xor": "0xe7b92d4a6c1f8035"
+      },
+      "formula": "T(14,0x6b2e9d1a4f7c3085,0x8f4a2c1e9b7d3f61, T(43,0xe7b92d4a6c1f8035,0x5d0f3a8e2c6b4197,x))",
+      "second": {
+        "add": "0x8f4a2c1e9b7d3f61",
+        "rotation": 14,
+        "xor": "0x6b2e9d1a4f7c3085"
+      },
+      "word": 0
+    },
+    {
+      "first": {
+        "add": "0xa7e2d9c4b1f60853",
+        "rotation": 7,
+        "xor": "0x1a4f8c3e9d2b6074"
+      },
+      "formula": "T(29,0xc3f05a2e8d6194b7,0x3c6e9a1d5b7f2840, T(7,0x1a4f8c3e9d2b6074,0xa7e2d9c4b1f60853,x))",
+      "second": {
+        "add": "0x3c6e9a1d5b7f2840",
+        "rotation": 29,
+        "xor": "0xc3f05a2e8d6194b7"
+      },
+      "word": 1
+    },
+    {
+      "first": {
+        "add": "0x3c6e9a1d5b7f2840",
+        "rotation": 29,
+        "xor": "0xc3f05a2e8d6194b7"
+      },
+      "formula": "T(7,0x1a4f8c3e9d2b6074,0xa7e2d9c4b1f60853, T(29,0xc3f05a2e8d6194b7,0x3c6e9a1d5b7f2840,x))",
+      "second": {
+        "add": "0xa7e2d9c4b1f60853",
+        "rotation": 7,
+        "xor": "0x1a4f8c3e9d2b6074"
+      },
+      "word": 2
+    },
+    {
+      "first": {
+        "add": "0x8f4a2c1e9b7d3f61",
+        "rotation": 14,
+        "xor": "0x6b2e9d1a4f7c3085"
+      },
+      "formula": "T(43,0xe7b92d4a6c1f8035,0x5d0f3a8e2c6b4197, T(14,0x6b2e9d1a4f7c3085,0x8f4a2c1e9b7d3f61,x))",
+      "second": {
+        "add": "0x5d0f3a8e2c6b4197",
+        "rotation": 43,
+        "xor": "0xe7b92d4a6c1f8035"
+      },
+      "word": 3
+    }
+  ],
+  "codegen": {
+    "clang": {
+      "compiler": "/home/seorii/.local/share/swiftly/bin/clang",
+      "contest_command": [
+        "/home/seorii/.local/share/swiftly/bin/clang",
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-mllvm",
+        "-inline-threshold=5000",
+        "/home/seorii/dev/hancomac/cryptotest/submissions/02/contest.c",
+        "-o",
+        "$TMP/contest-clang"
+      ],
+      "contest_timing_loop_audit": {
+        "binary_sha256": "e6e6140c21e0fdca1aa3882794d163958f4ddf51768aa69090d7c5a97d7b6f4b",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "errors": [
+          "memory_operands_excluding_lea: expected 0, got 2"
+        ],
+        "legacy_addressed_loop_sha256": "3c5e814364e365ae8f1ded2c74b982bac2fc21f9edcc3cc83b17b95aebcbb339",
+        "loop_bytes": 1246,
+        "loop_instructions": 327,
+        "loop_start": "0x1dd0",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 16,
+        "memory_operands_excluding_lea": 2,
+        "mnemonics": {
+          "add": 80,
+          "bswap": 80,
+          "dec": 1,
+          "jne": 1,
+          "mov": 2,
+          "movabs": 3,
+          "rorx": 80,
+          "xor": 80
+        },
+        "mode": "full-inline-320",
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "83a0f74b779054fda453c9d89f4ba5e9c3354cfd3a2a0194e1f55669b99049aa",
+        "push_pop": 0,
+        "status": "FAIL",
+        "text_bytes": 9692
+      },
+      "probe_command": [
+        "/home/seorii/.local/share/swiftly/bin/clang",
+        "-O3",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-c",
+        "/home/seorii/dev/hancomac/cryptotest/solutions/02_optimization/two_round_chain_probe_02.c",
+        "-o",
+        "$TMP/probe-clang.o"
+      ],
+      "probe_functions": {
+        "chain_baseline": {
+          "assembly": [
+            "rorx $0x15,%rdi,%rax",
+            "xor %rsi,%rax",
+            "bswap %rax",
+            "add %rdx,%rax",
+            "rorx $0x32,%rax,%rax",
+            "xor %rcx,%rax",
+            "bswap %rax",
+            "add %r8,%rax"
+          ],
+          "body_instruction_count": 8,
+          "core_counts": {
+            "add_or_lea": 2,
+            "bswap": 2,
+            "rotate": 2,
+            "xor": 2
+          },
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 2,
+            "bswap": 2,
+            "rorx": 2,
+            "xor": 2
+          },
+          "movabs": 0
+        },
+        "chain_linear_skeleton": {
+          "assembly": [
+            "rorx $0x15,%rdi,%rax",
+            "bswap %rax",
+            "rorx $0x32,%rax,%rax",
+            "bswap %rax"
+          ],
+          "body_instruction_count": 4,
+          "core_counts": {
+            "add_or_lea": 0,
+            "bswap": 2,
+            "rotate": 2,
+            "xor": 0
+          },
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "bswap": 2,
+            "rorx": 2
+          },
+          "movabs": 0
+        },
+        "chain_literal_x0": {
+          "assembly": [
+            "rorx $0x15,%rdi,%rax",
+            "movabs $0xe7b92d4a6c1f8035,%rcx",
+            "xor %rax,%rcx",
+            "bswap %rcx",
+            "movabs $0x5d0f3a8e2c6b4197,%rax",
+            "add %rcx,%rax",
+            "rorx $0x32,%rax,%rax",
+            "movabs $0x6b2e9d1a4f7c3085,%rcx",
+            "xor %rax,%rcx",
+            "bswap %rcx",
+            "movabs $0x8f4a2c1e9b7d3f61,%rax",
+            "add %rcx,%rax"
+          ],
+          "body_instruction_count": 12,
+          "core_counts": {
+            "add_or_lea": 2,
+            "bswap": 2,
+            "rotate": 2,
+            "xor": 2
+          },
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 2,
+            "bswap": 2,
+            "movabs": 4,
+            "rorx": 2,
+            "xor": 2
+          },
+          "movabs": 4
+        },
+        "chain_post_bswap": {
+          "assembly": [
+            "rorx $0x15,%rdi,%rax",
+            "bswap %rax",
+            "xor %rsi,%rax",
+            "add %rdx,%rax",
+            "rorx $0x32,%rax,%rax",
+            "bswap %rax",
+            "xor %rcx,%rax",
+            "add %r8,%rax"
+          ],
+          "body_instruction_count": 8,
+          "core_counts": {
+            "add_or_lea": 2,
+            "bswap": 2,
+            "rotate": 2,
+            "xor": 2
+          },
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 2,
+            "bswap": 2,
+            "rorx": 2,
+            "xor": 2
+          },
+          "movabs": 0
+        },
+        "chain_pre_rotate": {
+          "assembly": [
+            "xor %rsi,%rdi",
+            "rorx $0x15,%rdi,%rax",
+            "bswap %rax",
+            "add %rdx,%rax",
+            "xor %rcx,%rax",
+            "rorx $0x32,%rax,%rax",
+            "bswap %rax",
+            "add %r8,%rax"
+          ],
+          "body_instruction_count": 8,
+          "core_counts": {
+            "add_or_lea": 2,
+            "bswap": 2,
+            "rotate": 2,
+            "xor": 2
+          },
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 2,
+            "bswap": 2,
+            "rorx": 2,
+            "xor": 2
+          },
+          "movabs": 0
+        }
+      },
+      "status": "PASS",
+      "version": "clang version 21.0.0 (https://github.com/swiftlang/llvm-project.git 82cdc19fa54d566969527b56f587ea8ea30bef51)"
+    },
+    "gcc": {
+      "compiler": "/usr/bin/gcc",
+      "contest_command": [
+        "/usr/bin/gcc",
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "/home/seorii/dev/hancomac/cryptotest/submissions/02/contest.c",
+        "-o",
+        "$TMP/contest-gcc"
+      ],
+      "contest_timing_loop_audit": {
+        "binary_sha256": "376386ba570cafde9bdb29f74185516f2da39a03d15df9525af7219b6abe187b",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "errors": [],
+        "legacy_addressed_loop_sha256": "fc3de2566570551bc966fb779d907a187f88f269d7100324e4fe14322c77d7e7",
+        "loop_bytes": 1216,
+        "loop_instructions": 322,
+        "loop_start": "0x1550",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 16,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "add": 74,
+          "bswap": 80,
+          "jne": 1,
+          "lea": 6,
+          "rorx": 80,
+          "sub": 1,
+          "xor": 80
+        },
+        "mode": "full-inline-320",
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "6b803105c59776a62b75848692307bbe611286ee1d1806d23c4577f974dc2683",
+        "push_pop": 0,
+        "status": "PASS",
+        "text_bytes": 7537
+      },
+      "probe_command": [
+        "/usr/bin/gcc",
+        "-O3",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-c",
+        "/home/seorii/dev/hancomac/cryptotest/solutions/02_optimization/two_round_chain_probe_02.c",
+        "-o",
+        "$TMP/probe-gcc.o"
+      ],
+      "probe_functions": {
+        "chain_baseline": {
+          "assembly": [
+            "rorx $0x15,%rdi,%rdi",
+            "xor %rsi,%rdi",
+            "bswap %rdi",
+            "add %rdx,%rdi",
+            "rorx $0x32,%rdi,%rdi",
+            "xor %rcx,%rdi",
+            "bswap %rdi",
+            "lea (%rdi,%r8,1),%rax"
+          ],
+          "body_instruction_count": 8,
+          "core_counts": {
+            "add_or_lea": 2,
+            "bswap": 2,
+            "rotate": 2,
+            "xor": 2
+          },
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 1,
+            "bswap": 2,
+            "lea": 1,
+            "rorx": 2,
+            "xor": 2
+          },
+          "movabs": 0
+        },
+        "chain_linear_skeleton": {
+          "assembly": [
+            "rorx $0x15,%rdi,%rax",
+            "bswap %rax",
+            "rorx $0x32,%rax,%rax",
+            "bswap %rax"
+          ],
+          "body_instruction_count": 4,
+          "core_counts": {
+            "add_or_lea": 0,
+            "bswap": 2,
+            "rotate": 2,
+            "xor": 0
+          },
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "bswap": 2,
+            "rorx": 2
+          },
+          "movabs": 0
+        },
+        "chain_literal_x0": {
+          "assembly": [
+            "movabs $0xe7b92d4a6c1f8035,%rdx",
+            "rorx $0x15,%rdi,%rax",
+            "xor %rdx,%rax",
+            "movabs $0x5d0f3a8e2c6b4197,%rdx",
+            "bswap %rax",
+            "add %rdx,%rax",
+            "movabs $0x6b2e9d1a4f7c3085,%rdx",
+            "rorx $0x32,%rax,%rax",
+            "xor %rdx,%rax",
+            "movabs $0x8f4a2c1e9b7d3f61,%rdx",
+            "bswap %rax",
+            "add %rdx,%rax"
+          ],
+          "body_instruction_count": 12,
+          "core_counts": {
+            "add_or_lea": 2,
+            "bswap": 2,
+            "rotate": 2,
+            "xor": 2
+          },
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 2,
+            "bswap": 2,
+            "movabs": 4,
+            "rorx": 2,
+            "xor": 2
+          },
+          "movabs": 4
+        },
+        "chain_post_bswap": {
+          "assembly": [
+            "rorx $0x15,%rdi,%rdi",
+            "bswap %rdi",
+            "xor %rsi,%rdi",
+            "add %rdx,%rdi",
+            "rorx $0x32,%rdi,%rdi",
+            "bswap %rdi",
+            "xor %rcx,%rdi",
+            "lea (%rdi,%r8,1),%rax"
+          ],
+          "body_instruction_count": 8,
+          "core_counts": {
+            "add_or_lea": 2,
+            "bswap": 2,
+            "rotate": 2,
+            "xor": 2
+          },
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 1,
+            "bswap": 2,
+            "lea": 1,
+            "rorx": 2,
+            "xor": 2
+          },
+          "movabs": 0
+        },
+        "chain_pre_rotate": {
+          "assembly": [
+            "xor %rsi,%rdi",
+            "rorx $0x15,%rdi,%rdi",
+            "bswap %rdi",
+            "add %rdx,%rdi",
+            "xor %rcx,%rdi",
+            "rorx $0x32,%rdi,%rdi",
+            "bswap %rdi",
+            "lea (%rdi,%r8,1),%rax"
+          ],
+          "body_instruction_count": 8,
+          "core_counts": {
+            "add_or_lea": 2,
+            "bswap": 2,
+            "rotate": 2,
+            "xor": 2
+          },
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 1,
+            "bswap": 2,
+            "lea": 1,
+            "rorx": 2,
+            "xor": 2
+          },
+          "movabs": 0
+        }
+      },
+      "status": "PASS",
+      "version": "gcc (Debian 12.2.0-14+deb12u1) 12.2.0"
+    }
+  },
+  "codegen_observations": {
+    "clang": {
+      "contest_loop_audit_status": "FAIL",
+      "contest_loop_bytes": 1246,
+      "contest_loop_instructions": 327,
+      "contest_loop_memory_operands": 2,
+      "contest_loop_movabs": 3,
+      "dynamic_chain_core_instruction_count": 8,
+      "literal_chain_movabs": 4,
+      "post_bswap_core_instruction_count": 8,
+      "pre_rotate_core_instruction_count": 8
+    },
+    "gcc": {
+      "contest_loop_audit_status": "PASS",
+      "contest_loop_bytes": 1216,
+      "contest_loop_instructions": 322,
+      "contest_loop_memory_operands": 0,
+      "contest_loop_movabs": 0,
+      "dynamic_chain_core_instruction_count": 8,
+      "literal_chain_movabs": 4,
+      "post_bswap_core_instruction_count": 8,
+      "pre_rotate_core_instruction_count": 8
+    }
+  },
+  "conclusion": {
+    "candidate_found": false,
+    "global_two_stage_lower_bound": null,
+    "linear_pair_lower_bound_in_rotate_bswap_grammar": 4,
+    "one_stage_lower_bound_in_grammar": 4,
+    "original_pair_single_deletion_rejected": true,
+    "scope": "The pair search proves that no one of the original eight operations can simply be deleted while retaining the other rotations/order and resynthesizing all remaining constants. It is not a global eight-op lower bound against every reordered program, nor a claim about an ISA outside ADD/XOR/ROL/BSWAP."
+  },
+  "definition": "T(r,k,a,x) = BSWAP64(ROL64(x,r) xor k) + a mod 2^64",
+  "immediate_encoding": {
+    "all_forms_require_register_or_memory": true,
+    "stages": [
+      {
+        "fits_sign_extended_imm32": {
+          "add": false,
+          "xor_after_bswap": false,
+          "xor_before_rotate": false,
+          "xor_original": false
+        },
+        "rotation": 43,
+        "stage_occurrence": 0,
+        "values": {
+          "add": "0x5d0f3a8e2c6b4197",
+          "xor_after_bswap": "0x35801f6c4a2db9e7",
+          "xor_before_rotate": "0xa94d83f006bcf725",
+          "xor_original": "0xe7b92d4a6c1f8035"
+        }
+      },
+      {
+        "fits_sign_extended_imm32": {
+          "add": false,
+          "xor_after_bswap": false,
+          "xor_before_rotate": false,
+          "xor_original": false
+        },
+        "rotation": 14,
+        "stage_occurrence": 1,
+        "values": {
+          "add": "0x8f4a2c1e9b7d3f61",
+          "xor_after_bswap": "0x85307c4f1a9d2e6b",
+          "xor_before_rotate": "0xc215acba74693df0",
+          "xor_original": "0x6b2e9d1a4f7c3085"
+        }
+      },
+      {
+        "fits_sign_extended_imm32": {
+          "add": false,
+          "xor_after_bswap": false,
+          "xor_before_rotate": false,
+          "xor_original": false
+        },
+        "rotation": 7,
+        "stage_occurrence": 2,
+        "values": {
+          "add": "0xa7e2d9c4b1f60853",
+          "xor_after_bswap": "0x74602b9d3e8c4f1a",
+          "xor_before_rotate": "0xe8349f187d3a56c0",
+          "xor_original": "0x1a4f8c3e9d2b6074"
+        }
+      },
+      {
+        "fits_sign_extended_imm32": {
+          "add": false,
+          "xor_after_bswap": false,
+          "xor_before_rotate": false,
+          "xor_original": false
+        },
+        "rotation": 29,
+        "stage_occurrence": 3,
+        "values": {
+          "add": "0x3c6e9a1d5b7f2840",
+          "xor_after_bswap": "0xb794618d2e5af0c3",
+          "xor_before_rotate": "0x6b0ca5be1f82d174",
+          "xor_original": "0xc3f05a2e8d6194b7"
+        }
+      },
+      {
+        "fits_sign_extended_imm32": {
+          "add": false,
+          "xor_after_bswap": false,
+          "xor_before_rotate": false,
+          "xor_original": false
+        },
+        "rotation": 29,
+        "stage_occurrence": 4,
+        "values": {
+          "add": "0x3c6e9a1d5b7f2840",
+          "xor_after_bswap": "0xb794618d2e5af0c3",
+          "xor_before_rotate": "0x6b0ca5be1f82d174",
+          "xor_original": "0xc3f05a2e8d6194b7"
+        }
+      },
+      {
+        "fits_sign_extended_imm32": {
+          "add": false,
+          "xor_after_bswap": false,
+          "xor_before_rotate": false,
+          "xor_original": false
+        },
+        "rotation": 7,
+        "stage_occurrence": 5,
+        "values": {
+          "add": "0xa7e2d9c4b1f60853",
+          "xor_after_bswap": "0x74602b9d3e8c4f1a",
+          "xor_before_rotate": "0xe8349f187d3a56c0",
+          "xor_original": "0x1a4f8c3e9d2b6074"
+        }
+      },
+      {
+        "fits_sign_extended_imm32": {
+          "add": false,
+          "xor_after_bswap": false,
+          "xor_before_rotate": false,
+          "xor_original": false
+        },
+        "rotation": 14,
+        "stage_occurrence": 6,
+        "values": {
+          "add": "0x8f4a2c1e9b7d3f61",
+          "xor_after_bswap": "0x85307c4f1a9d2e6b",
+          "xor_before_rotate": "0xc215acba74693df0",
+          "xor_original": "0x6b2e9d1a4f7c3085"
+        }
+      },
+      {
+        "fits_sign_extended_imm32": {
+          "add": false,
+          "xor_after_bswap": false,
+          "xor_before_rotate": false,
+          "xor_original": false
+        },
+        "rotation": 43,
+        "stage_occurrence": 7,
+        "values": {
+          "add": "0x5d0f3a8e2c6b4197",
+          "xor_after_bswap": "0x35801f6c4a2db9e7",
+          "xor_before_rotate": "0xa94d83f006bcf725",
+          "xor_original": "0xe7b92d4a6c1f8035"
+        }
+      }
+    ],
+    "x86_64_rule": "XOR/ADD r64, imm encodes only a sign-extended imm32"
+  },
+  "linear_skeleton_exhaustive": {
+    "all_pair_skeletons_need_four": true,
+    "distinct_permutations": 632,
+    "enumerated_syntaxes": 4223,
+    "grammar": "canonical reduced sequences of ROL and BSWAP of length <= 3",
+    "results": [
+      {
+        "matches_at_most_three_linear_instructions": [],
+        "rotations": [
+          43,
+          14
+        ],
+        "word": 0
+      },
+      {
+        "matches_at_most_three_linear_instructions": [],
+        "rotations": [
+          7,
+          29
+        ],
+        "word": 1
+      },
+      {
+        "matches_at_most_three_linear_instructions": [],
+        "rotations": [
+          29,
+          7
+        ],
+        "word": 2
+      },
+      {
+        "matches_at_most_three_linear_instructions": [],
+        "rotations": [
+          14,
+          43
+        ],
+        "word": 3
+      }
+    ]
+  },
+  "measurement_scope": {
+    "codegen_only": true,
+    "host_timing_executed": false,
+    "note": "Compiler outputs are disassembled but never benchmarked."
+  },
+  "official_vector_check": {
+    "archive": "problems/2_암호구현.zip",
+    "archive_sha256": "d0c3158adda8ba258becfc0e347267c0f2f0112738ec732be6dcb5477342e88e",
+    "one_round_cases": 1000,
+    "status": "PASS",
+    "twenty_round_cases": 1
+  },
+  "pair_boundary_commutation": {
+    "all_commutations_unsat": true,
+    "equations": "P(x + A) == P(x) + D and P(x + A) == P(x) xor E, where P is the next BSWAP-after-rotate permutation",
+    "results": [
+      {
+        "candidate_tail": "A",
+        "first_add": "0x5d0f3a8e2c6b4197",
+        "next_linear": "BSWAP(ROL(x,14))",
+        "status": "UNSAT_ON_WITNESSES",
+        "word": 0
+      },
+      {
+        "candidate_tail": "X",
+        "first_add": "0x5d0f3a8e2c6b4197",
+        "next_linear": "BSWAP(ROL(x,14))",
+        "status": "UNSAT_ON_WITNESSES",
+        "word": 0
+      },
+      {
+        "candidate_tail": "A",
+        "first_add": "0xa7e2d9c4b1f60853",
+        "next_linear": "BSWAP(ROL(x,29))",
+        "status": "UNSAT_ON_WITNESSES",
+        "word": 1
+      },
+      {
+        "candidate_tail": "X",
+        "first_add": "0xa7e2d9c4b1f60853",
+        "next_linear": "BSWAP(ROL(x,29))",
+        "status": "UNSAT_ON_WITNESSES",
+        "word": 1
+      },
+      {
+        "candidate_tail": "A",
+        "first_add": "0x3c6e9a1d5b7f2840",
+        "next_linear": "BSWAP(ROL(x,7))",
+        "status": "UNSAT_ON_WITNESSES",
+        "word": 2
+      },
+      {
+        "candidate_tail": "X",
+        "first_add": "0x3c6e9a1d5b7f2840",
+        "next_linear": "BSWAP(ROL(x,7))",
+        "status": "UNSAT_ON_WITNESSES",
+        "word": 2
+      },
+      {
+        "candidate_tail": "A",
+        "first_add": "0x8f4a2c1e9b7d3f61",
+        "next_linear": "BSWAP(ROL(x,43))",
+        "status": "UNSAT_ON_WITNESSES",
+        "word": 3
+      },
+      {
+        "candidate_tail": "X",
+        "first_add": "0x8f4a2c1e9b7d3f61",
+        "next_linear": "BSWAP(ROL(x,43))",
+        "status": "UNSAT_ON_WITNESSES",
+        "word": 3
+      }
+    ]
+  },
+  "pair_single_deletion_search": {
+    "all_deletions_unsat": true,
+    "pairs": [
+      {
+        "deletions": [
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 0,
+            "deleted_operation": "R",
+            "remaining_template": "XBARXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 1,
+            "deleted_operation": "X",
+            "remaining_template": "RBARXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 2,
+            "deleted_operation": "B",
+            "remaining_template": "RXARXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 3,
+            "deleted_operation": "A",
+            "remaining_template": "RXBRXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 4,
+            "deleted_operation": "R",
+            "remaining_template": "RXBAXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 5,
+            "deleted_operation": "X",
+            "remaining_template": "RXBARBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 6,
+            "deleted_operation": "B",
+            "remaining_template": "RXBARXA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 7,
+            "deleted_operation": "A",
+            "remaining_template": "RXBARXB",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          }
+        ],
+        "word": 0
+      },
+      {
+        "deletions": [
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 0,
+            "deleted_operation": "R",
+            "remaining_template": "XBARXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 1,
+            "deleted_operation": "X",
+            "remaining_template": "RBARXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 2,
+            "deleted_operation": "B",
+            "remaining_template": "RXARXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 3,
+            "deleted_operation": "A",
+            "remaining_template": "RXBRXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 4,
+            "deleted_operation": "R",
+            "remaining_template": "RXBAXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 5,
+            "deleted_operation": "X",
+            "remaining_template": "RXBARBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 6,
+            "deleted_operation": "B",
+            "remaining_template": "RXBARXA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 7,
+            "deleted_operation": "A",
+            "remaining_template": "RXBARXB",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          }
+        ],
+        "word": 1
+      },
+      {
+        "deletions": [
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 0,
+            "deleted_operation": "R",
+            "remaining_template": "XBARXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 1,
+            "deleted_operation": "X",
+            "remaining_template": "RBARXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 2,
+            "deleted_operation": "B",
+            "remaining_template": "RXARXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 3,
+            "deleted_operation": "A",
+            "remaining_template": "RXBRXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 4,
+            "deleted_operation": "R",
+            "remaining_template": "RXBAXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 5,
+            "deleted_operation": "X",
+            "remaining_template": "RXBARBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 6,
+            "deleted_operation": "B",
+            "remaining_template": "RXBARXA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 7,
+            "deleted_operation": "A",
+            "remaining_template": "RXBARXB",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          }
+        ],
+        "word": 2
+      },
+      {
+        "deletions": [
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 0,
+            "deleted_operation": "R",
+            "remaining_template": "XBARXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 1,
+            "deleted_operation": "X",
+            "remaining_template": "RBARXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 2,
+            "deleted_operation": "B",
+            "remaining_template": "RXARXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 3,
+            "deleted_operation": "A",
+            "remaining_template": "RXBRXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 4,
+            "deleted_operation": "R",
+            "remaining_template": "RXBAXBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 5,
+            "deleted_operation": "X",
+            "remaining_template": "RXBARBA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 6,
+            "deleted_operation": "B",
+            "remaining_template": "RXBARXA",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          },
+          {
+            "cegis_iterations": 0,
+            "deleted_index": 7,
+            "deleted_operation": "A",
+            "remaining_template": "RXBARXB",
+            "status": "UNSAT_ON_WITNESSES",
+            "witness_count": 24
+          }
+        ],
+        "word": 3
+      }
+    ],
+    "scope": "Delete one operation from RXBARXBA, retain the remaining rotation amounts and order, and resynthesize every remaining XOR/ADD constant."
+  },
+  "probe_source": {
+    "path": "solutions/02_optimization/two_round_chain_probe_02.c",
+    "sha256": "55203ba713e0aae7b9744b31f5e7b2a5fe4b89d370472e59745b8e5af172fadb"
+  },
+  "random_identity_check": {
+    "cases": 100000,
+    "random_state_and_constants": true,
+    "seed": "0xbb67ae8584caa73b",
+    "status": "PASS"
+  },
+  "schema_version": 1,
+  "solver": {
+    "method": "64-bit CEGIS; UNSAT on the finite witness constraints is already a valid obstruction to a universal identity",
+    "name": "Z3",
+    "timeout_ms_per_check": 10000,
+    "version": "4.16.0"
+  },
+  "source": {
+    "path": "submissions/02/contest.c",
+    "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+  },
+  "stage_length_three_search": {
+    "all_templates_unsat": true,
+    "grammar": {
+      "A": "ADD modulo 2^64 by an arbitrary 64-bit constant",
+      "B": "BSWAP64",
+      "R": "ROL by an arbitrary amount 1..63",
+      "X": "XOR by an arbitrary 64-bit constant"
+    },
+    "searched_length": 3,
+    "shorter_sequence_padding": "Any length-0/1/2 expression is included by padding it with XOR 0.",
+    "stages": [
+      {
+        "add_constant": "0x5d0f3a8e2c6b4197",
+        "all_length_three_templates_unsat": true,
+        "non_unsat_templates": [],
+        "rotation": 43,
+        "stage_id": 0,
+        "stage_occurrences": [
+          0,
+          7
+        ],
+        "status_counts": {
+          "UNSAT_ON_WITNESSES": 64
+        },
+        "xor_constant": "0xe7b92d4a6c1f8035"
+      },
+      {
+        "add_constant": "0x8f4a2c1e9b7d3f61",
+        "all_length_three_templates_unsat": true,
+        "non_unsat_templates": [],
+        "rotation": 14,
+        "stage_id": 1,
+        "stage_occurrences": [
+          1,
+          6
+        ],
+        "status_counts": {
+          "UNSAT_ON_WITNESSES": 64
+        },
+        "xor_constant": "0x6b2e9d1a4f7c3085"
+      },
+      {
+        "add_constant": "0xa7e2d9c4b1f60853",
+        "all_length_three_templates_unsat": true,
+        "non_unsat_templates": [],
+        "rotation": 7,
+        "stage_id": 2,
+        "stage_occurrences": [
+          2,
+          5
+        ],
+        "status_counts": {
+          "UNSAT_ON_WITNESSES": 64
+        },
+        "xor_constant": "0x1a4f8c3e9d2b6074"
+      },
+      {
+        "add_constant": "0x3c6e9a1d5b7f2840",
+        "all_length_three_templates_unsat": true,
+        "non_unsat_templates": [],
+        "rotation": 29,
+        "stage_id": 3,
+        "stage_occurrences": [
+          3,
+          4
+        ],
+        "status_counts": {
+          "UNSAT_ON_WITNESSES": 64
+        },
+        "xor_constant": "0xc3f05a2e8d6194b7"
+      }
+    ],
+    "template_count_per_stage": 64
+  },
+  "witnesses": {
+    "seed": "0x3c6ef372fe94f82b",
+    "sha256_little_endian_u64": "0d0ea5d4ab6df41229721df21a3cff010896ffe335ed67301f1516e552a12c7a",
+    "values": [
+      "0x0000000000000000",
+      "0x0000000000000001",
+      "0xffffffffffffffff",
+      "0x8000000000000000",
+      "0x7fffffffffffffff",
+      "0x0123456789abcdef",
+      "0xfedcba9876543210",
+      "0x5555555555555555",
+      "0xaaaaaaaaaaaaaaaa",
+      "0x5041936d7f5ec5a0",
+      "0x97befebb414cafb9",
+      "0xca4f4f44d7058c23",
+      "0x2612259605dd6be9",
+      "0xad53666e36d14a17",
+      "0xdd29a070fe5ea0d3",
+      "0x515729f1175c86dc",
+      "0x319adadc86fcdb92",
+      "0xc272831720bbd25b",
+      "0x69ad6a192644e58e",
+      "0xf28ba002a5c6b805",
+      "0x29719be7bc167b47",
+      "0xff7e8ce2c1841f74",
+      "0xd18326ceb184f508",
+      "0xb8747fc0fbed909a"
+    ]
+  },
+  "xor_add_reordering": {
+    "all_reorderings_unsat": true,
+    "equation": "(x xor K) + A == (x + D) xor E",
+    "results": [
+      {
+        "add_constant": "0x5d0f3a8e2c6b4197",
+        "stage_id": 0,
+        "stage_occurrences": [
+          0,
+          7
+        ],
+        "status": "UNSAT_ON_WITNESSES",
+        "xor_after_bswap": "0x35801f6c4a2db9e7"
+      },
+      {
+        "add_constant": "0x8f4a2c1e9b7d3f61",
+        "stage_id": 1,
+        "stage_occurrences": [
+          1,
+          6
+        ],
+        "status": "UNSAT_ON_WITNESSES",
+        "xor_after_bswap": "0x85307c4f1a9d2e6b"
+      },
+      {
+        "add_constant": "0xa7e2d9c4b1f60853",
+        "stage_id": 2,
+        "stage_occurrences": [
+          2,
+          5
+        ],
+        "status": "UNSAT_ON_WITNESSES",
+        "xor_after_bswap": "0x74602b9d3e8c4f1a"
+      },
+      {
+        "add_constant": "0x3c6e9a1d5b7f2840",
+        "stage_id": 3,
+        "stage_occurrences": [
+          3,
+          4
+        ],
+        "status": "UNSAT_ON_WITNESSES",
+        "xor_after_bswap": "0xb794618d2e5af0c3"
+      }
+    ]
+  }
+}

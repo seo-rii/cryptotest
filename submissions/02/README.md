@@ -113,6 +113,40 @@ and
 These are static filters, not 255H measurements; AMD diagnostics disagreed by
 CPU, so none is promoted.
 
+A sixth wave adds a structurally different target-only candidate.  After two
+rounds the word reversal cancels, so
+[`contest_simd_avx2_lanewise.c`](../../solutions/02_optimization/contest_simd_avx2_lanewise.c)
+places the four independent chains in four YMM lanes.  A reproducible
+12-variant constant-residency screen reduced its exact GCC 13.3 timed loop from
+124 instructions/587 bytes/two hot loads to **122 instructions/579 bytes/no hot
+memory**.  The loop contains exactly 20 each of `VPSLLVQ`, `VPSRLVQ`, `VPOR`,
+`VPXOR`, `VPSHUFB`, and `VPADDQ`, plus `SUB/JNE`.  The cleanup itself tied the
+previous vector form at 1.0013x (paired 95% CI 0.9983--1.0039).
+
+Against the scalar incumbent, two balanced AMD/GCC12 campaigns used six
+discarded warm-ups, 32 samples, 3,000,000 calls per sample, and the direct
+100,000-case random-state/random-constant gate.  CPU 1 measured 46.927/36.690 ns
+and paired **1.275x** (CI 1.260--1.292); CPU 3 measured 45.938/36.724 ns and
+paired **1.248x** (1.222--1.269).  In contrast, CPU 2 measured 34.354/36.569 ns
+and paired **0.940x** (0.923--0.950), reversing the ordering.  The raw results are
+[`avx2_confirm_02_cpu1.json`](../../solutions/02_optimization/avx2_confirm_02_cpu1.json)
+and
+[`avx2_confirm_02_cpu3.json`](../../solutions/02_optimization/avx2_confirm_02_cpu3.json).
+Together they make AVX2 the leading 255H experiment, but not a submission
+replacement: even this VM's physical affinities disagree, and its compiler and
+microarchitecture differ from the judge.
+
+The same pass also closed three alternatives.  A compact pair loop showed
+1.035x in its first screen but only 1.0004x (CI 0.9855--1.0176) in a larger
+confirmation.  Z3 and exhaustive bit-permutation searches found no shorter
+two-round scalar expression in the stated rotate/XOR/byte-swap/add grammar.
+Finally, 47 extra exact-GCC13 and 53 Clang 21 target/scheduler combinations
+produced no stream better than the existing static proxy.  Reproduction and
+scope limits are in the
+[`SIMD screen`](../../solutions/02_optimization/simd_results_02.json),
+[`superoptimization result`](../../solutions/02_optimization/two_round_superopt_results_02.json),
+and [`toolchain screen`](../../solutions/02_optimization/255h_toolchain_screen_02.json).
+
 On the actual 255H, use
 [`../../solutions/02_optimization/autotune_02_255h.py`](../../solutions/02_optimization/autotune_02_255h.py)
 to probe P/E/LP-E topology, screen candidates, run two-session holdout
@@ -127,4 +161,7 @@ protocols. Fresh campaign ids plus canonical evidence and paired-sample hashes
 reject renamed or whitespace-modified copies of an earlier run.  Nested
 topology/cache records also fail closed, and an expanded balanced 15-case smoke
 passed all 15 direct verifications and all 15 measured-binary audits.  Those
-1,000-call smoke timings are tool regression evidence only.
+1,000-call smoke timings are tool regression evidence only.  The current
+19-case manifest, including three partial-unroll controls and lane-wise AVX2,
+also passed 19/19 direct verifications and 19/19 measured-binary audits; its
+AVX2 loop was exactly 122 instructions, 579 bytes, and memory-free.

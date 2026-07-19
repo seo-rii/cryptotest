@@ -1,3 +1,4 @@
+#include <immintrin.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -84,7 +85,7 @@ static inline uint64_t bswap64_portable(uint64_t x) {
 #endif
 }
 
-#if defined(__GNUC__) && !defined(__clang__) && defined(__BMI2__)
+#if defined(__GNUC__) && !defined(__clang__) && (defined(__BMI2__) || defined(CH2_SIMD_INLINE))
 #define PERMUTE20_ATTRIBUTE                                                   \
     __attribute__((always_inline, optimize("no-tree-vectorize"))) inline
 #elif defined(__GNUC__) && !defined(__clang__)
@@ -107,84 +108,71 @@ static inline uint64_t transform_word(uint64_t value,
 }
 
 /*
- * Reversing the four words twice restores their original positions.  Grouping
- * rounds in pairs therefore exposes four independent scalar dependency chains.
+ * After two rounds the word reversal cancels.  Keep the four independent
+ * chains in four AVX2 lanes; variable shifts implement their distinct rotates.
  */
-#define APPLY_TWO_ROUNDS()                                                    \
+static inline __m256i keep_in_vector_register(__m256i value) {
+    __asm__("" : "+x"(value));
+    return value;
+}
+
+static inline __m256i rotl64_lanes_avx2(__m256i value,
+                                        __m256i left,
+                                        __m256i right) {
+    return _mm256_or_si256(_mm256_sllv_epi64(value, left),
+                           _mm256_srlv_epi64(value, right));
+}
+
+#define APPLY_TWO_ROUNDS_AVX2()                                               \
     do {                                                                      \
-        x2 = transform_word(transform_word(x2, 29U, k2, a1), 7U, k1, a2);    \
-        x1 = transform_word(transform_word(x1, 7U, k1, a2), 29U, k2, a1);    \
-        x0 = transform_word(transform_word(x0, 43U, k0, a3), 14U, k3, a0);   \
-        x3 = transform_word(transform_word(x3, 14U, k3, a0), 43U, k0, a3);   \
+        value = rotl64_lanes_avx2(value, left_forward, right_forward);        \
+        value = _mm256_xor_si256(value, xor_forward);                         \
+        value = _mm256_shuffle_epi8(value, byte_swap);                        \
+        value = _mm256_add_epi64(value, add_reverse);                         \
+        value = rotl64_lanes_avx2(value, left_reverse, right_reverse);        \
+        value = _mm256_xor_si256(value, xor_reverse);                         \
+        value = _mm256_shuffle_epi8(value, byte_swap);                        \
+        value = _mm256_add_epi64(value, add_forward);                         \
     } while (0)
 
 PERMUTE20_ATTRIBUTE static void permute_20rounds_unrolled(
     state256_t *restrict state,
     const uint64_t constants1[restrict 4],
     const uint64_t constants2[restrict 4]) {
-    uint64_t x0 = state->w[0];
-    uint64_t x1 = state->w[1];
-    uint64_t x2 = state->w[2];
-    uint64_t x3 = state->w[3];
-    const uint64_t a0 = constants1[0];
-    const uint64_t a1 = constants1[1];
-    const uint64_t a2 = constants1[2];
-    const uint64_t a3 = constants1[3];
-    const uint64_t k0 = constants2[0];
-    const uint64_t k1 = constants2[1];
-    const uint64_t k2 = constants2[2];
-    const uint64_t k3 = constants2[3];
+    __m256i value = _mm256_loadu_si256((const __m256i *)(const void *)state);
+    __m256i add_forward =
+        _mm256_loadu_si256((const __m256i *)(const void *)constants1);
+    __m256i xor_forward =
+        _mm256_loadu_si256((const __m256i *)(const void *)constants2);
+    const __m256i add_reverse =
+        _mm256_permute4x64_epi64(add_forward, _MM_SHUFFLE(0, 1, 2, 3));
+    const __m256i xor_reverse =
+        _mm256_permute4x64_epi64(xor_forward, _MM_SHUFFLE(0, 1, 2, 3));
+    const __m256i left_forward = _mm256_setr_epi64x(43, 7, 29, 14);
+    const __m256i right_forward = _mm256_setr_epi64x(21, 57, 35, 50);
+    const __m256i left_reverse = _mm256_setr_epi64x(14, 29, 7, 43);
+    const __m256i right_reverse = _mm256_setr_epi64x(50, 35, 57, 21);
+    const __m256i byte_swap = _mm256_setr_epi8(
+        7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8,
+        7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8);
+    add_forward = keep_in_vector_register(add_forward);
+    xor_forward = keep_in_vector_register(xor_forward);
 
-#ifndef P2_PAIR_BLOCK
-#define P2_PAIR_BLOCK 10
-#endif
+    APPLY_TWO_ROUNDS_AVX2();
+    APPLY_TWO_ROUNDS_AVX2();
+    APPLY_TWO_ROUNDS_AVX2();
+    APPLY_TWO_ROUNDS_AVX2();
+    APPLY_TWO_ROUNDS_AVX2();
+    APPLY_TWO_ROUNDS_AVX2();
+    APPLY_TWO_ROUNDS_AVX2();
+    APPLY_TWO_ROUNDS_AVX2();
+    APPLY_TWO_ROUNDS_AVX2();
+    APPLY_TWO_ROUNDS_AVX2();
 
-#if P2_PAIR_BLOCK == 1
-    unsigned int blocks = 10U;
-    __asm__ __volatile__("" : "+r"(blocks));
-    do {
-        APPLY_TWO_ROUNDS();
-    } while (--blocks != 0U);
-#elif P2_PAIR_BLOCK == 2
-    unsigned int blocks = 5U;
-    __asm__ __volatile__("" : "+r"(blocks));
-    do {
-        APPLY_TWO_ROUNDS();
-        APPLY_TWO_ROUNDS();
-    } while (--blocks != 0U);
-#elif P2_PAIR_BLOCK == 5
-    unsigned int blocks = 2U;
-    __asm__ __volatile__("" : "+r"(blocks));
-    do {
-        APPLY_TWO_ROUNDS();
-        APPLY_TWO_ROUNDS();
-        APPLY_TWO_ROUNDS();
-        APPLY_TWO_ROUNDS();
-        APPLY_TWO_ROUNDS();
-    } while (--blocks != 0U);
-#elif P2_PAIR_BLOCK == 10
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-#else
-#error "P2_PAIR_BLOCK must be one of 1, 2, 5, or 10"
-#endif
-
-    state->w[0] = x0;
-    state->w[1] = x1;
-    state->w[2] = x2;
-    state->w[3] = x3;
+    _mm256_storeu_si256((__m256i *)(void *)state, value);
 }
 
-#undef APPLY_TWO_ROUNDS
-#undef P2_PAIR_BLOCK
+#undef APPLY_TWO_ROUNDS_AVX2
 #undef PERMUTE20_ATTRIBUTE
 
 /* -------------------------------------------------

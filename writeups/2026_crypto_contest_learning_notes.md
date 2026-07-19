@@ -11,7 +11,7 @@
 | 번호 | 주제 | 상태 | 최종 결과 | 상세 writeup |
 |---:|---|---|---|---|
 | 1 | 고전 암호와 분류 | 완료 | Caesar shift `6`, Vigenère key `KLVOJ`, 재현 가능한 분류 모델과 식별 불가능성 분석 | [01_암호분석](01_암호분석.md) |
-| 2 | 256비트 permutation 구현 | 현 incumbent 완료·source/backend 255H 후보 추가·실측 미정 | `rot={43,7,29,14}`, 2-round scalar full-unroll과 adaptive BMI2 cross-call inline | [02_암호구현](02_암호구현.md) |
+| 2 | 256비트 permutation 구현 | scalar incumbent 완료·122-insn AVX2/255H 후보 추가·target 실측 미정 | `rot={43,7,29,14}`, 2-round scalar full-unroll과 4-lane AVX2 | [02_암호구현](02_암호구현.md) |
 | 3 | TLS 1.2 AES-GCM 위조 | 완료 | nonce 재사용으로 `H`와 `E_K(J0)`를 복원하고 유효한 급여 변경 record 생성 | [03_네트워크보안](03_네트워크보안.md) |
 | 4 | LLM weight steganography | 완료 | `CRYPTO{G00D_J0B!_y0u_f0und_7h3_h1dd3n_s3cr37_1n_LLM}` 추출 | [04_디지털포렌식](04_디지털포렌식.md) |
 | 5 | textbook-BGV | 완료 | ternary secret 64계수, 날짜 `20260410→20260411`, 고정 `State` 복원 | [05_동형암호](05_동형암호.md) |
@@ -75,6 +75,14 @@
   109/109 build audit와 shortlist의 임의 state/상수 100,000건이 통과했지만,
   모델은 Lion Cove/Skymont 실측이 아니고 AMD 보조 결과도 엇갈렸다.
   따라서 새 255H A/B 후보로만 보존하고 incumbent는 유지했다.
+- 6차 탐색에서는 두 라운드 뒤 생기는 네 독립 chain을 YMM 네 lane에 놓아
+  exact GCC 13.3 loop를 122 instructions/579 bytes/hot memory 0으로 줄였다.
+  warm-up 6회 뒤 32 samples의 AMD CPU 1/3에서는 scalar 대비
+  `1.275x (1.260--1.292)`, `1.248x (1.222--1.269)`였지만 CPU 2에서는
+  `0.940x (0.923--0.950)`로 순위가 뒤집혔다. 따라서 AVX2는 최우선 255H
+  후보일 뿐 incumbent는 아니다. 부분 pair loop의 첫 `1.035x`도 더 큰
+  확인에서 `1.0004x (0.9855--1.0176)`로 사라졌다. Z3/완전탐색으로 제한된
+  rotate/XOR/BSWAP/ADD grammar의 연산 삭제 32개가 모두 UNSAT임도 기록했다.
 - `autotune_02_255h.py`는 pinned CPUID와 Linux topology로 P/E/LP-E를 보수적으로
   분류하고 `probe → screen → confirm → decide`를 실행한다. 두 session·core type별
   두 physical core·correctness/assembly gate가 갖춰지지 않으면 winner 대신
@@ -87,6 +95,8 @@
   배열의 malformed nested 원소도 fail-closed한다. 8-case 초기 통합 smoke로
   portable control의 누락된 inline flag를 찾아 고쳤고, 확장된 15-case
   screen은 15개 직접 검증과 15개 assembly audit를 모두 통과했다.
+  부분 언롤과 AVX2를 더한 최신 19-case screen도 19/19 직접 검증과 19/19
+  assembly audit를 통과했으며, 짧은 smoke timing은 성능 근거로 쓰지 않았다.
 - 측정 도구와 raw 기록은 [02 optimization README](../solutions/02_optimization/README.md),
   [deep review](../solutions/02_optimization/deep_review_02.md),
   [inline raw samples](../solutions/02_optimization/inline_results_02.json),

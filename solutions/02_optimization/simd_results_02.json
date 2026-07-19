@@ -1,0 +1,2673 @@
+{
+  "all_checks_passed": true,
+  "candidate_designs": {
+    "avx2": "four independent two-round chains in four YMM lanes; each lane-wise rotate is VPSLLVQ+VPSRLVQ+VPOR; two non-volatile +x identity helpers keep dynamic forward constants resident and eliminate all timed-loop memory operands under GCC 13.3",
+    "sse2": "two chains per XMM; compute both immediate rotates and select lanes, with five-instruction SSE2 byte swap"
+  },
+  "checks": {
+    "all_12_residency_variants_verified_and_audited": true,
+    "hoist_confirmation_used_only_requested_cpu": true,
+    "hoist_confirmation_verified_all_dynamic_candidates": true,
+    "hoisted_vs_current_runtime_ci_includes_tie": true,
+    "host_measured_binary_audits_passed": true,
+    "host_random_state_and_constants_100k_passed": true,
+    "identity_helper_removes_timed_loop_memory_operands": true,
+    "pinned_gcc_is_exact_13_3_0": true,
+    "pinned_gcc_random_state_and_constants_100k_passed": true,
+    "simd_loops_have_no_calls_or_push_pop": true,
+    "source_hashes_match": true,
+    "static_binary_audits_passed": true
+  },
+  "constant_residency_host_confirmation": {
+    "artifact_sha256": "b5f415ec68af318e977a76b3579c77e78876b3486f919b9180c1077163c95d49",
+    "assembly_audits": {
+      "avx2_current": {
+        "binary_sha256": "d288e0a78057db92ffd3bf33c62ac0828d7bb5e99f0176551b60dddc7994d508",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "errors": [],
+        "legacy_addressed_loop_sha256": "04c666aa9b3c0ba253a54e34755ee87d123c21995f5f1b70c1f91910392ab6bd",
+        "loop_bytes": 587,
+        "loop_instructions": 124,
+        "loop_start": "0x1530",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 2,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vmovdqa": 2,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "mode": "report-only",
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "3f725cb15b4b9e78da81700f33377ae867eb4364cb27ac0cb75c50b0208b6d1f",
+        "push_pop": 0,
+        "status": "PASS",
+        "text_bytes": 6584
+      },
+      "avx2_hoisted": {
+        "binary_sha256": "d7a8eceaea96730648cd4d749fb201612668f6a59c136f0c0f53d978d0fb5ba8",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "errors": [],
+        "legacy_addressed_loop_sha256": "86c3330762547729d81566a3c0bdc1d7bd062e974f4eb95c49778f076befb776",
+        "loop_bytes": 579,
+        "loop_instructions": 122,
+        "loop_start": "0x1540",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 0,
+        "loop_start_mod_64": 0,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "mode": "report-only",
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+        "push_pop": 0,
+        "status": "PASS",
+        "text_bytes": 6600
+      },
+      "scalar": {
+        "binary_sha256": "bd3a86020dcda7924d60da89a3a362fcbdcef75d844a3aa5f65959387cb7431d",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 80,
+          "bswap": 80,
+          "rotate": 80,
+          "xor": 80
+        },
+        "errors": [],
+        "legacy_addressed_loop_sha256": "fc3de2566570551bc966fb779d907a187f88f269d7100324e4fe14322c77d7e7",
+        "loop_bytes": 1216,
+        "loop_instructions": 322,
+        "loop_start": "0x1550",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 16,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "add": 74,
+          "bswap": 80,
+          "jne": 1,
+          "lea": 6,
+          "rorx": 80,
+          "sub": 1,
+          "xor": 80
+        },
+        "mode": "full-inline-320",
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "6b803105c59776a62b75848692307bbe611286ee1d1806d23c4577f974dc2683",
+        "push_pop": 0,
+        "status": "PASS",
+        "text_bytes": 7561
+      }
+    },
+    "campaign_id": "simd-hoist-cpu2",
+    "candidate_verification": {
+      "avx2_current": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "verifier_link_cflags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "verifier_only_flag_overrides": [],
+        "verifier_translation_unit_cflags": [
+          "-O3",
+          "-std=c11",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror"
+        ]
+      },
+      "avx2_hoisted": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "verifier_link_cflags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "verifier_only_flag_overrides": [],
+        "verifier_translation_unit_cflags": [
+          "-O3",
+          "-std=c11",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror"
+        ]
+      },
+      "scalar": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "verifier_link_cflags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mbmi2",
+          "-finline-limit=2000"
+        ],
+        "verifier_only_flag_overrides": [],
+        "verifier_translation_unit_cflags": [
+          "-O3",
+          "-std=c11",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror"
+        ]
+      }
+    },
+    "comparisons_against_scalar": {
+      "avx2_current": {
+        "paired_bootstrap_ci95_high": 0.9505378413110201,
+        "paired_bootstrap_ci95_low": 0.9251514832496726,
+        "paired_mad": 0.022496752165026168,
+        "paired_median": 0.9396861614857593,
+        "paired_p05": 0.8831442545976975,
+        "paired_p95": 0.994163166143774,
+        "ratio_of_medians": 0.9364071252368038
+      },
+      "avx2_hoisted": {
+        "paired_bootstrap_ci95_high": 0.9497938994229185,
+        "paired_bootstrap_ci95_low": 0.9232773754663155,
+        "paired_mad": 0.02389382269398682,
+        "paired_median": 0.94038495376282,
+        "paired_p05": 0.8821780535527644,
+        "paired_p95": 1.003424149349392,
+        "ratio_of_medians": 0.939415898712024
+      }
+    },
+    "config": {
+      "bootstrap_resamples": 5000,
+      "candidate_random_differential": true,
+      "candidate_random_differential_cases": 100000,
+      "iterations": 3000000,
+      "official_iterations": 1000000,
+      "oracle_selftest_random_cases": 100000,
+      "order": "balanced-cyclic-reversed",
+      "random_differential_cases": 100000,
+      "samples_per_case": 32,
+      "warmups": 6
+    },
+    "direct_hoisted_vs_current": {
+      "baseline": "avx2_current",
+      "bootstrap_resamples": 5000,
+      "bootstrap_seed": "0xd1b54a32d192ed05",
+      "candidate": "avx2_hoisted",
+      "conclusion": "statistical tie: the paired 95% bootstrap interval includes 1.0",
+      "paired_bootstrap_ci95_high": 1.0039215083594055,
+      "paired_bootstrap_ci95_low": 0.9983308039061092,
+      "paired_mad": 0.005166707467161302,
+      "paired_median": 1.0012732142057676,
+      "paired_p05": 0.9824133801648849,
+      "paired_p95": 1.0169199005370768,
+      "ratio_of_medians": 1.0032131039951873,
+      "samples": 32,
+      "speedup_definition": "current_ns / hoisted_ns"
+    },
+    "environment": {
+      "affinity": [
+        2
+      ],
+      "compiler": "gcc (Debian 12.2.0-14+deb12u1) 12.2.0",
+      "cpu": "AMD EPYC 7B12",
+      "flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror"
+      ],
+      "host": "Linux-6.1.0-51-cloud-amd64-x86_64-with-glibc2.36",
+      "inner_timer": "clock()",
+      "objdump": "GNU objdump (GNU Binutils for Debian) 2.40",
+      "outer_timer": "time.perf_counter_ns",
+      "size_tool": "GNU size (GNU Binutils for Debian) 2.40"
+    },
+    "internal_ns_per_20round": {
+      "avx2_current": [
+        36.519000000000005,
+        36.881,
+        36.828,
+        36.689,
+        37.001,
+        36.684000000000005,
+        36.778,
+        36.769000000000005,
+        36.604,
+        36.497,
+        36.821,
+        36.859,
+        36.564,
+        36.64,
+        36.631,
+        36.537,
+        37.011,
+        36.787,
+        36.769999999999996,
+        36.677,
+        36.388,
+        36.426,
+        36.303000000000004,
+        36.854,
+        36.405,
+        36.263,
+        36.763,
+        36.917,
+        37.957,
+        35.969,
+        36.776,
+        36.464999999999996
+      ],
+      "avx2_hoisted": [
+        36.409,
+        36.474,
+        36.731,
+        36.934000000000005,
+        36.951,
+        35.943999999999996,
+        36.756,
+        36.737,
+        36.65,
+        36.392,
+        36.574000000000005,
+        36.353,
+        36.746,
+        36.711,
+        37.653,
+        36.559000000000005,
+        38.036,
+        36.562999999999995,
+        36.568999999999996,
+        36.501,
+        36.456,
+        36.329,
+        36.667,
+        36.407000000000004,
+        36.481,
+        36.568999999999996,
+        36.39,
+        36.873000000000005,
+        36.594,
+        36.127,
+        36.422999999999995,
+        36.691
+      ],
+      "scalar": [
+        32.855000000000004,
+        34.410000000000004,
+        37.156,
+        35.848,
+        36.045,
+        36.886,
+        36.221999999999994,
+        34.534,
+        34.478,
+        32.334,
+        35.434,
+        35.181999999999995,
+        34.118,
+        33.903000000000006,
+        33.603,
+        33.607,
+        33.260999999999996,
+        33.504,
+        34.687999999999995,
+        35.131,
+        33.659,
+        34.297000000000004,
+        34.196999999999996,
+        36.289,
+        35.047000000000004,
+        34.729000000000006,
+        34.563,
+        34.163,
+        33.391999999999996,
+        30.267,
+        33.387,
+        33.251000000000005
+      ]
+    },
+    "measurement_protocol_fingerprint_sha256": "f33dcff5431c18df6b1a5ea2e541d2dbf5e5638ee9c4e19f86f9d9a9bae6ce0e",
+    "outer_wall_seconds": {
+      "avx2_current": [
+        0.112813016,
+        0.114668766,
+        0.114925966,
+        0.114569575,
+        0.115959494,
+        0.123454034,
+        0.114223395,
+        0.113662836,
+        0.113706496,
+        0.112744056,
+        0.114185944,
+        0.114077845,
+        0.113437136,
+        0.113787696,
+        0.113969286,
+        0.113120095,
+        0.114726945,
+        0.113931556,
+        0.113679435,
+        0.113743185,
+        0.113310785,
+        0.113086435,
+        0.112086565,
+        0.113753166,
+        0.112250725,
+        0.113051716,
+        0.114354885,
+        0.113895315,
+        0.117015244,
+        0.110937316,
+        0.114515875,
+        0.112786216
+      ],
+      "avx2_hoisted": [
+        0.112451425,
+        0.113336275,
+        0.113533576,
+        0.115032145,
+        0.114900385,
+        0.112520356,
+        0.113747115,
+        0.113710305,
+        0.113630265,
+        0.113354125,
+        0.113043526,
+        0.112329016,
+        0.113732415,
+        0.113940805,
+        0.116815996,
+        0.113535096,
+        0.117589965,
+        0.113475796,
+        0.113182826,
+        0.113089746,
+        0.113289965,
+        0.112141445,
+        0.114474196,
+        0.112950555,
+        0.112961786,
+        0.113910136,
+        0.112472936,
+        0.114156536,
+        0.113755615,
+        0.111692276,
+        0.113482725,
+        0.113949635
+      ],
+      "scalar": [
+        0.101690537,
+        0.107641896,
+        0.115820215,
+        0.111653826,
+        0.112227705,
+        0.15515597,
+        0.114015595,
+        0.107091796,
+        0.107687506,
+        0.100619657,
+        0.109832916,
+        0.109932886,
+        0.105586176,
+        0.106178416,
+        0.104026456,
+        0.105088187,
+        0.103141077,
+        0.103985316,
+        0.107612636,
+        0.108712516,
+        0.104182717,
+        0.106660966,
+        0.106264216,
+        0.112237656,
+        0.108713587,
+        0.107490596,
+        0.106957586,
+        0.105921657,
+        0.103755676,
+        0.093937418,
+        0.104100046,
+        0.102947287
+      ]
+    },
+    "qualification": "CPU-pinned balanced AMD host confirmation after the pinned GCC static screen; it establishes a runtime tie, not a 255H speedup",
+    "sources": {
+      "avx2_current": {
+        "case_cflags": [
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "path": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+        "rewritten_sha256": "41a1064e38b62ac4876fb577fb68d87c7d2a16edf1e0b03c936318f0674c20ed",
+        "sha256": "e9bc8537e8d66a1ed101277ac826bb476c8215b15bb9603df0c64ec2190f34fa"
+      },
+      "avx2_hoisted": {
+        "case_cflags": [
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "path": "/tmp/ch2-hoist/sources/identity_helper.c",
+        "rewritten_sha256": "c122e17ed0e06279273877e26fd33b2460a398486a723cb56bfc82c3feff1f4f",
+        "sha256": "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751"
+      },
+      "scalar": {
+        "case_cflags": [
+          "-mbmi2",
+          "-finline-limit=2000"
+        ],
+        "path": "submissions/02/contest.c",
+        "rewritten_sha256": "4cfbd50bfb64f320c84f502dc08f9420f99e9aedc4e9c1e53adfce2d5c05b13c",
+        "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+      }
+    },
+    "summaries": {
+      "avx2_current": {
+        "bootstrap_median_ci95_high_ns": 36.778,
+        "bootstrap_median_ci95_low_ns": 36.564,
+        "mad_ns": 0.15850000000000009,
+        "mad_percent": 0.4320390334319166,
+        "max_ns": 37.957,
+        "median_ns": 36.6865,
+        "min_ns": 35.969,
+        "outliers_beyond_3mad": 2,
+        "p05_ns": 36.285000000000004,
+        "p25_ns": 36.51350000000001,
+        "p75_ns": 36.82275,
+        "p95_ns": 37.0055
+      },
+      "avx2_hoisted": {
+        "bootstrap_median_ci95_high_ns": 36.680499999999995,
+        "bootstrap_median_ci95_low_ns": 36.474,
+        "mad_ns": 0.16099999999999426,
+        "mad_percent": 0.4402636112554193,
+        "max_ns": 38.036,
+        "median_ns": 36.568999999999996,
+        "min_ns": 35.943999999999996,
+        "outliers_beyond_3mad": 3,
+        "p05_ns": 36.2381,
+        "p25_ns": 36.41949999999999,
+        "p75_ns": 36.7325,
+        "p95_ns": 37.2669
+      },
+      "scalar": {
+        "bootstrap_median_ci95_high_ns": 34.729000000000006,
+        "bootstrap_median_ci95_low_ns": 33.755,
+        "mad_ns": 0.8029999999999937,
+        "mad_percent": 2.337461976217834,
+        "max_ns": 37.156,
+        "median_ns": 34.353500000000004,
+        "min_ns": 30.267,
+        "outliers_beyond_3mad": 3,
+        "p05_ns": 32.62055,
+        "p25_ns": 33.578250000000004,
+        "p75_ns": 35.14375,
+        "p95_ns": 36.55765
+      }
+    }
+  },
+  "constant_residency_screen": {
+    "cflags": [
+      "-O3",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-mavx2",
+      "-DCH2_SIMD_INLINE",
+      "-finline-limit=2000"
+    ],
+    "compiler": "gcc (GCC) 13.3.0",
+    "counts": {
+      "attempted": 12,
+      "compiled": 12,
+      "complete_binary_audit_passed": 12,
+      "dynamic_verification_passed": 12,
+      "rejected": 11,
+      "selected": 1,
+      "unique_loop_text_hashes": 7
+    },
+    "input_artifact_sha256": "228e76da21f6c0771f7fe488e967a42214d953f424d747ec12714becb7b8fd4d",
+    "machine_code_delta_vs_current": {
+      "alderlake_mca_cycles": -0.06,
+      "loop_bytes": -8,
+      "loop_instructions": -2,
+      "memory_operands_excluding_lea": -2,
+      "znver2_mca_cycles": -0.02
+    },
+    "protocol": {
+      "audit_scope": "complete candidate binary, report-only loop contract",
+      "candidate_random_state_and_constants": 100000,
+      "generated_from": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+      "generated_from_sha256": "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751",
+      "llvm_mca_models": [
+        "alderlake",
+        "znver2"
+      ],
+      "round_counts": [
+        1,
+        20
+      ],
+      "screen_order": "pinned GCC 13.3 plus LLVM-MCA before host timing"
+    },
+    "selected": "identity_helper",
+    "variant_outcomes": {
+      "current_volatile_plusx": {
+        "assembly_sha256": "dff8597529f14b9058517b51e8f5495ae9a1d4354c182b918e98c71dcec4da9a",
+        "audit": {
+          "binary_sha256": "e37369e6fb3284e817a403fca74c21c1af28efb21785a698d1ca940ce357d938",
+          "calls": 0,
+          "errors": [],
+          "loop_bytes": 587,
+          "loop_instructions": 124,
+          "memory_operands_excluding_lea": 2,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "normalized_loop_sha256": "93a6a8dca9962b906c48b406fd1bb7339899fd3c3af91c00a6e4b39361aa9048",
+          "push_pop": 0,
+          "status": "PASS"
+        },
+        "binary_sha256": "e37369e6fb3284e817a403fca74c21c1af28efb21785a698d1ca940ce357d938",
+        "llvm_mca": {
+          "alderlake": {
+            "cycles": 100.09,
+            "instructions": 124.0,
+            "rthroughput": 20.7,
+            "uops": 124.0
+          },
+          "znver2": {
+            "cycles": 180.05,
+            "instructions": 124.0,
+            "rthroughput": 80.0,
+            "uops": 124.0
+          }
+        },
+        "loop_text_sha256": "7ca101e176d89d23a92463c713cd9150f5fd7ee3750bfb6fad28c2d9e96fc00d",
+        "outcome": "REJECTED",
+        "reason": "rejected: volatility and read-write operands keep two vmovdqa loads in the timed loop",
+        "source_sha256": "e9bc8537e8d66a1ed101277ac826bb476c8215b15bb9603df0c64ec2190f34fa",
+        "status": "PASS",
+        "strategy": "volatile empty asm with tied +x outputs on both forward constants",
+        "verification": {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+        },
+        "verification_pass": true
+      },
+      "identity_helper": {
+        "assembly_sha256": "9111f812d9826169398b81bb92b4962e1da285535710861b7675e6e89fdd8916",
+        "audit": {
+          "binary_sha256": "a5943e1cc3981a6f222c48928a9618e112dbb7326a5a50717e052efb7108a303",
+          "calls": 0,
+          "errors": [],
+          "loop_bytes": 579,
+          "loop_instructions": 122,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "status": "PASS"
+        },
+        "binary_sha256": "a5943e1cc3981a6f222c48928a9618e112dbb7326a5a50717e052efb7108a303",
+        "llvm_mca": {
+          "alderlake": {
+            "cycles": 100.03,
+            "instructions": 122.0,
+            "rthroughput": 20.3,
+            "uops": 122.0
+          },
+          "znver2": {
+            "cycles": 180.03,
+            "instructions": 122.0,
+            "rthroughput": 80.0,
+            "uops": 122.0
+          }
+        },
+        "loop_text_sha256": "31d08206e92609b0e9861ed470f03f2730376b041b09a5601217bf90978815ba",
+        "outcome": "SELECTED_CODEGEN",
+        "reason": "selected for code generation: the only variant with zero timed-loop memory operands, 122 instructions, and 579 bytes",
+        "source_sha256": "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751",
+        "status": "PASS",
+        "strategy": "pass each constant through an inline non-volatile +x identity helper",
+        "verification": {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+        },
+        "verification_pass": true
+      },
+      "nonvolatile_plusx": {
+        "assembly_sha256": "589fa3f4e65d0f08381e05b68106c1a9eb13a8f23cc6aa7ae80e024badc6ebd5",
+        "audit": {
+          "binary_sha256": "324c7747c787bc5acd853d8a3ee1e879ddd32910283b4a4c09c65b8bad81a387",
+          "calls": 0,
+          "errors": [],
+          "loop_bytes": 587,
+          "loop_instructions": 124,
+          "memory_operands_excluding_lea": 2,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "normalized_loop_sha256": "93c548a0f0da3666a547b72fad76d92dc9def4036bd50baa38e3b97ca7cc93a2",
+          "push_pop": 0,
+          "status": "PASS"
+        },
+        "binary_sha256": "324c7747c787bc5acd853d8a3ee1e879ddd32910283b4a4c09c65b8bad81a387",
+        "llvm_mca": {
+          "alderlake": {
+            "cycles": 100.09,
+            "instructions": 124.0,
+            "rthroughput": 20.7,
+            "uops": 124.0
+          },
+          "znver2": {
+            "cycles": 180.05,
+            "instructions": 124.0,
+            "rthroughput": 80.0,
+            "uops": 124.0
+          }
+        },
+        "loop_text_sha256": "6569908a3fc52e6db0f907c834d11ca59e8fd288960c53fc1af2440a8b504991",
+        "outcome": "REJECTED",
+        "reason": "rejected: removing volatile alone leaves the constants as loop-carried read-write operands and retains two loads",
+        "source_sha256": "448170428acf62caa08c8ea1982b5ec8ec7fa8a90ec3b180ca5d1c657d232616",
+        "status": "PASS",
+        "strategy": "non-volatile empty asm with tied +x outputs on both constants",
+        "verification": {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+        },
+        "verification_pass": true
+      },
+      "register_asm_ops": {
+        "assembly_sha256": "1b358d870abe2bc413a1a34b67eab40e2ad3097587769d3db03bc725cc5eaa18",
+        "audit": {
+          "binary_sha256": "fe958670450f1a3ba9f4701cd5fc53869cee88e468f20aff602f540f8273490a",
+          "calls": 0,
+          "errors": [],
+          "loop_bytes": 615,
+          "loop_instructions": 126,
+          "memory_operands_excluding_lea": 2,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 4,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "normalized_loop_sha256": "240d1bc2691801d4ff8fc552c06655657a503e04827086e0341a393af5f410a4",
+          "push_pop": 0,
+          "status": "PASS"
+        },
+        "binary_sha256": "fe958670450f1a3ba9f4701cd5fc53869cee88e468f20aff602f540f8273490a",
+        "llvm_mca": {
+          "alderlake": {
+            "cycles": 100.09,
+            "instructions": 126.0,
+            "rthroughput": 20.7,
+            "uops": 124.0
+          },
+          "znver2": {
+            "cycles": 180.05,
+            "instructions": 126.0,
+            "rthroughput": 80.0,
+            "uops": 128.0
+          }
+        },
+        "loop_text_sha256": "93f171ab34ba411876e15eead945195dd78f7b88ec06cef96fff79693d253277",
+        "outcome": "REJECTED",
+        "reason": "rejected: it retains two loads and adds register moves, reaching 126 instructions and 615 bytes",
+        "source_sha256": "5198a8414b3ac5dd237a6054735badbda4d7c5f4d589257b3815606edb11abe2",
+        "status": "PASS",
+        "strategy": "spell forward VPXOR and VPADDQ directly in tied-register asm",
+        "verification": {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+        },
+        "verification_pass": true
+      },
+      "register_keyword_state_inputs": {
+        "assembly_sha256": "f1984314db4018fa474788073d2122ba9f40fbd5f54818f310e27cebc5d710e1",
+        "audit": {
+          "binary_sha256": "6e357aaadad3512a6764dc8e09fd927e8b9288c83e174f48f39dc5765c9df222",
+          "calls": 0,
+          "errors": [],
+          "loop_bytes": 605,
+          "loop_instructions": 124,
+          "memory_operands_excluding_lea": 2,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "normalized_loop_sha256": "eea714c74c1e6777f8770318e2ee8c53cc02083662dfd3c7d3400b98a97d25f6",
+          "push_pop": 0,
+          "status": "PASS"
+        },
+        "binary_sha256": "6e357aaadad3512a6764dc8e09fd927e8b9288c83e174f48f39dc5765c9df222",
+        "llvm_mca": {
+          "alderlake": {
+            "cycles": 100.09,
+            "instructions": 124.0,
+            "rthroughput": 20.7,
+            "uops": 124.0
+          },
+          "znver2": {
+            "cycles": 180.05,
+            "instructions": 124.0,
+            "rthroughput": 80.0,
+            "uops": 124.0
+          }
+        },
+        "loop_text_sha256": "4cf6aa787a254929a9997b5a991c96642c6259ce4397494bb6126dd30a04951f",
+        "outcome": "REJECTED",
+        "reason": "rejected: the register keyword is only a hint and does not change GCC's allocation",
+        "source_sha256": "b81ed491da8fbdcd00d26ba7899d2928b8a9b6b8c9b4b06d65921af3108e53f4",
+        "status": "PASS",
+        "strategy": "add C register hints and constrain constants as x inputs",
+        "verification": {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+        },
+        "verification_pass": true
+      },
+      "state_all_constants_x": {
+        "assembly_sha256": "8784b95948796bdbe34dfeac9a42221f0a81177304a78d6b4888973f60a57bf5",
+        "audit": {
+          "binary_sha256": "31508c39e0999683336c2b0fb0344d221c59b3b297416aaa7c51b0bb6ea377db",
+          "calls": 0,
+          "errors": [],
+          "loop_bytes": 605,
+          "loop_instructions": 124,
+          "memory_operands_excluding_lea": 2,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "normalized_loop_sha256": "a2f53791819e49c2607878afdf70aea6e64eb85d7aab452702ae6d18888897e1",
+          "push_pop": 0,
+          "status": "PASS"
+        },
+        "binary_sha256": "31508c39e0999683336c2b0fb0344d221c59b3b297416aaa7c51b0bb6ea377db",
+        "llvm_mca": {
+          "alderlake": {
+            "cycles": 100.09,
+            "instructions": 124.0,
+            "rthroughput": 20.7,
+            "uops": 124.0
+          },
+          "znver2": {
+            "cycles": 180.05,
+            "instructions": 124.0,
+            "rthroughput": 80.0,
+            "uops": 124.0
+          }
+        },
+        "loop_text_sha256": "88ed77ef74206829dc1c4ede6c8bf1b33134aa750f50f5f90fa7459c1734e0c7",
+        "outcome": "REJECTED",
+        "reason": "rejected: additional input constraints do not reserve registers across the fully inlined outer loop",
+        "source_sha256": "55556baa9efdefd2ec82dee03e5cfb3e8e70c47a2068a4e6c2b03cdafa1b9af7",
+        "status": "PASS",
+        "strategy": "list forward and reversed constants as x inputs",
+        "verification": {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+        },
+        "verification_pass": true
+      },
+      "state_inputs_memory_clobber": {
+        "assembly_sha256": "0424d2652f2e0b562634aa7193d60a1f0333583a423dbcc940b3177475661e1d",
+        "audit": {
+          "binary_sha256": "507108e8df1cf9cd99c57103e025718bafea85592a05fe0fdf4e20d3aca7a0c4",
+          "calls": 0,
+          "errors": [],
+          "loop_bytes": 596,
+          "loop_instructions": 126,
+          "memory_operands_excluding_lea": 2,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 20,
+            "vpermq": 2,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "normalized_loop_sha256": "f2ae58bcfcc0278c01708f78ea2f1765a014d3400dd244fd003f15eccdb1816b",
+          "push_pop": 0,
+          "status": "PASS"
+        },
+        "binary_sha256": "507108e8df1cf9cd99c57103e025718bafea85592a05fe0fdf4e20d3aca7a0c4",
+        "llvm_mca": {
+          "alderlake": {
+            "cycles": 100.1,
+            "instructions": 126.0,
+            "rthroughput": 21.0,
+            "uops": 126.0
+          },
+          "znver2": {
+            "cycles": 180.05,
+            "instructions": 126.0,
+            "rthroughput": 80.0,
+            "uops": 126.0
+          }
+        },
+        "loop_text_sha256": "82be1d5d36aba705021073d2e9024ad100b7a1435a9d8feb0ea66d14fb54296a",
+        "outcome": "REJECTED",
+        "reason": "rejected: the compiler barrier retains both loads and increases the loop to 126 instructions",
+        "source_sha256": "f1874fa9c52da56c647eab237a41dd92f32a49882c7afb53f9b63262fb025e95",
+        "status": "PASS",
+        "strategy": "volatile state/input constraint plus a memory clobber",
+        "verification": {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+        },
+        "verification_pass": true
+      },
+      "state_inputs_v": {
+        "assembly_sha256": "4783bf793669acb26190d96c6d941d6771dda62abb83bd930a4a14a14f9575be",
+        "audit": {
+          "binary_sha256": "ab9d04613f23753c91bd7ca1aa226f13a2eeeaa0f4274e50e980ec344b8813ee",
+          "calls": 0,
+          "errors": [],
+          "loop_bytes": 605,
+          "loop_instructions": 124,
+          "memory_operands_excluding_lea": 2,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "normalized_loop_sha256": "eea714c74c1e6777f8770318e2ee8c53cc02083662dfd3c7d3400b98a97d25f6",
+          "push_pop": 0,
+          "status": "PASS"
+        },
+        "binary_sha256": "ab9d04613f23753c91bd7ca1aa226f13a2eeeaa0f4274e50e980ec344b8813ee",
+        "llvm_mca": {
+          "alderlake": {
+            "cycles": 100.09,
+            "instructions": 124.0,
+            "rthroughput": 20.7,
+            "uops": 124.0
+          },
+          "znver2": {
+            "cycles": 180.05,
+            "instructions": 124.0,
+            "rthroughput": 80.0,
+            "uops": 124.0
+          }
+        },
+        "loop_text_sha256": "4cf6aa787a254929a9997b5a991c96642c6259ce4397494bb6126dd30a04951f",
+        "outcome": "REJECTED",
+        "reason": "rejected: v versus x does not alter allocation; it emits the same two-load loop as state_inputs_x",
+        "source_sha256": "29c6c5b7ec48e7ec610845e7177deb2996c065165cd595b4d2ec8600919cc5e4",
+        "status": "PASS",
+        "strategy": "use generic vector v constraints for state and constant inputs",
+        "verification": {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+        },
+        "verification_pass": true
+      },
+      "state_inputs_x": {
+        "assembly_sha256": "899557cf97d37109d6c6b468ff39e49513d742170d3c318632b8258b462e42e9",
+        "audit": {
+          "binary_sha256": "3146f0da2ece566e7a1129147506506057b04a24139bb327e6ec877d2b360922",
+          "calls": 0,
+          "errors": [],
+          "loop_bytes": 605,
+          "loop_instructions": 124,
+          "memory_operands_excluding_lea": 2,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "normalized_loop_sha256": "eea714c74c1e6777f8770318e2ee8c53cc02083662dfd3c7d3400b98a97d25f6",
+          "push_pop": 0,
+          "status": "PASS"
+        },
+        "binary_sha256": "3146f0da2ece566e7a1129147506506057b04a24139bb327e6ec877d2b360922",
+        "llvm_mca": {
+          "alderlake": {
+            "cycles": 100.09,
+            "instructions": 124.0,
+            "rthroughput": 20.7,
+            "uops": 124.0
+          },
+          "znver2": {
+            "cycles": 180.05,
+            "instructions": 124.0,
+            "rthroughput": 80.0,
+            "uops": 124.0
+          }
+        },
+        "loop_text_sha256": "4cf6aa787a254929a9997b5a991c96642c6259ce4397494bb6126dd30a04951f",
+        "outcome": "REJECTED",
+        "reason": "rejected: GCC still reloads both forward constants and the loop grows from 587 to 605 bytes",
+        "source_sha256": "0b6a6a277cdf4e0be0755a409b098e09b38d94af59a2303479f56b587de3b437",
+        "status": "PASS",
+        "strategy": "tie the evolving state, list forward constants as x inputs",
+        "verification": {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+        },
+        "verification_pass": true
+      },
+      "swapped_current": {
+        "assembly_sha256": "faa5e128badf2e84329445870c1d533c484a2fe9910808e1aa9fb37a0490608f",
+        "audit": {
+          "binary_sha256": "5e62bb9a2160dade89adb4f977a63699f04781a9ea3febdebd933561aeb43f06",
+          "calls": 0,
+          "errors": [],
+          "loop_bytes": 587,
+          "loop_instructions": 124,
+          "memory_operands_excluding_lea": 2,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "normalized_loop_sha256": "93a6a8dca9962b906c48b406fd1bb7339899fd3c3af91c00a6e4b39361aa9048",
+          "push_pop": 0,
+          "status": "PASS"
+        },
+        "binary_sha256": "5e62bb9a2160dade89adb4f977a63699f04781a9ea3febdebd933561aeb43f06",
+        "llvm_mca": {
+          "alderlake": {
+            "cycles": 100.09,
+            "instructions": 124.0,
+            "rthroughput": 20.7,
+            "uops": 124.0
+          },
+          "znver2": {
+            "cycles": 180.05,
+            "instructions": 124.0,
+            "rthroughput": 80.0,
+            "uops": 124.0
+          }
+        },
+        "loop_text_sha256": "7ca101e176d89d23a92463c713cd9150f5fd7ee3750bfb6fad28c2d9e96fc00d",
+        "outcome": "REJECTED",
+        "reason": "rejected: GCC canonicalizes the commutative operands to the current loop",
+        "source_sha256": "07412ad61e2f66d6d62dffe6a7a66ac72de43b57e24942cf8e8639fd92ce3de4",
+        "status": "PASS",
+        "strategy": "swap operands of commutative forward XOR and ADD intrinsics",
+        "verification": {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+        },
+        "verification_pass": true
+      },
+      "swapped_state_inputs": {
+        "assembly_sha256": "fb2a1980d150667f1b7052047eb2ec20ed8454058b967b0b7da117d95913a13e",
+        "audit": {
+          "binary_sha256": "5921ef9baadb62b55b212a7dd5d6f926dcc2187c3a22a6775ebc0606de9774b1",
+          "calls": 0,
+          "errors": [],
+          "loop_bytes": 605,
+          "loop_instructions": 124,
+          "memory_operands_excluding_lea": 2,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "normalized_loop_sha256": "eea714c74c1e6777f8770318e2ee8c53cc02083662dfd3c7d3400b98a97d25f6",
+          "push_pop": 0,
+          "status": "PASS"
+        },
+        "binary_sha256": "5921ef9baadb62b55b212a7dd5d6f926dcc2187c3a22a6775ebc0606de9774b1",
+        "llvm_mca": {
+          "alderlake": {
+            "cycles": 100.09,
+            "instructions": 124.0,
+            "rthroughput": 20.7,
+            "uops": 124.0
+          },
+          "znver2": {
+            "cycles": 180.05,
+            "instructions": 124.0,
+            "rthroughput": 80.0,
+            "uops": 124.0
+          }
+        },
+        "loop_text_sha256": "4cf6aa787a254929a9997b5a991c96642c6259ce4397494bb6126dd30a04951f",
+        "outcome": "REJECTED",
+        "reason": "rejected: operand order does not improve the state_inputs_x allocation",
+        "source_sha256": "4fdc848d17eda2d4b6728e2f2f6ffa3ee0c9956c4f706487831afb4a1f2bd91a",
+        "status": "PASS",
+        "strategy": "combine swapped operands with state/input constraints",
+        "verification": {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+        },
+        "verification_pass": true
+      },
+      "tied_alias_outputs": {
+        "assembly_sha256": "a683e2210482b42c9937c8298070f046d76325237d905afe8b2ec55a18dec8c5",
+        "audit": {
+          "binary_sha256": "b77915b1c6b67d13e5af81abae2c58e791dc435cf4b3398ca9294b934f340c14",
+          "calls": 0,
+          "errors": [],
+          "loop_bytes": 587,
+          "loop_instructions": 124,
+          "memory_operands_excluding_lea": 2,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "normalized_loop_sha256": "93c548a0f0da3666a547b72fad76d92dc9def4036bd50baa38e3b97ca7cc93a2",
+          "push_pop": 0,
+          "status": "PASS"
+        },
+        "binary_sha256": "b77915b1c6b67d13e5af81abae2c58e791dc435cf4b3398ca9294b934f340c14",
+        "llvm_mca": {
+          "alderlake": {
+            "cycles": 100.09,
+            "instructions": 124.0,
+            "rthroughput": 20.7,
+            "uops": 124.0
+          },
+          "znver2": {
+            "cycles": 180.05,
+            "instructions": 124.0,
+            "rthroughput": 80.0,
+            "uops": 124.0
+          }
+        },
+        "loop_text_sha256": "6569908a3fc52e6db0f907c834d11ca59e8fd288960c53fc1af2440a8b504991",
+        "outcome": "REJECTED",
+        "reason": "rejected: explicit aliases reproduce the nonvolatile_plusx two-load loop",
+        "source_sha256": "cbf099ec8e8a4453b01878c7396985d04d94dfa141c89030f99da4034b346d2c",
+        "status": "PASS",
+        "strategy": "copy constants through explicit =x outputs tied to numbered inputs",
+        "verification": {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+        },
+        "verification_pass": true
+      }
+    }
+  },
+  "decision": {
+    "adoption": "deferred pending independent Intel Core Ultra 7 255H runs",
+    "avx2": "identity helper selected for strictly better GCC 13.3 machine code; direct CPU 2 runtime is a statistical tie, and scalar is faster there, so 255H P/E/LP-E confirmation is still required",
+    "sse2": "rejected: much larger loop and slower on both AMD CPUs"
+  },
+  "experiment": "challenge02_lane_wise_simd_screen",
+  "host_measurement": {
+    "qualification": "historical pre-identity-helper balanced measurements on two AMD CPUs; retained for SIMD-versus-scalar context, not 255H evidence",
+    "runs": [
+      {
+        "artifact_sha256": "101e4af5ed11c50917a8fea2a713179c23616828ce2a5271a515aa9ade6e86d5",
+        "assembly_audits": {
+          "avx2": {
+            "binary_sha256": "4612145bd302691f5b393c4a2cf59932b63ce1ee9bda572bd587614f0e1bed45",
+            "calls": 0,
+            "core_counts": {
+              "add_or_lea": 0,
+              "bswap": 0,
+              "rotate": 0,
+              "xor": 0
+            },
+            "errors": [],
+            "legacy_addressed_loop_sha256": "04c666aa9b3c0ba253a54e34755ee87d123c21995f5f1b70c1f91910392ab6bd",
+            "loop_bytes": 587,
+            "loop_instructions": 124,
+            "loop_start": "0x1530",
+            "loop_start_mod_16": 0,
+            "loop_start_mod_32": 16,
+            "loop_start_mod_64": 48,
+            "memory_operands_excluding_lea": 2,
+            "mnemonics": {
+              "jne": 1,
+              "sub": 1,
+              "vmovdqa": 2,
+              "vpaddq": 20,
+              "vpor": 20,
+              "vpshufb": 20,
+              "vpsllvq": 20,
+              "vpsrlvq": 20,
+              "vpxor": 20
+            },
+            "mode": "report-only",
+            "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+            "normalized_loop_sha256": "3f725cb15b4b9e78da81700f33377ae867eb4364cb27ac0cb75c50b0208b6d1f",
+            "push_pop": 0,
+            "status": "PASS",
+            "text_bytes": 6584
+          },
+          "scalar": {
+            "binary_sha256": "bd3a86020dcda7924d60da89a3a362fcbdcef75d844a3aa5f65959387cb7431d",
+            "calls": 0,
+            "core_counts": {
+              "add_or_lea": 80,
+              "bswap": 80,
+              "rotate": 80,
+              "xor": 80
+            },
+            "errors": [],
+            "legacy_addressed_loop_sha256": "fc3de2566570551bc966fb779d907a187f88f269d7100324e4fe14322c77d7e7",
+            "loop_bytes": 1216,
+            "loop_instructions": 322,
+            "loop_start": "0x1550",
+            "loop_start_mod_16": 0,
+            "loop_start_mod_32": 16,
+            "loop_start_mod_64": 16,
+            "memory_operands_excluding_lea": 0,
+            "mnemonics": {
+              "add": 74,
+              "bswap": 80,
+              "jne": 1,
+              "lea": 6,
+              "rorx": 80,
+              "sub": 1,
+              "xor": 80
+            },
+            "mode": "full-inline-320",
+            "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+            "normalized_loop_sha256": "6b803105c59776a62b75848692307bbe611286ee1d1806d23c4577f974dc2683",
+            "push_pop": 0,
+            "status": "PASS",
+            "text_bytes": 7561
+          },
+          "sse2": {
+            "binary_sha256": "3ace21f315686b729834591e803d1f994c3519bb85f2dd3a44d589975149f9ba",
+            "calls": 0,
+            "core_counts": {
+              "add_or_lea": 0,
+              "bswap": 0,
+              "rotate": 0,
+              "xor": 0
+            },
+            "errors": [],
+            "legacy_addressed_loop_sha256": "cf9b1fc71e6972854a51db1dfc0b94b9aa64d12f2be938a4fafa5eede3f274f9",
+            "loop_bytes": 4064,
+            "loop_instructions": 781,
+            "loop_start": "0x1510",
+            "loop_start_mod_16": 0,
+            "loop_start_mod_32": 16,
+            "loop_start_mod_64": 16,
+            "memory_operands_excluding_lea": 20,
+            "mnemonics": {
+              "jne": 1,
+              "movdqa": 219,
+              "movsd": 39,
+              "paddq": 40,
+              "por": 120,
+              "pshufhw": 40,
+              "pshuflw": 40,
+              "psllq": 80,
+              "psllw": 40,
+              "psrlq": 80,
+              "psrlw": 40,
+              "pxor": 20,
+              "shufpd": 1,
+              "sub": 1,
+              "xorpd": 20
+            },
+            "mode": "report-only",
+            "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+            "normalized_loop_sha256": "60eb9c192d636f037239d00db164ae35b37b5bdbe63a31aa3bc05e724ef348be",
+            "push_pop": 0,
+            "status": "PASS",
+            "text_bytes": 12906
+          }
+        },
+        "avx2_source_revision": "pre_identity_helper",
+        "campaign_id": "simd-amd-reg-cpu0",
+        "candidate_verification": {
+          "avx2": {
+            "random_cases": 100000,
+            "random_state_and_constants": true,
+            "round_counts": [
+              1,
+              20
+            ],
+            "seed": "0x243f6a8885a308d3",
+            "status": "PASS",
+            "verifier_link_cflags": [
+              "-O3",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-mavx2",
+              "-DCH2_SIMD_INLINE",
+              "-finline-limit=2000"
+            ],
+            "verifier_only_flag_overrides": [],
+            "verifier_translation_unit_cflags": [
+              "-O3",
+              "-std=c11",
+              "-Wall",
+              "-Wextra",
+              "-Wpedantic",
+              "-Werror"
+            ]
+          },
+          "scalar": {
+            "random_cases": 100000,
+            "random_state_and_constants": true,
+            "round_counts": [
+              1,
+              20
+            ],
+            "seed": "0x243f6a8885a308d3",
+            "status": "PASS",
+            "verifier_link_cflags": [
+              "-O3",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-mbmi2",
+              "-finline-limit=2000"
+            ],
+            "verifier_only_flag_overrides": [],
+            "verifier_translation_unit_cflags": [
+              "-O3",
+              "-std=c11",
+              "-Wall",
+              "-Wextra",
+              "-Wpedantic",
+              "-Werror"
+            ]
+          },
+          "sse2": {
+            "random_cases": 100000,
+            "random_state_and_constants": true,
+            "round_counts": [
+              1,
+              20
+            ],
+            "seed": "0x243f6a8885a308d3",
+            "status": "PASS",
+            "verifier_link_cflags": [
+              "-O3",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-msse2",
+              "-mno-avx",
+              "-DCH2_SIMD_INLINE",
+              "-finline-limit=2000"
+            ],
+            "verifier_only_flag_overrides": [],
+            "verifier_translation_unit_cflags": [
+              "-O3",
+              "-std=c11",
+              "-Wall",
+              "-Wextra",
+              "-Wpedantic",
+              "-Werror"
+            ]
+          }
+        },
+        "comparisons": {
+          "avx2": {
+            "paired_bootstrap_ci95_high": 1.2507984168145216,
+            "paired_bootstrap_ci95_low": 1.1943118915823632,
+            "paired_mad": 0.035640305700797015,
+            "paired_median": 1.2273423549152365,
+            "paired_p05": 1.151596308410262,
+            "paired_p95": 1.2999173768201029,
+            "ratio_of_medians": 1.2332527764955061
+          },
+          "sse2": {
+            "paired_bootstrap_ci95_high": 0.4070337879861475,
+            "paired_bootstrap_ci95_low": 0.39770728114616594,
+            "paired_mad": 0.01252863091503087,
+            "paired_median": 0.40236132771164457,
+            "paired_p05": 0.37468617866491616,
+            "paired_p95": 0.4305730050882152,
+            "ratio_of_medians": 0.4075466618808328
+          }
+        },
+        "config": {
+          "bootstrap_resamples": 5000,
+          "candidate_random_differential": true,
+          "candidate_random_differential_cases": 100000,
+          "iterations": 3000000,
+          "official_iterations": 1000000,
+          "oracle_selftest_random_cases": 100000,
+          "order": "balanced-cyclic-reversed",
+          "random_differential_cases": 100000,
+          "samples_per_case": 32,
+          "warmups": 6
+        },
+        "environment": {
+          "affinity": [
+            0
+          ],
+          "compiler": "gcc (Debian 12.2.0-14+deb12u1) 12.2.0",
+          "cpu": "AMD EPYC 7B12",
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-Werror"
+          ],
+          "host": "Linux-6.1.0-51-cloud-amd64-x86_64-with-glibc2.36",
+          "inner_timer": "clock()",
+          "objdump": "GNU objdump (GNU Binutils for Debian) 2.40",
+          "outer_timer": "time.perf_counter_ns",
+          "size_tool": "GNU size (GNU Binutils for Debian) 2.40"
+        },
+        "internal_ns_per_20round": {
+          "avx2": [
+            36.635,
+            36.977999999999994,
+            37.165,
+            36.981,
+            36.718,
+            36.588,
+            36.691,
+            36.841,
+            36.946,
+            36.869,
+            36.756,
+            36.756,
+            36.703,
+            36.817,
+            36.838,
+            37.199000000000005,
+            36.845000000000006,
+            36.92,
+            36.768,
+            36.646,
+            36.540000000000006,
+            36.837,
+            36.679,
+            36.672999999999995,
+            36.799,
+            36.612,
+            36.928999999999995,
+            36.879000000000005,
+            36.561,
+            37.015,
+            37.244,
+            37.022
+          ],
+          "scalar": [
+            45.823,
+            47.409,
+            47.454,
+            44.317,
+            44.388,
+            43.105,
+            47.678,
+            61.166,
+            43.255,
+            40.415,
+            42.997,
+            46.287,
+            45.443,
+            43.293,
+            45.391,
+            45.476,
+            45.926,
+            46.656000000000006,
+            43.851,
+            45.461,
+            47.52,
+            43.283,
+            45.504000000000005,
+            43.799,
+            46.168,
+            44.089999999999996,
+            46.614000000000004,
+            44.767,
+            43.018,
+            41.803,
+            43.964000000000006,
+            48.043
+          ],
+          "sse2": [
+            113.253,
+            114.152,
+            116.06099999999999,
+            111.295,
+            110.993,
+            111.44500000000001,
+            106.46300000000001,
+            159.079,
+            107.366,
+            109.637,
+            110.176,
+            110.39,
+            115.301,
+            115.584,
+            113.959,
+            112.232,
+            111.93400000000001,
+            107.95100000000001,
+            108.708,
+            108.222,
+            110.706,
+            111.435,
+            114.55600000000001,
+            114.651,
+            110.658,
+            109.71799999999999,
+            114.167,
+            111.744,
+            110.694,
+            111.53699999999999,
+            108.764,
+            112.50699999999999
+          ]
+        },
+        "measurement_protocol_fingerprint_sha256": "f33dcff5431c18df6b1a5ea2e541d2dbf5e5638ee9c4e19f86f9d9a9bae6ce0e",
+        "outer_wall_seconds": {
+          "avx2": [
+            0.217734361,
+            0.498726484,
+            0.645716184,
+            0.604253809,
+            0.452238709,
+            0.481571816,
+            0.465700198,
+            0.288426461,
+            0.419115174,
+            0.2976133,
+            0.37836664,
+            0.316909388,
+            0.381265139,
+            0.474825746,
+            0.360338723,
+            0.421834374,
+            0.349469634,
+            0.335827395,
+            0.490836075,
+            0.429839633,
+            0.369912801,
+            0.362638502,
+            0.359616573,
+            0.379886059,
+            0.429323103,
+            0.420018504,
+            0.384436688,
+            0.492903435,
+            0.373164201,
+            0.396943656,
+            0.422573544,
+            0.476973437
+          ],
+          "scalar": [
+            0.462833148,
+            0.672505521,
+            0.629734056,
+            0.528317559,
+            0.485777645,
+            0.570881644,
+            0.59520153,
+            0.581352762,
+            0.437431731,
+            0.371549461,
+            0.44975751,
+            0.364892551,
+            0.529756959,
+            0.558201685,
+            0.437210701,
+            0.545832767,
+            0.632818956,
+            0.491528795,
+            0.647338923,
+            0.485478185,
+            0.456445299,
+            0.45201291,
+            0.415643645,
+            0.480652196,
+            0.495199165,
+            0.52757005,
+            0.503414714,
+            0.547224657,
+            0.52787433,
+            0.488635105,
+            0.449050691,
+            0.487915475
+          ],
+          "sse2": [
+            1.129049279,
+            1.925781804,
+            1.731582519,
+            1.751339846,
+            1.229485426,
+            1.291826838,
+            1.015936925,
+            1.376639016,
+            1.123995281,
+            1.074331537,
+            1.159841065,
+            1.019853184,
+            1.148538547,
+            1.5763934,
+            1.392235094,
+            1.169285074,
+            1.206221399,
+            1.419501481,
+            1.439294828,
+            1.370711928,
+            1.237075146,
+            1.109286352,
+            1.129928059,
+            1.183926593,
+            1.150911217,
+            1.179899733,
+            1.388415496,
+            1.235219146,
+            1.141619388,
+            1.260842222,
+            1.178602363,
+            1.232205186
+          ]
+        },
+        "sources": {
+          "avx2": {
+            "case_cflags": [
+              "-mavx2",
+              "-DCH2_SIMD_INLINE",
+              "-finline-limit=2000"
+            ],
+            "path": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+            "rewritten_sha256": "41a1064e38b62ac4876fb577fb68d87c7d2a16edf1e0b03c936318f0674c20ed",
+            "sha256": "e9bc8537e8d66a1ed101277ac826bb476c8215b15bb9603df0c64ec2190f34fa"
+          },
+          "scalar": {
+            "case_cflags": [
+              "-mbmi2",
+              "-finline-limit=2000"
+            ],
+            "path": "submissions/02/contest.c",
+            "rewritten_sha256": "4cfbd50bfb64f320c84f502dc08f9420f99e9aedc4e9c1e53adfce2d5c05b13c",
+            "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+          },
+          "sse2": {
+            "case_cflags": [
+              "-msse2",
+              "-mno-avx",
+              "-DCH2_SIMD_INLINE",
+              "-finline-limit=2000"
+            ],
+            "path": "solutions/02_optimization/contest_simd_sse2_twolanes.c",
+            "rewritten_sha256": "02d72992e141a838c853a8380c476645e0fa830093cb9be2f8c23eb17c1985a9",
+            "sha256": "d3cdf1c5a773eae0df18433e8a8127833a976f0506644a825c1643fa4fb80138"
+          }
+        },
+        "summaries": {
+          "avx2": {
+            "bootstrap_median_ci95_high_ns": 36.874,
+            "bootstrap_median_ci95_low_ns": 36.7295,
+            "mad_ns": 0.12999999999999545,
+            "mad_percent": 0.35300187362531693,
+            "max_ns": 37.244,
+            "median_ns": 36.827,
+            "min_ns": 36.540000000000006,
+            "outliers_beyond_3mad": 1,
+            "p05_ns": 36.57585,
+            "p25_ns": 36.688,
+            "p75_ns": 36.93325,
+            "p95_ns": 37.1803
+          },
+          "scalar": {
+            "bootstrap_median_ci95_high_ns": 45.8745,
+            "bootstrap_median_ci95_low_ns": 43.964000000000006,
+            "mad_ns": 1.5094999999999992,
+            "mad_percent": 3.3236453310434397,
+            "max_ns": 61.166,
+            "median_ns": 45.417,
+            "min_ns": 40.415,
+            "outliers_beyond_3mad": 2,
+            "p05_ns": 42.4597,
+            "p25_ns": 43.6725,
+            "p75_ns": 46.36875,
+            "p95_ns": 47.84225
+          },
+          "sse2": {
+            "bootstrap_median_ci95_high_ns": 112.50699999999999,
+            "bootstrap_median_ci95_low_ns": 110.658,
+            "mad_ns": 1.8079999999999998,
+            "mad_percent": 1.6223977027997125,
+            "max_ns": 159.079,
+            "median_ns": 111.44,
+            "min_ns": 106.46300000000001,
+            "outliers_beyond_3mad": 1,
+            "p05_ns": 107.68775000000001,
+            "p25_ns": 110.0615,
+            "p75_ns": 114.00725,
+            "p95_ns": 115.79865
+          }
+        }
+      },
+      {
+        "artifact_sha256": "4f11aa701bdaac207f675dd1516422f0585bd8f4e97ebf9d8d6aa0688658ade8",
+        "assembly_audits": {
+          "avx2": {
+            "binary_sha256": "4612145bd302691f5b393c4a2cf59932b63ce1ee9bda572bd587614f0e1bed45",
+            "calls": 0,
+            "core_counts": {
+              "add_or_lea": 0,
+              "bswap": 0,
+              "rotate": 0,
+              "xor": 0
+            },
+            "errors": [],
+            "legacy_addressed_loop_sha256": "04c666aa9b3c0ba253a54e34755ee87d123c21995f5f1b70c1f91910392ab6bd",
+            "loop_bytes": 587,
+            "loop_instructions": 124,
+            "loop_start": "0x1530",
+            "loop_start_mod_16": 0,
+            "loop_start_mod_32": 16,
+            "loop_start_mod_64": 48,
+            "memory_operands_excluding_lea": 2,
+            "mnemonics": {
+              "jne": 1,
+              "sub": 1,
+              "vmovdqa": 2,
+              "vpaddq": 20,
+              "vpor": 20,
+              "vpshufb": 20,
+              "vpsllvq": 20,
+              "vpsrlvq": 20,
+              "vpxor": 20
+            },
+            "mode": "report-only",
+            "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+            "normalized_loop_sha256": "3f725cb15b4b9e78da81700f33377ae867eb4364cb27ac0cb75c50b0208b6d1f",
+            "push_pop": 0,
+            "status": "PASS",
+            "text_bytes": 6584
+          },
+          "scalar": {
+            "binary_sha256": "bd3a86020dcda7924d60da89a3a362fcbdcef75d844a3aa5f65959387cb7431d",
+            "calls": 0,
+            "core_counts": {
+              "add_or_lea": 80,
+              "bswap": 80,
+              "rotate": 80,
+              "xor": 80
+            },
+            "errors": [],
+            "legacy_addressed_loop_sha256": "fc3de2566570551bc966fb779d907a187f88f269d7100324e4fe14322c77d7e7",
+            "loop_bytes": 1216,
+            "loop_instructions": 322,
+            "loop_start": "0x1550",
+            "loop_start_mod_16": 0,
+            "loop_start_mod_32": 16,
+            "loop_start_mod_64": 16,
+            "memory_operands_excluding_lea": 0,
+            "mnemonics": {
+              "add": 74,
+              "bswap": 80,
+              "jne": 1,
+              "lea": 6,
+              "rorx": 80,
+              "sub": 1,
+              "xor": 80
+            },
+            "mode": "full-inline-320",
+            "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+            "normalized_loop_sha256": "6b803105c59776a62b75848692307bbe611286ee1d1806d23c4577f974dc2683",
+            "push_pop": 0,
+            "status": "PASS",
+            "text_bytes": 7561
+          },
+          "sse2": {
+            "binary_sha256": "3ace21f315686b729834591e803d1f994c3519bb85f2dd3a44d589975149f9ba",
+            "calls": 0,
+            "core_counts": {
+              "add_or_lea": 0,
+              "bswap": 0,
+              "rotate": 0,
+              "xor": 0
+            },
+            "errors": [],
+            "legacy_addressed_loop_sha256": "cf9b1fc71e6972854a51db1dfc0b94b9aa64d12f2be938a4fafa5eede3f274f9",
+            "loop_bytes": 4064,
+            "loop_instructions": 781,
+            "loop_start": "0x1510",
+            "loop_start_mod_16": 0,
+            "loop_start_mod_32": 16,
+            "loop_start_mod_64": 16,
+            "memory_operands_excluding_lea": 20,
+            "mnemonics": {
+              "jne": 1,
+              "movdqa": 219,
+              "movsd": 39,
+              "paddq": 40,
+              "por": 120,
+              "pshufhw": 40,
+              "pshuflw": 40,
+              "psllq": 80,
+              "psllw": 40,
+              "psrlq": 80,
+              "psrlw": 40,
+              "pxor": 20,
+              "shufpd": 1,
+              "sub": 1,
+              "xorpd": 20
+            },
+            "mode": "report-only",
+            "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+            "normalized_loop_sha256": "60eb9c192d636f037239d00db164ae35b37b5bdbe63a31aa3bc05e724ef348be",
+            "push_pop": 0,
+            "status": "PASS",
+            "text_bytes": 12906
+          }
+        },
+        "avx2_source_revision": "pre_identity_helper",
+        "campaign_id": "simd-amd-reg-cpu4",
+        "candidate_verification": {
+          "avx2": {
+            "random_cases": 100000,
+            "random_state_and_constants": true,
+            "round_counts": [
+              1,
+              20
+            ],
+            "seed": "0x243f6a8885a308d3",
+            "status": "PASS",
+            "verifier_link_cflags": [
+              "-O3",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-mavx2",
+              "-DCH2_SIMD_INLINE",
+              "-finline-limit=2000"
+            ],
+            "verifier_only_flag_overrides": [],
+            "verifier_translation_unit_cflags": [
+              "-O3",
+              "-std=c11",
+              "-Wall",
+              "-Wextra",
+              "-Wpedantic",
+              "-Werror"
+            ]
+          },
+          "scalar": {
+            "random_cases": 100000,
+            "random_state_and_constants": true,
+            "round_counts": [
+              1,
+              20
+            ],
+            "seed": "0x243f6a8885a308d3",
+            "status": "PASS",
+            "verifier_link_cflags": [
+              "-O3",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-mbmi2",
+              "-finline-limit=2000"
+            ],
+            "verifier_only_flag_overrides": [],
+            "verifier_translation_unit_cflags": [
+              "-O3",
+              "-std=c11",
+              "-Wall",
+              "-Wextra",
+              "-Wpedantic",
+              "-Werror"
+            ]
+          },
+          "sse2": {
+            "random_cases": 100000,
+            "random_state_and_constants": true,
+            "round_counts": [
+              1,
+              20
+            ],
+            "seed": "0x243f6a8885a308d3",
+            "status": "PASS",
+            "verifier_link_cflags": [
+              "-O3",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-msse2",
+              "-mno-avx",
+              "-DCH2_SIMD_INLINE",
+              "-finline-limit=2000"
+            ],
+            "verifier_only_flag_overrides": [],
+            "verifier_translation_unit_cflags": [
+              "-O3",
+              "-std=c11",
+              "-Wall",
+              "-Wextra",
+              "-Wpedantic",
+              "-Werror"
+            ]
+          }
+        },
+        "comparisons": {
+          "avx2": {
+            "paired_bootstrap_ci95_high": 1.266499673273797,
+            "paired_bootstrap_ci95_low": 1.17154776130146,
+            "paired_mad": 0.06120844535623782,
+            "paired_median": 1.2228557256976467,
+            "paired_p05": 1.0971094221391742,
+            "paired_p95": 1.3233526163109215,
+            "ratio_of_medians": 1.2204650784616635
+          },
+          "sse2": {
+            "paired_bootstrap_ci95_high": 0.4064228446136723,
+            "paired_bootstrap_ci95_low": 0.39163999418054846,
+            "paired_mad": 0.013925520411468384,
+            "paired_median": 0.39806148597678626,
+            "paired_p05": 0.36374126935379403,
+            "paired_p95": 0.4227570463784033,
+            "ratio_of_medians": 0.4001857340270958
+          }
+        },
+        "config": {
+          "bootstrap_resamples": 5000,
+          "candidate_random_differential": true,
+          "candidate_random_differential_cases": 100000,
+          "iterations": 3000000,
+          "official_iterations": 1000000,
+          "oracle_selftest_random_cases": 100000,
+          "order": "balanced-cyclic-reversed",
+          "random_differential_cases": 100000,
+          "samples_per_case": 32,
+          "warmups": 6
+        },
+        "environment": {
+          "affinity": [
+            4
+          ],
+          "compiler": "gcc (Debian 12.2.0-14+deb12u1) 12.2.0",
+          "cpu": "AMD EPYC 7B12",
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-Werror"
+          ],
+          "host": "Linux-6.1.0-51-cloud-amd64-x86_64-with-glibc2.36",
+          "inner_timer": "clock()",
+          "objdump": "GNU objdump (GNU Binutils for Debian) 2.40",
+          "outer_timer": "time.perf_counter_ns",
+          "size_tool": "GNU size (GNU Binutils for Debian) 2.40"
+        },
+        "internal_ns_per_20round": {
+          "avx2": [
+            37.165,
+            37.066,
+            37.137,
+            37.221,
+            37.191,
+            37.0,
+            36.677,
+            36.962,
+            36.676,
+            36.846,
+            36.977000000000004,
+            36.891,
+            36.964999999999996,
+            36.781,
+            37.028999999999996,
+            36.809000000000005,
+            37.068999999999996,
+            36.591,
+            37.074999999999996,
+            36.721999999999994,
+            36.771,
+            36.718,
+            36.833999999999996,
+            36.948,
+            36.945,
+            36.727999999999994,
+            36.672999999999995,
+            36.647,
+            36.829,
+            36.903,
+            36.719,
+            36.916
+          ],
+          "scalar": [
+            41.02,
+            39.614999999999995,
+            40.443,
+            43.742999999999995,
+            43.048,
+            45.285,
+            45.199999999999996,
+            49.097,
+            48.923,
+            42.143,
+            42.065,
+            40.724000000000004,
+            47.942,
+            42.705,
+            45.799,
+            48.437,
+            48.904999999999994,
+            46.709,
+            48.118,
+            46.409,
+            45.493,
+            44.123000000000005,
+            43.687,
+            47.836,
+            46.814,
+            46.516000000000005,
+            47.069,
+            42.799,
+            40.793000000000006,
+            43.071,
+            44.863,
+            44.369
+          ],
+          "sse2": [
+            109.864,
+            105.18900000000001,
+            105.30799999999999,
+            106.561,
+            107.446,
+            108.706,
+            114.31099999999999,
+            120.298,
+            120.22099999999999,
+            115.787,
+            113.228,
+            112.046,
+            113.788,
+            112.043,
+            110.958,
+            119.681,
+            118.375,
+            113.99199999999999,
+            113.351,
+            116.486,
+            112.251,
+            111.696,
+            120.197,
+            104.882,
+            111.165,
+            115.123,
+            119.112,
+            114.149,
+            106.169,
+            109.976,
+            112.80199999999999,
+            112.11699999999999
+          ]
+        },
+        "measurement_protocol_fingerprint_sha256": "f33dcff5431c18df6b1a5ea2e541d2dbf5e5638ee9c4e19f86f9d9a9bae6ce0e",
+        "outer_wall_seconds": {
+          "avx2": [
+            0.332697266,
+            0.335160566,
+            0.371095061,
+            0.369164962,
+            0.225610081,
+            0.303612279,
+            0.194535154,
+            0.395828978,
+            0.281098212,
+            0.327940926,
+            0.37758121,
+            0.363682872,
+            0.258917426,
+            0.337775875,
+            0.431916453,
+            0.369425782,
+            0.512847512,
+            0.52994113,
+            0.439392382,
+            0.503267393,
+            0.370747361,
+            0.351569544,
+            0.521306712,
+            0.388438778,
+            0.432338563,
+            0.406125627,
+            0.340594126,
+            0.362836642,
+            0.244898887,
+            0.353728134,
+            0.316102139,
+            0.320277358
+          ],
+          "scalar": [
+            0.330824536,
+            0.413443355,
+            0.398985137,
+            0.362974922,
+            0.446736051,
+            0.356228613,
+            0.403829117,
+            0.486357935,
+            0.468727869,
+            0.391036008,
+            0.431177304,
+            0.37887866,
+            0.390352938,
+            0.359937713,
+            0.519020412,
+            0.440264623,
+            0.469500057,
+            0.806375024,
+            0.45291031,
+            0.539798609,
+            0.488306826,
+            0.378344529,
+            0.577008234,
+            0.460074649,
+            0.497988054,
+            0.325902997,
+            0.471640677,
+            0.396619797,
+            0.291093752,
+            0.360446352,
+            0.309475829,
+            0.474105488
+          ],
+          "sse2": [
+            0.992261469,
+            0.898830521,
+            1.021299685,
+            0.821246581,
+            1.081663316,
+            0.940686526,
+            0.947331764,
+            0.956164434,
+            1.13268843,
+            0.850643058,
+            1.028152704,
+            1.058607,
+            1.111483003,
+            0.844131489,
+            0.798762004,
+            1.129989021,
+            1.207655251,
+            1.030625884,
+            1.506810981,
+            1.260090633,
+            1.021582355,
+            1.021320135,
+            1.170828905,
+            0.971880592,
+            1.158639917,
+            0.83485159,
+            0.842653229,
+            1.068916509,
+            0.798122015,
+            1.009539827,
+            0.98466785,
+            1.158849087
+          ]
+        },
+        "sources": {
+          "avx2": {
+            "case_cflags": [
+              "-mavx2",
+              "-DCH2_SIMD_INLINE",
+              "-finline-limit=2000"
+            ],
+            "path": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+            "rewritten_sha256": "41a1064e38b62ac4876fb577fb68d87c7d2a16edf1e0b03c936318f0674c20ed",
+            "sha256": "e9bc8537e8d66a1ed101277ac826bb476c8215b15bb9603df0c64ec2190f34fa"
+          },
+          "scalar": {
+            "case_cflags": [
+              "-mbmi2",
+              "-finline-limit=2000"
+            ],
+            "path": "submissions/02/contest.c",
+            "rewritten_sha256": "4cfbd50bfb64f320c84f502dc08f9420f99e9aedc4e9c1e53adfce2d5c05b13c",
+            "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+          },
+          "sse2": {
+            "case_cflags": [
+              "-msse2",
+              "-mno-avx",
+              "-DCH2_SIMD_INLINE",
+              "-finline-limit=2000"
+            ],
+            "path": "solutions/02_optimization/contest_simd_sse2_twolanes.c",
+            "rewritten_sha256": "02d72992e141a838c853a8380c476645e0fa830093cb9be2f8c23eb17c1985a9",
+            "sha256": "d3cdf1c5a773eae0df18433e8a8127833a976f0506644a825c1643fa4fb80138"
+          }
+        },
+        "summaries": {
+          "avx2": {
+            "bootstrap_median_ci95_high_ns": 36.964999999999996,
+            "bootstrap_median_ci95_low_ns": 36.795,
+            "mad_ns": 0.15050000000000097,
+            "mad_percent": 0.40789224056156587,
+            "max_ns": 37.221,
+            "median_ns": 36.897,
+            "min_ns": 36.591,
+            "outliers_beyond_3mad": 0,
+            "p05_ns": 36.6613,
+            "p25_ns": 36.7265,
+            "p75_ns": 37.00725,
+            "p95_ns": 37.176700000000004
+          },
+          "scalar": {
+            "bootstrap_median_ci95_high_ns": 46.516000000000005,
+            "bootstrap_median_ci95_low_ns": 43.379,
+            "mad_ns": 2.1350000000000016,
+            "mad_percent": 4.741125656484909,
+            "max_ns": 49.097,
+            "median_ns": 45.031499999999994,
+            "min_ns": 39.614999999999995,
+            "outliers_beyond_3mad": 0,
+            "p05_ns": 40.59755,
+            "p25_ns": 42.7755,
+            "p75_ns": 46.877750000000006,
+            "p95_ns": 48.9131
+          },
+          "sse2": {
+            "bootstrap_median_ci95_high_ns": 114.149,
+            "bootstrap_median_ci95_low_ns": 111.4305,
+            "mad_ns": 2.6295,
+            "mad_percent": 2.336782891141198,
+            "max_ns": 120.298,
+            "median_ns": 112.5265,
+            "min_ns": 104.882,
+            "outliers_beyond_3mad": 0,
+            "p05_ns": 105.25444999999999,
+            "p25_ns": 109.94800000000001,
+            "p75_ns": 115.28900000000002,
+            "p95_ns": 120.20779999999999
+          }
+        }
+      }
+    ]
+  },
+  "interpretation": [
+    "AVX2 reduces instruction count but merges four scalar dependency chains into one vector chain.",
+    "The identity-helper form removes the final two vmovdqa operations from the GCC 13.3 timed loop: 124 to 122 instructions and 587 to 579 bytes.",
+    "All twelve register-constraint variants passed 100,000 random dynamic state/constant cases for one and twenty rounds and complete-binary audits; eleven were rejected on code generation, not correctness.",
+    "On CPU 2, hoisted versus prior AVX2 measured 1.0013x with a 95% paired bootstrap interval of 0.9983x to 1.0039x, so no runtime improvement is claimed.",
+    "LLVM-MCA's approximate models are used only to screen machine code and are not treated as timing evidence for the 255H.",
+    "SSE2 lacks per-lane variable shifts and PSHUFB, so selection, shuffle, and register-copy overhead dominate.",
+    "Static models and AMD measurements are deliberately reported separately and cannot substitute for 255H data."
+  ],
+  "schema_version": 2,
+  "sources": {
+    "avx2": {
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "path": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+      "sha256": "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751"
+    },
+    "scalar": {
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "path": "submissions/02/contest.c",
+      "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+    },
+    "sse2": {
+      "cflags": [
+        "-msse2",
+        "-mno-avx",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "path": "solutions/02_optimization/contest_simd_sse2_twolanes.c",
+      "sha256": "d3cdf1c5a773eae0df18433e8a8127833a976f0506644a825c1643fa4fb80138"
+    }
+  },
+  "static_analysis": {
+    "binutils": "GNU ld (GNU Binutils for Debian) 2.40",
+    "cases": {
+      "avx2": {
+        "assembly_sha256": "9111f812d9826169398b81bb92b4962e1da285535710861b7675e6e89fdd8916",
+        "binary_audit": {
+          "binary_sha256": "a5943e1cc3981a6f222c48928a9618e112dbb7326a5a50717e052efb7108a303",
+          "calls": 0,
+          "errors": [],
+          "loop_bytes": 579,
+          "loop_instructions": 122,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "mode": "report-only",
+          "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_simd_operation_counts": {
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "status": "PASS"
+        },
+        "binary_sha256": "a5943e1cc3981a6f222c48928a9618e112dbb7326a5a50717e052efb7108a303",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "total_cycles": 10003,
+            "uops_per_iteration": 122.0
+          },
+          "znver2": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "total_cycles": 18003,
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop_text_sha256": "31d08206e92609b0e9861ed470f03f2730376b041b09a5601217bf90978815ba",
+        "provenance": "constant_residency_screen.identity_helper",
+        "source": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+        "source_sha256": "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751",
+        "verification": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "returncode": 0,
+          "round_counts": [
+            1,
+            20
+          ],
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+          "verifier_translation_unit_cflags": [
+            "-O3",
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror"
+          ]
+        }
+      },
+      "scalar": {
+        "assembly_sha256": "6d6f32ff16be74005597c530dce180bf6b070ee4197697c57ad274755e0d0f87",
+        "binary_audit": {
+          "binary_sha256": "df7da5f1f98311bfcf4472f6eab2077586fd264966aa6952b306fedbb6572f2e",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "errors": [],
+          "legacy_addressed_loop_sha256": "cbbef56326fbc4437dff78afaf7eb3229d5cce8a9858a8628d04e194ca01f770",
+          "loop_bytes": 1216,
+          "loop_instructions": 322,
+          "loop_start": "0x401528",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 40,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 74,
+            "bswap": 80,
+            "jne": 1,
+            "lea": 6,
+            "rorx": 80,
+            "sub": 1,
+            "xor": 80
+          },
+          "mode": "full-inline-320",
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "6b803105c59776a62b75848692307bbe611286ee1d1806d23c4577f974dc2683",
+          "push_pop": 0,
+          "selected_simd_operation_counts": {},
+          "status": "PASS",
+          "text_bytes": 7246
+        },
+        "binary_sha256": "df7da5f1f98311bfcf4472f6eab2077586fd264966aa6952b306fedbb6572f2e",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mbmi2",
+          "-finline-limit=2000"
+        ],
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 86.0,
+            "cycles_per_iteration": 125.06,
+            "instructions_per_iteration": 322.0,
+            "iterations": 100,
+            "total_cycles": 12506,
+            "uops_per_iteration": 402.0
+          },
+          "znver2": {
+            "block_rthroughput": 140.5,
+            "cycles_per_iteration": 140.55,
+            "instructions_per_iteration": 322.0,
+            "iterations": 100,
+            "total_cycles": 14055,
+            "uops_per_iteration": 322.0
+          }
+        },
+        "loop_text_sha256": "23d63ff2ff7e52cebf6b27750a718f0d5d35883f9c1c41f0dcb2a8c76ba1a3cc",
+        "source": "submissions/02/contest.c",
+        "source_sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71",
+        "verification": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "returncode": 0,
+          "round_counts": [
+            1,
+            20
+          ],
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+          "verifier_translation_unit_cflags": [
+            "-O3",
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror"
+          ]
+        }
+      },
+      "sse2": {
+        "assembly_sha256": "1fa70da4b0b03fdf3dff1a3777cef2ea06bc2883f62c7a39e0721127e168a148",
+        "binary_audit": {
+          "binary_sha256": "cefe3b7e10fc669e319383feb4d1b9a967635d1322f9a00749f778b3a500558d",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 0,
+            "bswap": 0,
+            "rotate": 0,
+            "xor": 0
+          },
+          "errors": [],
+          "legacy_addressed_loop_sha256": "4a51055b424c6429e7ea1f60ba2704b4194db55b0ff4f3431842c74e3b6d5f1e",
+          "loop_bytes": 4064,
+          "loop_instructions": 781,
+          "loop_start": "0x4014e0",
+          "loop_start_mod_16": 0,
+          "loop_start_mod_32": 0,
+          "loop_start_mod_64": 32,
+          "memory_operands_excluding_lea": 20,
+          "mnemonics": {
+            "jne": 1,
+            "movdqa": 219,
+            "movsd": 39,
+            "paddq": 40,
+            "por": 120,
+            "pshufhw": 40,
+            "pshuflw": 40,
+            "psllq": 80,
+            "psllw": 40,
+            "psrlq": 80,
+            "psrlw": 40,
+            "pxor": 20,
+            "shufpd": 1,
+            "sub": 1,
+            "xorpd": 20
+          },
+          "mode": "report-only",
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "f8ad78b1afef6221a2ec3f11ec2b904affe3baa153c9f4c2584c53b4b6b04f72",
+          "push_pop": 0,
+          "selected_simd_operation_counts": {
+            "movdqa": 219,
+            "movsd": 39,
+            "paddq": 40,
+            "por": 120,
+            "pshufhw": 40,
+            "pshuflw": 40,
+            "psllq": 80,
+            "psllw": 40,
+            "psrlq": 80,
+            "psrlw": 40,
+            "pxor": 20,
+            "shufpd": 1,
+            "xorpd": 20
+          },
+          "status": "PASS",
+          "text_bytes": 12551
+        },
+        "binary_sha256": "cefe3b7e10fc669e319383feb4d1b9a967635d1322f9a00749f778b3a500558d",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-msse2",
+          "-mno-avx",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 120.0,
+            "cycles_per_iteration": 300.08,
+            "instructions_per_iteration": 781.0,
+            "iterations": 100,
+            "total_cycles": 30008,
+            "uops_per_iteration": 582.0
+          },
+          "znver2": {
+            "block_rthroughput": 240.0,
+            "cycles_per_iteration": 357.55,
+            "instructions_per_iteration": 781.0,
+            "iterations": 100,
+            "total_cycles": 35755,
+            "uops_per_iteration": 781.0
+          }
+        },
+        "loop_text_sha256": "dd4b1b6327bd48c8edaa682208cea3b2830098f951cf1c0a4b6addef69abf182",
+        "source": "solutions/02_optimization/contest_simd_sse2_twolanes.c",
+        "source_sha256": "d3cdf1c5a773eae0df18433e8a8127833a976f0506644a825c1643fa4fb80138",
+        "verification": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "returncode": 0,
+          "round_counts": [
+            1,
+            20
+          ],
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+          "verifier_translation_unit_cflags": [
+            "-O3",
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror"
+          ]
+        }
+      }
+    },
+    "compiler": "gcc (GCC) 13.3.0",
+    "container": {
+      "image": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "local_image_id": "sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "network": "none",
+      "pinned_manifest_digest_sha256": "1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "repository_mount": "read-only"
+    },
+    "llvm_mca": {
+      "executable": "llvm-mca-16",
+      "models": [
+        "alderlake",
+        "znver2"
+      ],
+      "qualification": "static scheduler models only; neither model is Lion Cove or Skymont",
+      "version": "Debian LLVM version 16.0.6"
+    }
+  }
+}

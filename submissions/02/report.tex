@@ -47,7 +47,11 @@ non-destructive constant rotates under the supplied compile command.  The same
 source has an adaptive score build: global BMI2 changes the core to
 \texttt{always\_inline}, and a larger inline threshold integrates the public
 wrapper into the timing loop.  Two repeated campaigns measured paired speedups
-of 1.116x and 1.118x over the default build.
+of 1.116x and 1.118x over the default build.  A later lane-wise AVX2 candidate
+reduces the exact score loop from 322 scalar instructions to 122 vector
+instructions, but AMD affinities disagree on whether it beats scalar.  It is
+therefore a high-priority 255H experiment while the scalar source remains the
+submission incumbent.
 
 \section{Recovering the structure}
 
@@ -328,6 +332,55 @@ did not stack the static gain.  AMD diagnostics disagreed across CPUs and are
 not a proxy for Lion Cove or Skymont.  These builds were added only to the 255H
 screen/confirm manifest; the incumbent remains unchanged.
 
+\subsection{Sixth-wave algebraic and lane-wise SIMD search}
+
+Smaller scalar pair blocks were checked again before changing the algorithm.
+Their 1/2/5/10-block loops were 143/278/646/1,211 bytes.  The compact loop's
+initial 21-sample result was 1.035x (CI 1.007--1.043), but a six-warm-up,
+6,000,000-call, 32-sample confirmation gave only 1.0004x
+(0.9855--1.0176).  This failed reproduction prevents promotion.
+
+We also searched for a shorter scalar identity.  Model one stage as
+$\mathrm{BSWAP64}(\mathrm{ROL64}(x,r)\mathbin{\mathtt{xor}}k)+a$.
+Z3 found all 64 length-three rotate/XOR/byte-swap/add templates UNSAT for every
+distinct stage.  Deleting any one operation from each existing eight-operation
+pair and resynthesizing constants gave 32 further UNSAT results.  An exhaustive
+linear search enumerated 4,223 length-at-most-three syntaxes, 632 distinct bit
+permutations, without matching a pair.  These are local lower bounds for this
+grammar, not a global lower bound over arbitrary machine programs.
+
+The new algorithm instead places the four independent two-round chains in four
+YMM lanes.  A 12-variant register-residency screen found an identity-helper form
+that removes the last two constant loads.  Exact GCC 13.3 emits 122 instructions
+and 579 bytes with no hot memory operand: exactly 20 each of
+\texttt{VPSLLVQ}, \texttt{VPSRLVQ}, \texttt{VPOR}, \texttt{VPXOR},
+\texttt{VPSHUFB}, and \texttt{VPADDQ}, plus \texttt{SUB/JNE}.  The cleanup
+itself tied the previous 124-instruction vector stream at 1.0013x
+(0.9983--1.0039).
+
+\begin{center}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+AMD affinity & scalar ns & AVX2 ns & paired & 95\% CI \\
+\midrule
+CPU 1 & 46.927 & 36.690 & \textbf{1.275x} & 1.260--1.292 \\
+CPU 2 & 34.354 & 36.569 & \textbf{0.940x} & 0.923--0.950 \\
+CPU 3 & 45.938 & 36.724 & \textbf{1.248x} & 1.222--1.269 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Each row uses six discarded warm-ups, 32 balanced samples, 3,000,000 calls per
+sample, and the direct 100,000-case random-state/random-constant gate.  CPU 2
+reverses the CPU 1/3 ordering, demonstrating that even this VM cannot replace a
+255H measurement.  SSE2 was rejected at 781 instructions, 4,064 bytes, and
+about 0.40x.  Finally, 47 extra exact-GCC13 and 53 Clang 21 target/scheduler
+combinations found no better static stream.  Clang's spill-free 1,208-byte
+Arrow Lake stream scored 133.79 on the approximate Alder model, and LLVM-MCA 16
+has no Lion Cove or Skymont model.  The scalar build therefore remains the
+incumbent; the 122-instruction AVX2 build is the leading target-only candidate.
+
 The remaining target experiment is encoded as a guarded
 \texttt{probe--screen--confirm--decide} workflow.  It pins a CPUID probe to every
 allowed logical CPU, combines core type with Linux topology signals, and leaves
@@ -351,7 +404,10 @@ and rewritten-performance hashes are retained.  Nested topology records are
 validated through each cache-list element and malformed input fails closed
 without a traceback.  An expanded balanced 15-case integration screen passed
 all 15 direct correctness checks and all 15 exact-binary audits; its 1,000-call
-timings are tool-regression evidence only.  Two deliberately undersized
+timings are tool-regression evidence only.  The current 19-case
+manifest, including partial-unroll controls and lane-wise AVX2, likewise passed
+19/19 direct checks and 19/19 exact-binary audits; its AVX2 loop was exactly 122
+instructions, 579 bytes, and memory-free.  Two deliberately undersized
 AMD/GCC12 confirmation sessions kept the incumbent while naming every missing
 target/compiler/sample/warm-up/iteration/random-case gate.  Every P-core
 campaign needs paired median $\ge 1.010$ and an
@@ -445,8 +501,8 @@ CPU 4 & 45.924 ns & 40.801 ns & \textbf{1.118x} & 1.095--1.140x \\
 The paired MAD values were 0.0281x and 0.0322x.  Exact GCC 13.3 inspection has
 already established inline-limit 700/2000 equality and call removal.  The final
 Intel Core Ultra 7 255H experiment therefore compares the incumbent with Alder
-and Alder+IRA schedules, source order $2,1,0,3$, and the two shortlisted backend
-scheduler streams in independent sessions pinned to recorded physical
+and Alder+IRA schedules, source order $2,1,0,3$, the two shortlisted backend
+scheduler streams, and the lane-wise AVX2 source in independent sessions pinned to recorded physical
 representatives of each core type; native tune remains diagnostic only.
 
 \section{Reproduction}
@@ -479,6 +535,12 @@ python3 solutions/02_optimization/screen_gcc133_source_orders_02.py \
   --json /tmp/challenge02-gcc133-source-orders.json
 python3 solutions/02_optimization/screen_gcc133_layout_02.py \
   --json /tmp/challenge02-gcc133-layout.json
+python3 solutions/02_optimization/analyze_two_round_superopt_02.py \
+  --json /tmp/challenge02-superopt.json
+python3 solutions/02_optimization/screen_simd_02.py \
+  --json /tmp/challenge02-simd.json
+python3 solutions/02_optimization/screen_255h_toolchains_02.py \
+  --json /tmp/challenge02-toolchains.json
 python3 solutions/02_optimization/autotune_02_255h.py probe \
   --compiler /path/to/gcc-13.3.0 \
   --out /tmp/ch2-255h/topology.json
@@ -535,6 +597,14 @@ gcc -O3 -Wall -Wextra -mbmi2 -finline-limit=2000 \
     \href{https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/Optimize-Options.html}
     {GCC 13.3 Optimize Options}: inline thresholds, scheduling, IRA, PGO, and
     LTO experiments.
+  \item de Moura and Bj\o{}rner,
+    \href{https://doi.org/10.1007/978-3-540-78800-3_24}
+    {Z3: An Efficient SMT Solver}, TACAS 2008: bit-vector equivalence and
+    UNSAT checks for the scalar operation-deletion search.
+  \item Solar-Lezama et al.,
+    \href{https://people.csail.mit.edu/asolar/papers/asplos06-final.pdf}
+    {Combinatorial Sketching for Finite Programs}, ASPLOS 2006: the CEGIS-style
+    template-and-counterexample synthesis procedure.
   \item LLVM,
     \href{https://llvm.org/docs/CommandGuide/llvm-mca.html}
     {llvm-mca Machine Code Analyzer}: scheduling-model throughput and resource
