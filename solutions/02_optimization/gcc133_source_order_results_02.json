@@ -1,0 +1,2989 @@
+{
+  "all_checks_passed": true,
+  "base_flags": [
+    "-O3",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-mbmi2",
+    "-finline-limit=2000"
+  ],
+  "baseline": {
+    "order": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "path": "submissions/02/contest.c",
+    "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+  },
+  "binutils": "GNU ld (GNU Binutils for Debian) 2.40",
+  "checks": {
+    "baseline_source_hash_is_expected": true,
+    "compiler_is_exact_gcc_13_3_0": true,
+    "generated_top_matches_checked_in_source": true,
+    "local_image_id_matches_digest": true,
+    "pinned_image_digest_is_expected": true,
+    "screened_all_24_orders_in_3_profiles": true,
+    "top_full_inline_audits_passed": true,
+    "top_is_static_best_for_alderlake": true,
+    "top_is_static_best_for_generic": true,
+    "top_random_state_and_constants_verifier_passed": true,
+    "top_source_hash_is_expected": true
+  },
+  "compiler": "gcc (GCC) 13.3.0",
+  "container": {
+    "image": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+    "local_image_id": "sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+    "network": "none",
+    "pinned_manifest_digest_sha256": "1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+    "repository_mount": "read-only"
+  },
+  "experiment": "challenge02_gcc133_source_chain_order_screen",
+  "host": {
+    "platform": "Linux-6.1.0-51-cloud-amd64-x86_64-with-glibc2.36",
+    "python": "3.11.2"
+  },
+  "llvm_mca": {
+    "executable": "llvm-mca-16",
+    "iterations": 100,
+    "models": [
+      "alderlake",
+      "tremont"
+    ],
+    "qualification": "static screen only; not Intel Core Ultra 7 255H timing",
+    "version": "Debian LLVM version 16.0.6"
+  },
+  "notes": [
+    "The 24 source variants differ only in the order of four independent two-round chain assignments.",
+    "Constant and state declaration-order probes were byte-identical to the baseline in all three profiles and are not retained as candidates.",
+    "LLVM-MCA's Alder Lake and Tremont models are filters, not Lion Cove or Skymont measurements."
+  ],
+  "profiles": {
+    "alder_ira": [
+      "-mtune=alderlake",
+      "-fira-algorithm=priority"
+    ],
+    "alderlake": [
+      "-mtune=alderlake"
+    ],
+    "generic": []
+  },
+  "rankings": {
+    "alder_ira": [
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "760d83e5e9cba5c27337ca74abf38b486cf1d06dc787e3ccebded20fac500a31",
+        "source": "order_0123"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "25b9319b7722824605b2e833cb4e0bf088672ec661a49655e27308115b202463",
+        "source": "order_0132"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "4ef7b436b691488e6d38d4f061f3d048cd2dcef5e68d725183017fd6e849f12c",
+        "source": "order_0213"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "6e1bca66af013c5fb117873123ba653f81f6fe3a18d802f72a9c8ace872ebf1e",
+        "source": "order_0231"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "a6e90d7c47ca0cf807d32329696411fc414141e53abe7900bd6ab91d160a8b5b",
+        "source": "order_0312"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "f6d36faa15b8744ca41a039e8ea66d7da678a4c13565fbf022abb7b067b82f08",
+        "source": "order_0321"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "9b2a203dd1e9601b997dc830b80a884058d391ee84c350e91d6d120a43dd038f",
+        "source": "order_1023"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "59505cd509457aae2d73a5e14e7343ed05b624124ef5fd1a47db026de016a5ec",
+        "source": "order_1032"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "f195f838a203c6138bb177cbb3ac661e5ad5b5c3e0f95a550bbb56d749c72d92",
+        "source": "order_1203"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "f75500a3ab84dfdef3e9d1ca121ee7118e2c5b87e29282344c2e5fa0a859f253",
+        "source": "order_1230"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "272bf2b731fac3c145f3ef7cc48921cf01078d95409a60abe27cfd555d82ee3f",
+        "source": "order_1302"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "0dcf7e7079d8fa35fce61d15e74e870a964e646f564460a8f73892a4d15acbf0",
+        "source": "order_1320"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "c1c6c213ad16bc74fe9645fb54d6d1166f23e035fb673535ca2e2d499adcbefc",
+        "source": "order_2013"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "dd519c01b73ef7991a928a1bebfd4ee8f94108a606665af8fedc0d8509089428",
+        "source": "order_2031"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "97bf2fac5f7f4f2fbb89cb82b12b638f79a36df7e1bf7148bdda186186bd9c14",
+        "source": "order_2103"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "e5195ccbc1c4513e0b95ae6a02b4ebbb48cd5bd4a8309c55a3ad1f7b9ec79b95",
+        "source": "order_2130"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "c1fda332d59341eab522912110907d4cb7c7f91e4c20400e423a04d322dfcfce",
+        "source": "order_2301"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "975dafabcb20478d488a58e0a0b779919a3c97d16f5849e744921a2d7266c42e",
+        "source": "order_2310"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "66090e67efc6dd3e7752a3b663d7d5b318263abccefe175f397ec00f3dbbf402",
+        "source": "order_3012"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "d9796c4d962ef8c72ceaeacc0d5b2b2b6c0cf60ca4a0c71db3d81ea6ad1af797",
+        "source": "order_3021"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "8b7a4ae5e556fb889ecd76285c05aabde4a7377e03b6de704e3eb9d00887759c",
+        "source": "order_3102"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "250a4c3d7cde41407a2438e44115906b93ec0516962ee34a25781b3b1c189820",
+        "source": "order_3120"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "4d90e3f372306115437898a52151dd1450b22bb3ca4a4b143aa2718a28ccda7c",
+        "source": "order_3201"
+      },
+      {
+        "block_rthroughput": 80.5,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "7cec998ed3d594c20481dbe4dc32cf4c55ddd073642d486dff35d47e9e7af3ea",
+        "source": "order_3210"
+      }
+    ],
+    "alderlake": [
+      {
+        "block_rthroughput": 81.0,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "bac9b1dd2e855ce97cc743bedfef796d8afcf5bdd48c413ae9a77092bffb50e9",
+        "source": "order_2103"
+      },
+      {
+        "block_rthroughput": 86.0,
+        "cycles_per_iteration": 122.06,
+        "loop_text_sha256": "05b56de8ab76ebf57f71080df6bced77feebe9a4d3ed73b1d94325d7f15ae293",
+        "source": "order_1203"
+      },
+      {
+        "block_rthroughput": 85.0,
+        "cycles_per_iteration": 122.72,
+        "loop_text_sha256": "ff3b07a37b2ac09d643d1f21081b23c0f9cf4b97a66734205608a60ded912445",
+        "source": "order_2301"
+      },
+      {
+        "block_rthroughput": 87.0,
+        "cycles_per_iteration": 123.04,
+        "loop_text_sha256": "7bb45d1cde215958183d0ffc14c0fe664fedde73dcb03a8f1fa7ace7d0edef57",
+        "source": "order_1302"
+      },
+      {
+        "block_rthroughput": 87.0,
+        "cycles_per_iteration": 123.06,
+        "loop_text_sha256": "fa9214417da612666d06353c2e0e292f3177360636ce8db2be73d5e6180fb6a0",
+        "source": "order_3210"
+      },
+      {
+        "block_rthroughput": 83.0,
+        "cycles_per_iteration": 123.08,
+        "loop_text_sha256": "cfce74c11b0a2ed398f16b25a8cbd53ad70a11b813548824fd2c0bff99331134",
+        "source": "order_3102"
+      },
+      {
+        "block_rthroughput": 88.0,
+        "cycles_per_iteration": 123.38,
+        "loop_text_sha256": "501f5069c895953c416b4bbebbf1526bbb9be7f5b09bb8fa0028ac38db859b14",
+        "source": "order_2031"
+      },
+      {
+        "block_rthroughput": 86.0,
+        "cycles_per_iteration": 123.59,
+        "loop_text_sha256": "6d0efbe70625ed9d4b0cb90b520c2e366064e5d248ae15dbad4dde516090bbae",
+        "source": "order_3201"
+      },
+      {
+        "block_rthroughput": 86.0,
+        "cycles_per_iteration": 123.62,
+        "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+        "source": "order_0123"
+      },
+      {
+        "block_rthroughput": 87.0,
+        "cycles_per_iteration": 124.07,
+        "loop_text_sha256": "0c627aa9d371538efe8328f38308006fe5145ce2f0fdd3738dfabc1cf4234830",
+        "source": "order_0132"
+      },
+      {
+        "block_rthroughput": 89.0,
+        "cycles_per_iteration": 124.07,
+        "loop_text_sha256": "09a7a90ae7c2a74f569d923ca2997cacc2e639cec2bd8cb3476ba65d421748c1",
+        "source": "order_1032"
+      },
+      {
+        "block_rthroughput": 89.0,
+        "cycles_per_iteration": 124.59,
+        "loop_text_sha256": "a0cf04fe54409bce051d157ecd2375975a63ee66cf4210ad4642f39f4de0e7cb",
+        "source": "order_0213"
+      },
+      {
+        "block_rthroughput": 88.0,
+        "cycles_per_iteration": 124.63,
+        "loop_text_sha256": "85f76048deef4f7ccc46ee4c5639ae3f31980302752caba3619dcd6426607704",
+        "source": "order_3012"
+      },
+      {
+        "block_rthroughput": 89.0,
+        "cycles_per_iteration": 124.63,
+        "loop_text_sha256": "87c7a322f4e6d326f0107f750668656512ebf403dcec13e3f717d531b499feaf",
+        "source": "order_3021"
+      },
+      {
+        "block_rthroughput": 88.0,
+        "cycles_per_iteration": 125.05,
+        "loop_text_sha256": "6f8b1fa56c6bf3424055cbdffb9d79b55167e435a1120ee0f21803ad477b4e3e",
+        "source": "order_1023"
+      },
+      {
+        "block_rthroughput": 89.0,
+        "cycles_per_iteration": 125.06,
+        "loop_text_sha256": "785e0c7cb6bac611e8121ec0f3f7a50d4383fc13f3a4271f3d5f1d721c867fe1",
+        "source": "order_0312"
+      },
+      {
+        "block_rthroughput": 92.0,
+        "cycles_per_iteration": 125.1,
+        "loop_text_sha256": "3af3705ee5e20e2a8fa9125564321a2caa8be9448a9e1acfc792d8f9211c8408",
+        "source": "order_1320"
+      },
+      {
+        "block_rthroughput": 90.0,
+        "cycles_per_iteration": 126.64,
+        "loop_text_sha256": "9729db35f2fef430102d83123f88a76096a40c70138918b805755faa9c174896",
+        "source": "order_1230"
+      },
+      {
+        "block_rthroughput": 90.0,
+        "cycles_per_iteration": 127.1,
+        "loop_text_sha256": "c1e06230e4b972ede7c01ea2af3d7bcaf28774a89bc08dff5161ca5afaad5454",
+        "source": "order_0231"
+      },
+      {
+        "block_rthroughput": 90.0,
+        "cycles_per_iteration": 127.1,
+        "loop_text_sha256": "e73862dbaf48529d66e82d832a4038a38cee502eb9ad641ad920b71474f60a36",
+        "source": "order_0321"
+      },
+      {
+        "block_rthroughput": 87.0,
+        "cycles_per_iteration": 128.0,
+        "loop_text_sha256": "d02c69e64c81156739db133cdaafa987963e1dbc16311b7d6137e39676c6c8ec",
+        "source": "order_2130"
+      },
+      {
+        "block_rthroughput": 88.0,
+        "cycles_per_iteration": 129.04,
+        "loop_text_sha256": "0512f9b4b2c92ff9702bae01bf1e7dc791bec5c5e299370768d50bf0e8ccf7a7",
+        "source": "order_2013"
+      },
+      {
+        "block_rthroughput": 89.0,
+        "cycles_per_iteration": 130.1,
+        "loop_text_sha256": "500da0f288533e94ae35b730eceb182f831acde36be2a33cc5d8d0d3cad479a8",
+        "source": "order_3120"
+      },
+      {
+        "block_rthroughput": 88.0,
+        "cycles_per_iteration": 130.94,
+        "loop_text_sha256": "1eec583dc22a3c1c5b738e2b3680e482078223138e1a8655fc6dc6d32bf7a5c1",
+        "source": "order_2310"
+      }
+    ],
+    "generic": [
+      {
+        "block_rthroughput": 81.0,
+        "cycles_per_iteration": 121.06,
+        "loop_text_sha256": "c05acf788ef5236e4baefccd729c505562b6e59e14faf715d7cc440163fe5955",
+        "source": "order_2103"
+      },
+      {
+        "block_rthroughput": 86.0,
+        "cycles_per_iteration": 122.06,
+        "loop_text_sha256": "418574466f07e0bf671d1476af029a57ef8b6cc24a7419f297acdd4363f98c15",
+        "source": "order_1203"
+      },
+      {
+        "block_rthroughput": 86.0,
+        "cycles_per_iteration": 122.15,
+        "loop_text_sha256": "4173543a7ce0c75e6e50a1758378339b32b75c3b58e6aca5bae69026ff95573b",
+        "source": "order_3201"
+      },
+      {
+        "block_rthroughput": 85.0,
+        "cycles_per_iteration": 122.72,
+        "loop_text_sha256": "3ff3a01c58c2c5d8ca87b6b5d8081d97532799f2b57cc3df9203268c6b47ecdd",
+        "source": "order_2301"
+      },
+      {
+        "block_rthroughput": 87.0,
+        "cycles_per_iteration": 123.06,
+        "loop_text_sha256": "bb055a456e61f012253ccb7584b79829029cb050af5db76dab35e1604a35fce3",
+        "source": "order_3210"
+      },
+      {
+        "block_rthroughput": 83.0,
+        "cycles_per_iteration": 123.08,
+        "loop_text_sha256": "86ea71c1a750cd48e69d7aea0e3705b62e1c884b6a99c97aac3cd711aaa5fd10",
+        "source": "order_3102"
+      },
+      {
+        "block_rthroughput": 87.0,
+        "cycles_per_iteration": 123.56,
+        "loop_text_sha256": "499fd0790adef4c898fb631a97ec7aba735f9ebb96ad0b6d66d858eb14040092",
+        "source": "order_1302"
+      },
+      {
+        "block_rthroughput": 87.0,
+        "cycles_per_iteration": 123.62,
+        "loop_text_sha256": "aa8f65437a9464aed1a0de959bc3055c3a5f18c855e4d8cf92a6cd5777a0f581",
+        "source": "order_0132"
+      },
+      {
+        "block_rthroughput": 88.0,
+        "cycles_per_iteration": 124.1,
+        "loop_text_sha256": "0dbd1d56e32b6c93518cc04d74080da56da55ad78f8aea7935bbdb686b70adbd",
+        "source": "order_2031"
+      },
+      {
+        "block_rthroughput": 89.0,
+        "cycles_per_iteration": 124.13,
+        "loop_text_sha256": "a251be6fd9ba2651479634badcdcc17c164e18cafacdf339ccfdea5e59d1362b",
+        "source": "order_3021"
+      },
+      {
+        "block_rthroughput": 88.0,
+        "cycles_per_iteration": 124.15,
+        "loop_text_sha256": "d56182553d441e4a600d7b7f3d84a5cc6da61bfcac476e54708c49514cb8a029",
+        "source": "order_3012"
+      },
+      {
+        "block_rthroughput": 89.0,
+        "cycles_per_iteration": 124.55,
+        "loop_text_sha256": "e29782d940c8e295be5def5d1eda73f4989e3e6d253082938fbf3da2d0d37773",
+        "source": "order_1032"
+      },
+      {
+        "block_rthroughput": 86.0,
+        "cycles_per_iteration": 125.06,
+        "loop_text_sha256": "23d63ff2ff7e52cebf6b27750a718f0d5d35883f9c1c41f0dcb2a8c76ba1a3cc",
+        "source": "order_0123"
+      },
+      {
+        "block_rthroughput": 88.0,
+        "cycles_per_iteration": 125.97,
+        "loop_text_sha256": "3b80486128ac7c870ee4badaeb42835f01e7807ea646abf78b69a94da3215452",
+        "source": "order_1023"
+      },
+      {
+        "block_rthroughput": 92.0,
+        "cycles_per_iteration": 127.06,
+        "loop_text_sha256": "ce102f607db774d6b19638074a9e2e2b6cdb3e4ac1953be28a95385a1be725d5",
+        "source": "order_1320"
+      },
+      {
+        "block_rthroughput": 88.0,
+        "cycles_per_iteration": 127.06,
+        "loop_text_sha256": "3d2e29e4e59a3176e53c6b34c3546a7b7c370ccc71b8cdd53211f6b558ceca1c",
+        "source": "order_2013"
+      },
+      {
+        "block_rthroughput": 89.0,
+        "cycles_per_iteration": 127.06,
+        "loop_text_sha256": "140ad4a9932bb764898a1ba6f0e5b0f7881b5f6d4407f0ac9cd1745512ca0afa",
+        "source": "order_3120"
+      },
+      {
+        "block_rthroughput": 90.0,
+        "cycles_per_iteration": 127.11,
+        "loop_text_sha256": "0c4e2d544b15377366bf213f834edae5e759c6c78c19e929ec643eaf36fc3dcf",
+        "source": "order_1230"
+      },
+      {
+        "block_rthroughput": 89.0,
+        "cycles_per_iteration": 127.58,
+        "loop_text_sha256": "214d417462541d90ff2b7396f9af707ce547e84e3532b0e7a1c0a6305042074e",
+        "source": "order_0312"
+      },
+      {
+        "block_rthroughput": 87.0,
+        "cycles_per_iteration": 128.0,
+        "loop_text_sha256": "49c21058c896cc3b30ee1ea58a0ae5b68880206c739277161ffc36ed8c3b82b2",
+        "source": "order_2130"
+      },
+      {
+        "block_rthroughput": 89.0,
+        "cycles_per_iteration": 128.02,
+        "loop_text_sha256": "d413d4fc30ea7115fb6b00ec228419e09e10ac915abda345917d7da37e6db664",
+        "source": "order_0213"
+      },
+      {
+        "block_rthroughput": 90.0,
+        "cycles_per_iteration": 128.89,
+        "loop_text_sha256": "565b313db748c697d5fce6f021663abd22e1da61bb21803b5b723c39fd5e2f76",
+        "source": "order_0231"
+      },
+      {
+        "block_rthroughput": 90.0,
+        "cycles_per_iteration": 128.89,
+        "loop_text_sha256": "b0317fec5cad76ebb918f16be7be68969d90226f4fdf8b88dcf7d0bd310b0ab8",
+        "source": "order_0321"
+      },
+      {
+        "block_rthroughput": 88.0,
+        "cycles_per_iteration": 129.47,
+        "loop_text_sha256": "697390ad777eacc8c94134ed78bf2cfffb79d35db7a5046ffdf5395dfab28c2c",
+        "source": "order_2310"
+      }
+    ]
+  },
+  "reports": {
+    "order_0123__alder_ira": {
+      "assembly_sha256": "446a921862f0574655d3672d85897c7273f2d3202009fcebb40233f710c40668",
+      "binary_sha256": "abca6dd19a4ab1ec6279021cf9ba9706a54f72c717fe68aaf7ef31ad352e22cd",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "760d83e5e9cba5c27337ca74abf38b486cf1d06dc787e3ccebded20fac500a31",
+      "profile": "alder_ira",
+      "source": "order_0123"
+    },
+    "order_0123__alderlake": {
+      "assembly_sha256": "df066e71258b5ef1b23584c3ad4ffd565cc38786965286b07e093f23e4e2d221",
+      "binary_sha256": "0c67d90de421712eb33afc370e1323ab636057f6f5aedd286c0e37a96156c51a",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "profile": "alderlake",
+      "source": "order_0123"
+    },
+    "order_0123__generic": {
+      "assembly_sha256": "a742df2a54d6d889dd39f7b2f700c8df67c36e8ea11ff0642b58747c56b4d87e",
+      "binary_sha256": "fb6012e07475ebb05f4b72aef63a11fa969356986cbf3ce7a8163380f56a2dfd",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 125.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12506
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "23d63ff2ff7e52cebf6b27750a718f0d5d35883f9c1c41f0dcb2a8c76ba1a3cc",
+      "profile": "generic",
+      "source": "order_0123"
+    },
+    "order_0132__alder_ira": {
+      "assembly_sha256": "1aef4d063f5a7f2223e70e550afe248580c5dc8e6bfc8b327b15df9db4cb6b1a",
+      "binary_sha256": "d5db1ff3e7ddfb1b3b50c1eae1bcb6568469babfe11c69308554f716ccf05b65",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "25b9319b7722824605b2e833cb4e0bf088672ec661a49655e27308115b202463",
+      "profile": "alder_ira",
+      "source": "order_0132"
+    },
+    "order_0132__alderlake": {
+      "assembly_sha256": "19465554e57a15127d391cb8e7fd968eaf119e536ae20cc44ad06198b6ee9954",
+      "binary_sha256": "f56b57b8a0f4fc6d691202fd44dbbb41a8b35dad5e3570e57771963040545303",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 87.0,
+          "cycles_per_iteration": 124.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12407
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "0c627aa9d371538efe8328f38308006fe5145ce2f0fdd3738dfabc1cf4234830",
+      "profile": "alderlake",
+      "source": "order_0132"
+    },
+    "order_0132__generic": {
+      "assembly_sha256": "3ee22b85917b953bcaea0fae68c9ccfbe632c2bdd534f420e94ff7c3b2bf09f8",
+      "binary_sha256": "af0a5a2b814870c1ee09233b447c0553dfb600a7b52d680a5f0885cf7ef96100",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 87.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "aa8f65437a9464aed1a0de959bc3055c3a5f18c855e4d8cf92a6cd5777a0f581",
+      "profile": "generic",
+      "source": "order_0132"
+    },
+    "order_0213__alder_ira": {
+      "assembly_sha256": "9fd243c9c5ce098204a48ba929ae6731f2ee5e0de0f2d217a00d20c84b5463b5",
+      "binary_sha256": "c9d6cffac70bc312f352167e396b86c34d638256f119e655eddddf3fd5780842",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "4ef7b436b691488e6d38d4f061f3d048cd2dcef5e68d725183017fd6e849f12c",
+      "profile": "alder_ira",
+      "source": "order_0213"
+    },
+    "order_0213__alderlake": {
+      "assembly_sha256": "0ad614a5f7a391e969f2716ea09101a16353fae21c5a5d32e18d0f433ef200ec",
+      "binary_sha256": "216e83d0027461d572ba29aba08c03f545ebf59af403b64e0832391fc762995f",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 89.0,
+          "cycles_per_iteration": 124.59,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12459
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "a0cf04fe54409bce051d157ecd2375975a63ee66cf4210ad4642f39f4de0e7cb",
+      "profile": "alderlake",
+      "source": "order_0213"
+    },
+    "order_0213__generic": {
+      "assembly_sha256": "d42c46fa58ca41cf22765a461176841f3cd6cc815b24855884d9961960bb13d4",
+      "binary_sha256": "8422d172b841595ff852a8d0cfa7fd0947da29641bb56fb5951ddbe4353031b8",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 89.0,
+          "cycles_per_iteration": 128.02,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12802
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16106
+        }
+      },
+      "loop_text_sha256": "d413d4fc30ea7115fb6b00ec228419e09e10ac915abda345917d7da37e6db664",
+      "profile": "generic",
+      "source": "order_0213"
+    },
+    "order_0231__alder_ira": {
+      "assembly_sha256": "81a519eb11e6bd7c2835a4dace7089be747fe5829ccfd275ee64e1504cf428f8",
+      "binary_sha256": "ade340207bd96f3bf3f24b8a71941f948326011b1b0cc300cfadfd996e42a5a3",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "6e1bca66af013c5fb117873123ba653f81f6fe3a18d802f72a9c8ace872ebf1e",
+      "profile": "alder_ira",
+      "source": "order_0231"
+    },
+    "order_0231__alderlake": {
+      "assembly_sha256": "b66fe5b3d95b75be315d89f780ac81e09c27fa8826d8d133456586d9b1e53f5b",
+      "binary_sha256": "16ef8eaad2fe0a5dff001b888d542433b92d9f7b1d8a176efd57bc9ec73ff21d",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 90.0,
+          "cycles_per_iteration": 127.1,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12710
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "c1e06230e4b972ede7c01ea2af3d7bcaf28774a89bc08dff5161ca5afaad5454",
+      "profile": "alderlake",
+      "source": "order_0231"
+    },
+    "order_0231__generic": {
+      "assembly_sha256": "bba4d406897d159e0a33e4513d024f1b8d15b110fb303d12faffc95162dda4a0",
+      "binary_sha256": "f4eb43e4552f4e77053915d0d2a59edeaf22495a3308e482bcb5564bcbe5ed3c",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 90.0,
+          "cycles_per_iteration": 128.89,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12889
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "565b313db748c697d5fce6f021663abd22e1da61bb21803b5b723c39fd5e2f76",
+      "profile": "generic",
+      "source": "order_0231"
+    },
+    "order_0312__alder_ira": {
+      "assembly_sha256": "f0bab528de90debd733ef8fc31d992fbf0996af9eab8de181518e75a81d129fb",
+      "binary_sha256": "e131b471dba9843a641e592338b30887555d0ef8503e0d982ee7f8d47295a62d",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "a6e90d7c47ca0cf807d32329696411fc414141e53abe7900bd6ab91d160a8b5b",
+      "profile": "alder_ira",
+      "source": "order_0312"
+    },
+    "order_0312__alderlake": {
+      "assembly_sha256": "5881c96f4f2496210b5bc2d061c4631e9725e40998cb3f62071089c418df9a3e",
+      "binary_sha256": "3938ffbeec197067370dc68d39e7e765768c316c8a4339ab487961f72eed67ed",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 89.0,
+          "cycles_per_iteration": 125.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12506
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "785e0c7cb6bac611e8121ec0f3f7a50d4383fc13f3a4271f3d5f1d721c867fe1",
+      "profile": "alderlake",
+      "source": "order_0312"
+    },
+    "order_0312__generic": {
+      "assembly_sha256": "f8095e67b0b5aba7492434c6a1db396f255be664f960d57ca18ca82ee52735f2",
+      "binary_sha256": "b52049dda2903afab58ad7e90dd661c49006e55abcdccc65dc03b0f7b2f5d7b0",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 89.0,
+          "cycles_per_iteration": 127.58,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12758
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "214d417462541d90ff2b7396f9af707ce547e84e3532b0e7a1c0a6305042074e",
+      "profile": "generic",
+      "source": "order_0312"
+    },
+    "order_0321__alder_ira": {
+      "assembly_sha256": "cff6191576546be666f868a7ffaecfa781aba1ac3972d0a45863a32141e11f86",
+      "binary_sha256": "26fe93b912f5a45a2bf0b100277576cc9ce9cbc5087b8c08bebe50c27f353df9",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "f6d36faa15b8744ca41a039e8ea66d7da678a4c13565fbf022abb7b067b82f08",
+      "profile": "alder_ira",
+      "source": "order_0321"
+    },
+    "order_0321__alderlake": {
+      "assembly_sha256": "d726617f2d2a200ffd96fbc90c1e52644db9cfda1debeaa70084ed02f916b786",
+      "binary_sha256": "5aa83351abae2ad9f86c8e1d1e45db589705d0ae60cc46199eaa9b3cb13a133f",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 90.0,
+          "cycles_per_iteration": 127.1,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12710
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "e73862dbaf48529d66e82d832a4038a38cee502eb9ad641ad920b71474f60a36",
+      "profile": "alderlake",
+      "source": "order_0321"
+    },
+    "order_0321__generic": {
+      "assembly_sha256": "b1d252ee6bec0203a53298c96b8102d638ed6ad7a5b3a235f7f96bfa3d84fde2",
+      "binary_sha256": "2416beddb86e1998c396ef54b268e1c74e7491b1b5d15b13dad6fed5c215d9ab",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 90.0,
+          "cycles_per_iteration": 128.89,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12889
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "b0317fec5cad76ebb918f16be7be68969d90226f4fdf8b88dcf7d0bd310b0ab8",
+      "profile": "generic",
+      "source": "order_0321"
+    },
+    "order_1023__alder_ira": {
+      "assembly_sha256": "87dc295a52d6b67a6b0a6138fb781968843c031f877e096ece41ece242e932e6",
+      "binary_sha256": "06629cd1fbaac698f3ce5597315ae955172e5ee6da8585e3e19aaa9faf8f1815",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "9b2a203dd1e9601b997dc830b80a884058d391ee84c350e91d6d120a43dd038f",
+      "profile": "alder_ira",
+      "source": "order_1023"
+    },
+    "order_1023__alderlake": {
+      "assembly_sha256": "dec393ca8ac4d9ee1cd614378a1b78b85a043b4122ff5bf9ea5285db08446d78",
+      "binary_sha256": "3de66e1a958e5287dbba65315dd3c4e4feb733a9f6bb8b580aaa43103cd1f1e7",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 88.0,
+          "cycles_per_iteration": 125.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12505
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "6f8b1fa56c6bf3424055cbdffb9d79b55167e435a1120ee0f21803ad477b4e3e",
+      "profile": "alderlake",
+      "source": "order_1023"
+    },
+    "order_1023__generic": {
+      "assembly_sha256": "12024d694d324469d0438d56223ffa3b253a4a61dddb0875d5f9325c48746058",
+      "binary_sha256": "3b637f96e36c27bd5ec656a66d711f964335ecac0d734118208238d213afe790",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 88.0,
+          "cycles_per_iteration": 125.97,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12597
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "3b80486128ac7c870ee4badaeb42835f01e7807ea646abf78b69a94da3215452",
+      "profile": "generic",
+      "source": "order_1023"
+    },
+    "order_1032__alder_ira": {
+      "assembly_sha256": "c3a45ec79a2d29c9d229766012f46f99797be37e2412b0dc5b6b1362c9eb74e7",
+      "binary_sha256": "91bb19e5cc646d3131a6be63e644fad25abad50d70331d016b6ad55bf4e3fc97",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "59505cd509457aae2d73a5e14e7343ed05b624124ef5fd1a47db026de016a5ec",
+      "profile": "alder_ira",
+      "source": "order_1032"
+    },
+    "order_1032__alderlake": {
+      "assembly_sha256": "755e7d956c59e1d4825e630c2b2d032ed81a1446e7501280cd317b12e92fecb4",
+      "binary_sha256": "88c6c04a446177e3b8c9d02c46b669070f1fc8e5607ec1c08d571a51de48b103",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 89.0,
+          "cycles_per_iteration": 124.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12407
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "09a7a90ae7c2a74f569d923ca2997cacc2e639cec2bd8cb3476ba65d421748c1",
+      "profile": "alderlake",
+      "source": "order_1032"
+    },
+    "order_1032__generic": {
+      "assembly_sha256": "283b2f666e1edcc37bb607806f56622329d8db7097555f791dda5cf543099cfe",
+      "binary_sha256": "9804b856b721df9e562bd5fd5d74e0e7b29fec21659f71dafaf8e090aba0d74d",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 89.0,
+          "cycles_per_iteration": 124.55,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12455
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "e29782d940c8e295be5def5d1eda73f4989e3e6d253082938fbf3da2d0d37773",
+      "profile": "generic",
+      "source": "order_1032"
+    },
+    "order_1203__alder_ira": {
+      "assembly_sha256": "f5d3a448a7e8b496e3cdd64e54e1d7c435ddd50fb859f79aa6ad6ace3c4ebce7",
+      "binary_sha256": "9e16a1c432f8ecc9eaea82475d2d3e7bc847b05de4f76c766d76490b5884245d",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "f195f838a203c6138bb177cbb3ac661e5ad5b5c3e0f95a550bbb56d749c72d92",
+      "profile": "alder_ira",
+      "source": "order_1203"
+    },
+    "order_1203__alderlake": {
+      "assembly_sha256": "f2e78e275f065865a8b8dc9e2d5544926fc55a188393ba944c5c753d2eb8fc3a",
+      "binary_sha256": "8caaa98aa349fd58024a9b0e320750af7cb72db86902bdbaccf7fc4a01247e95",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 122.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12206
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "05b56de8ab76ebf57f71080df6bced77feebe9a4d3ed73b1d94325d7f15ae293",
+      "profile": "alderlake",
+      "source": "order_1203"
+    },
+    "order_1203__generic": {
+      "assembly_sha256": "cf9ffb2e53064af73c88111f805212d1338bcf18da7b5eb7d0476d88d6244432",
+      "binary_sha256": "2c5a41522cb452d8891b6ae7ade25940869c4f3c2497f4c40088b3b819881cb3",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 122.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12206
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "418574466f07e0bf671d1476af029a57ef8b6cc24a7419f297acdd4363f98c15",
+      "profile": "generic",
+      "source": "order_1203"
+    },
+    "order_1230__alder_ira": {
+      "assembly_sha256": "b160dfbc1364d62001d342551f94d4418db09d88af6f599deac4c45081871e08",
+      "binary_sha256": "13c3acd8930b1e21edc8492788965565752c0f8bd03944846849594bf0b9862b",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "f75500a3ab84dfdef3e9d1ca121ee7118e2c5b87e29282344c2e5fa0a859f253",
+      "profile": "alder_ira",
+      "source": "order_1230"
+    },
+    "order_1230__alderlake": {
+      "assembly_sha256": "c20467387dd1ef88ceb63a8d395fecf03703fb07e962df95826b73ba4b1ec083",
+      "binary_sha256": "0d097db0f668f87c547a5065af706a26422903e1436493e63dc13d3143259b4f",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 90.0,
+          "cycles_per_iteration": 126.64,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12664
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "9729db35f2fef430102d83123f88a76096a40c70138918b805755faa9c174896",
+      "profile": "alderlake",
+      "source": "order_1230"
+    },
+    "order_1230__generic": {
+      "assembly_sha256": "c4b985e54514d3e3dae4bfdb24f7f0e7ef5b05d53fef7e90f6d5fe990177076f",
+      "binary_sha256": "2e5d4a621af9c5c4f3d5618f39064be1c97da07128db06505638de5db39db83a",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 90.0,
+          "cycles_per_iteration": 127.11,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12711
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16106
+        }
+      },
+      "loop_text_sha256": "0c4e2d544b15377366bf213f834edae5e759c6c78c19e929ec643eaf36fc3dcf",
+      "profile": "generic",
+      "source": "order_1230"
+    },
+    "order_1302__alder_ira": {
+      "assembly_sha256": "6403100a0a8ac1e04c7dbffa1982c7296667ac5c64a343807ac249d5c800b7bb",
+      "binary_sha256": "a3730766a1354c7ff4d06a2027bb31fb84c3a9570eea8fd458e0dc9d8cfe204b",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "272bf2b731fac3c145f3ef7cc48921cf01078d95409a60abe27cfd555d82ee3f",
+      "profile": "alder_ira",
+      "source": "order_1302"
+    },
+    "order_1302__alderlake": {
+      "assembly_sha256": "72ffa2d90108ed0e3c1ab1d9447ecc2b5ab65c97b16793f30ea49d1ade60a695",
+      "binary_sha256": "fe9c9d43f6ce58b9a08dd1efe2f01c19eece727ec304f7ee6a617552a43bfd5a",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 87.0,
+          "cycles_per_iteration": 123.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12304
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "7bb45d1cde215958183d0ffc14c0fe664fedde73dcb03a8f1fa7ace7d0edef57",
+      "profile": "alderlake",
+      "source": "order_1302"
+    },
+    "order_1302__generic": {
+      "assembly_sha256": "1b5633d537ab59066eb7f45b7cbc0b187195141f67e87cb507b2d0c60fc19e3f",
+      "binary_sha256": "ad2f33c7f5ee4f38133c937dd39e0d08d8ba07ac1cf97bf6f8b02a41e6759f67",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 87.0,
+          "cycles_per_iteration": 123.56,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12356
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "499fd0790adef4c898fb631a97ec7aba735f9ebb96ad0b6d66d858eb14040092",
+      "profile": "generic",
+      "source": "order_1302"
+    },
+    "order_1320__alder_ira": {
+      "assembly_sha256": "0c4017dcfdc00c9a258976c263508e8a698bc04052fee2943340983ad19aba41",
+      "binary_sha256": "a03a9dd976d36dec4eaf999132219d9f5182b17512ba05b739278de225a2eee6",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "0dcf7e7079d8fa35fce61d15e74e870a964e646f564460a8f73892a4d15acbf0",
+      "profile": "alder_ira",
+      "source": "order_1320"
+    },
+    "order_1320__alderlake": {
+      "assembly_sha256": "1f08453ea90afc6c4f69d4acf37907c5bd4d09c7a9d3a3cf807134de3b47dfb6",
+      "binary_sha256": "cac49b8f0dbcf40c5b027db124fb3b2d427b771101303c56503b857b15cb345e",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 92.0,
+          "cycles_per_iteration": 125.1,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12510
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.11,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16111
+        }
+      },
+      "loop_text_sha256": "3af3705ee5e20e2a8fa9125564321a2caa8be9448a9e1acfc792d8f9211c8408",
+      "profile": "alderlake",
+      "source": "order_1320"
+    },
+    "order_1320__generic": {
+      "assembly_sha256": "3f11e7f469490b8e7789c41228a9782bb4a24e36f507693db3ad858d9758c16f",
+      "binary_sha256": "fffdbc4fcbc528a5dd339e65c2483787e22ab117f36d75c8ffe395ab4ea7b133",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 92.0,
+          "cycles_per_iteration": 127.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12706
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16106
+        }
+      },
+      "loop_text_sha256": "ce102f607db774d6b19638074a9e2e2b6cdb3e4ac1953be28a95385a1be725d5",
+      "profile": "generic",
+      "source": "order_1320"
+    },
+    "order_2013__alder_ira": {
+      "assembly_sha256": "296335bda6cf5b293bd23b468da2130eadf928f2e36f4732f16e05b561154ce6",
+      "binary_sha256": "3d1cdf65334a624e7fc130134d03a5391a4332505a4caae75a514b271a2e6255",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "c1c6c213ad16bc74fe9645fb54d6d1166f23e035fb673535ca2e2d499adcbefc",
+      "profile": "alder_ira",
+      "source": "order_2013"
+    },
+    "order_2013__alderlake": {
+      "assembly_sha256": "e8b24616f9408ce6157ce395b235e5f031cde9588dce61ec27ee46a3343d878b",
+      "binary_sha256": "48923f0dd5357846abbd03966192d5d0f95cf86db71820c0b59cf5c180d05555",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 88.0,
+          "cycles_per_iteration": 129.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12904
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "0512f9b4b2c92ff9702bae01bf1e7dc791bec5c5e299370768d50bf0e8ccf7a7",
+      "profile": "alderlake",
+      "source": "order_2013"
+    },
+    "order_2013__generic": {
+      "assembly_sha256": "3e0a40439375ebaa95f10ad6f3260470c43557652d05153205ff9a9071ac7325",
+      "binary_sha256": "e151e7cbe90a98cc715711ca7acce4c90582827326680f10308c6b6376a203bf",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 88.0,
+          "cycles_per_iteration": 127.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12706
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16106
+        }
+      },
+      "loop_text_sha256": "3d2e29e4e59a3176e53c6b34c3546a7b7c370ccc71b8cdd53211f6b558ceca1c",
+      "profile": "generic",
+      "source": "order_2013"
+    },
+    "order_2031__alder_ira": {
+      "assembly_sha256": "9b93a1f6f132a3cd2ca4839b3c0b303e5305014e5864487ba15826b713669b17",
+      "binary_sha256": "1463fc509e139f196719ed42e62742af067290f69ba0124aebf6ce8c4caa9ba5",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "dd519c01b73ef7991a928a1bebfd4ee8f94108a606665af8fedc0d8509089428",
+      "profile": "alder_ira",
+      "source": "order_2031"
+    },
+    "order_2031__alderlake": {
+      "assembly_sha256": "348acbdb35707dbda6026a69e431c8162758f6d09543dfff5f63404c7f870fce",
+      "binary_sha256": "f524d01c84bc6af76a2d19d498b01797013777261ce72de395e14043611687b1",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 88.0,
+          "cycles_per_iteration": 123.38,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12338
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "501f5069c895953c416b4bbebbf1526bbb9be7f5b09bb8fa0028ac38db859b14",
+      "profile": "alderlake",
+      "source": "order_2031"
+    },
+    "order_2031__generic": {
+      "assembly_sha256": "928b3bbbff1c35658244d6defccf53be68850227b371af961915c0602f75131a",
+      "binary_sha256": "f7f3e77651c7cbea1777bd1808e1ab66a144fdae679967988d317be7e4f7563e",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 88.0,
+          "cycles_per_iteration": 124.1,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12410
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "0dbd1d56e32b6c93518cc04d74080da56da55ad78f8aea7935bbdb686b70adbd",
+      "profile": "generic",
+      "source": "order_2031"
+    },
+    "order_2103__alder_ira": {
+      "assembly_sha256": "083a16f26f720bc2ff7cf759f305cf8f22c7136cd93e0507952bd3f685bfa94e",
+      "binary_sha256": "5ce3c4685ea6a63f237a45ec7f189eec579756975cfac3e1c1d55588252e59cc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "97bf2fac5f7f4f2fbb89cb82b12b638f79a36df7e1bf7148bdda186186bd9c14",
+      "profile": "alder_ira",
+      "source": "order_2103"
+    },
+    "order_2103__alderlake": {
+      "assembly_sha256": "484c1d38cea1d12aab0807447c9871f4db333fcf80d9ec55715220c39c4a4bce",
+      "binary_sha256": "41c6354bae4021edaff6bc11a60ea255941bfeb1854557451df75d91997eda7c",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 81.0,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "bac9b1dd2e855ce97cc743bedfef796d8afcf5bdd48c413ae9a77092bffb50e9",
+      "profile": "alderlake",
+      "source": "order_2103"
+    },
+    "order_2103__generic": {
+      "assembly_sha256": "e73e5a0b6ac2cf9e69c42807c32ef4c3f6a37dcd484c09b28ceebe31eba2a98f",
+      "binary_sha256": "44a40e4342cacc290721bfbfc9cd3a4ceb3d537f1de8b364f12c6b2d76200619",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 81.0,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "c05acf788ef5236e4baefccd729c505562b6e59e14faf715d7cc440163fe5955",
+      "profile": "generic",
+      "source": "order_2103"
+    },
+    "order_2130__alder_ira": {
+      "assembly_sha256": "cd08588f5f8cad7cc65f041f4bb928c00367a5772b546d2b58ac340a6cd4e717",
+      "binary_sha256": "2e62ef3320d0ff3a53ff70b06cc249e8ff707ace8be830add7b1034b42d9467c",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "e5195ccbc1c4513e0b95ae6a02b4ebbb48cd5bd4a8309c55a3ad1f7b9ec79b95",
+      "profile": "alder_ira",
+      "source": "order_2130"
+    },
+    "order_2130__alderlake": {
+      "assembly_sha256": "1714976b5bbc8683d0b9a0159cd79fdc8b0381d2766070ef3f68971496b2b173",
+      "binary_sha256": "dbf7953a4d162573c94385f70ddd07dbab02daea807f95ca6c1f1ddc6a3b3638",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 87.0,
+          "cycles_per_iteration": 128.0,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12800
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16106
+        }
+      },
+      "loop_text_sha256": "d02c69e64c81156739db133cdaafa987963e1dbc16311b7d6137e39676c6c8ec",
+      "profile": "alderlake",
+      "source": "order_2130"
+    },
+    "order_2130__generic": {
+      "assembly_sha256": "6a229f5566a193c720f180ccb925ba36ed258647cd59b3f21af7c197ffe0dfcd",
+      "binary_sha256": "48d651ef804d54debe82fff5f3253a96e73db62400cd7a93a7c98617b1734bb1",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 87.0,
+          "cycles_per_iteration": 128.0,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12800
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "49c21058c896cc3b30ee1ea58a0ae5b68880206c739277161ffc36ed8c3b82b2",
+      "profile": "generic",
+      "source": "order_2130"
+    },
+    "order_2301__alder_ira": {
+      "assembly_sha256": "259981492c4b05ff3fec6e34f41512a3da0d939521c9f1c3fb77613a0bd69c82",
+      "binary_sha256": "a6ca0e1c074ee1b3b1b2497fa606391a4f98b2d6b9e82d9d18224c9830b021fa",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "c1fda332d59341eab522912110907d4cb7c7f91e4c20400e423a04d322dfcfce",
+      "profile": "alder_ira",
+      "source": "order_2301"
+    },
+    "order_2301__alderlake": {
+      "assembly_sha256": "7c9d1bb68c1ed4d5f80fc7f1c91a84b08f4b107f26700c4e11537f4dc5e86fad",
+      "binary_sha256": "01f41ceba4673eedf2c3635c71a3ae1926d60c562baa8eac1080d95dfad1ea66",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 85.0,
+          "cycles_per_iteration": 122.72,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12272
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "ff3b07a37b2ac09d643d1f21081b23c0f9cf4b97a66734205608a60ded912445",
+      "profile": "alderlake",
+      "source": "order_2301"
+    },
+    "order_2301__generic": {
+      "assembly_sha256": "618ba42fca23f83ad26b55bb430d787c1bc1a20f70dfd18af746a735627d24b1",
+      "binary_sha256": "07d523351d4fe908e8e3a783ba9f9d69412e801183cd18870636c768ca889e89",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 85.0,
+          "cycles_per_iteration": 122.72,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12272
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "3ff3a01c58c2c5d8ca87b6b5d8081d97532799f2b57cc3df9203268c6b47ecdd",
+      "profile": "generic",
+      "source": "order_2301"
+    },
+    "order_2310__alder_ira": {
+      "assembly_sha256": "483d56706604efcdc704c30ead21ffda2e4b82474fc23d64f4b4a9d96a9935b9",
+      "binary_sha256": "4f98583652b924b19c6983ee42419f2858651f9c5ecf2c7c6366e89b57bfc4ee",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "975dafabcb20478d488a58e0a0b779919a3c97d16f5849e744921a2d7266c42e",
+      "profile": "alder_ira",
+      "source": "order_2310"
+    },
+    "order_2310__alderlake": {
+      "assembly_sha256": "6f4645e398305daf8cd41ae2408b4f046d988633b6df04076ab37a1ed737c411",
+      "binary_sha256": "8b61130e9d3ef8ea30b95872e02fc37fba2f7554689a57199d978833ecd962f2",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 88.0,
+          "cycles_per_iteration": 130.94,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 13094
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16106
+        }
+      },
+      "loop_text_sha256": "1eec583dc22a3c1c5b738e2b3680e482078223138e1a8655fc6dc6d32bf7a5c1",
+      "profile": "alderlake",
+      "source": "order_2310"
+    },
+    "order_2310__generic": {
+      "assembly_sha256": "3542abe3745946e7c3939b4f162d2c9df1ca1c60bf210ee32e5fbc9d8e0d1e18",
+      "binary_sha256": "dd9bd93f8a87e005355ddbe3402d05d898c6d374643291be0dab502ace1a413c",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 88.0,
+          "cycles_per_iteration": 129.47,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12947
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "697390ad777eacc8c94134ed78bf2cfffb79d35db7a5046ffdf5395dfab28c2c",
+      "profile": "generic",
+      "source": "order_2310"
+    },
+    "order_3012__alder_ira": {
+      "assembly_sha256": "82a0f19dc9d5664eebcd29e9da74bbb5ca16fe90d2c5e872e457698f4d488bf0",
+      "binary_sha256": "785c33ebd844ddf6faa8077e1f3a4f011a3edbcb6c9779f2c3d53b656298020c",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "66090e67efc6dd3e7752a3b663d7d5b318263abccefe175f397ec00f3dbbf402",
+      "profile": "alder_ira",
+      "source": "order_3012"
+    },
+    "order_3012__alderlake": {
+      "assembly_sha256": "bd3aa829f6e37964b4c177d1aec41c45c3466f03f8de20210e6cd78ec7e857c7",
+      "binary_sha256": "59f17b2fb0a1daca14fc3cd536cf96176db3e10c9074944b8193106d68d783b0",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 88.0,
+          "cycles_per_iteration": 124.63,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12463
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "85f76048deef4f7ccc46ee4c5639ae3f31980302752caba3619dcd6426607704",
+      "profile": "alderlake",
+      "source": "order_3012"
+    },
+    "order_3012__generic": {
+      "assembly_sha256": "e56734f56cd30e6071f8603ce5a0534c5e7877bacff7aab61327265c68f67e9d",
+      "binary_sha256": "82eba41549a23698c2b6683280d055edc1587289fe9e3dc698ee629e9b5e9ca2",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 88.0,
+          "cycles_per_iteration": 124.15,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12415
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "d56182553d441e4a600d7b7f3d84a5cc6da61bfcac476e54708c49514cb8a029",
+      "profile": "generic",
+      "source": "order_3012"
+    },
+    "order_3021__alder_ira": {
+      "assembly_sha256": "7eda5fa3397100f334e068eedcd645fc659a04ebdb2989d7da05a48ab6abed79",
+      "binary_sha256": "421a5b2dec8022e8ad80cebbb35d1e6e005ed9db31d6e51a0271c26f765d3b12",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "d9796c4d962ef8c72ceaeacc0d5b2b2b6c0cf60ca4a0c71db3d81ea6ad1af797",
+      "profile": "alder_ira",
+      "source": "order_3021"
+    },
+    "order_3021__alderlake": {
+      "assembly_sha256": "ebb018ed259135c082447d79f641bc553682f3e48751850191e207b4bb33f9e4",
+      "binary_sha256": "42d78cce906d8d95b2e98dc2086a7d788f48954a832fbf2485ce99f0b3c32872",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 89.0,
+          "cycles_per_iteration": 124.63,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12463
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "87c7a322f4e6d326f0107f750668656512ebf403dcec13e3f717d531b499feaf",
+      "profile": "alderlake",
+      "source": "order_3021"
+    },
+    "order_3021__generic": {
+      "assembly_sha256": "9d31a0742a5894a924e816b9cab229fdcefe56ee4ec4a8f4ee42b384ac77b594",
+      "binary_sha256": "1ff16a789235d86269b69080048380556a24f2305ed73beb873124a7b5c9f6a3",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 89.0,
+          "cycles_per_iteration": 124.13,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12413
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "a251be6fd9ba2651479634badcdcc17c164e18cafacdf339ccfdea5e59d1362b",
+      "profile": "generic",
+      "source": "order_3021"
+    },
+    "order_3102__alder_ira": {
+      "assembly_sha256": "fe2fd3481d297cea01d083b0e231c550f8861c53d924cbb220919ae5f2bda1ca",
+      "binary_sha256": "ac890407bd4476127acf5c508a0ff5ca23d39e26d68963dffdba6808983d3d01",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "8b7a4ae5e556fb889ecd76285c05aabde4a7377e03b6de704e3eb9d00887759c",
+      "profile": "alder_ira",
+      "source": "order_3102"
+    },
+    "order_3102__alderlake": {
+      "assembly_sha256": "1e01f392c4e277ea87ece21c9f1848aa0b070738540292d5bd019a97292a74ae",
+      "binary_sha256": "9dec1f89e9f8ba878e99fed3f4acc61892c2e9b8072d42eac61cd41ab3b40a33",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 83.0,
+          "cycles_per_iteration": 123.08,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12308
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "cfce74c11b0a2ed398f16b25a8cbd53ad70a11b813548824fd2c0bff99331134",
+      "profile": "alderlake",
+      "source": "order_3102"
+    },
+    "order_3102__generic": {
+      "assembly_sha256": "9940edfeb9312e8280d41c56c8b4f2c4654edd71e15fb52042fd6eb481489a4e",
+      "binary_sha256": "9ca71fc2552469eb83118797d476e1e6dc57fd68ba55b212100165ce47a4ff5b",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 83.0,
+          "cycles_per_iteration": 123.08,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12308
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "86ea71c1a750cd48e69d7aea0e3705b62e1c884b6a99c97aac3cd711aaa5fd10",
+      "profile": "generic",
+      "source": "order_3102"
+    },
+    "order_3120__alder_ira": {
+      "assembly_sha256": "7fec6c0abc90ab712d8a5d626e4bcb4432bdd1bbdbc2e0878efbe3f6dfc96865",
+      "binary_sha256": "82dbbedfb5869a30a34ebce832bbd2f35a524a4bffd5d22a670dd1756bb2f44b",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "250a4c3d7cde41407a2438e44115906b93ec0516962ee34a25781b3b1c189820",
+      "profile": "alder_ira",
+      "source": "order_3120"
+    },
+    "order_3120__alderlake": {
+      "assembly_sha256": "0f318d01bcc63717c997943b18a3c357184ee4d5e155dac965e62057c5521327",
+      "binary_sha256": "a6f59ef269cf2588e338c1515bb5540a96a08ae97f126c1f53f447d2f6bd753b",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 89.0,
+          "cycles_per_iteration": 130.1,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 13010
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107
+        }
+      },
+      "loop_text_sha256": "500da0f288533e94ae35b730eceb182f831acde36be2a33cc5d8d0d3cad479a8",
+      "profile": "alderlake",
+      "source": "order_3120"
+    },
+    "order_3120__generic": {
+      "assembly_sha256": "bd23fa21badd861639eb5727350277b1369bae714739b1a615f9a18b11651f59",
+      "binary_sha256": "241db9e9e3b2500c87fa674858ab340ef5dfacd8e011110aaa69ce6f108b2e61",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 89.0,
+          "cycles_per_iteration": 127.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12706
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16106
+        }
+      },
+      "loop_text_sha256": "140ad4a9932bb764898a1ba6f0e5b0f7881b5f6d4407f0ac9cd1745512ca0afa",
+      "profile": "generic",
+      "source": "order_3120"
+    },
+    "order_3201__alder_ira": {
+      "assembly_sha256": "24246206da26e7cd39cf16942680ba36a4fdc81ebd0405a86add7d7754ae43b9",
+      "binary_sha256": "b66913c9bfecdef81b53d0fb91b9bf0ce5eed7b9966180c587068d78d69a271e",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "4d90e3f372306115437898a52151dd1450b22bb3ca4a4b143aa2718a28ccda7c",
+      "profile": "alder_ira",
+      "source": "order_3201"
+    },
+    "order_3201__alderlake": {
+      "assembly_sha256": "b32aa07ebab6fa05b2d8f82ea0b55eb6978dfdd9fc07045a0c3723aaf30c726b",
+      "binary_sha256": "453bb6ba51ead95d2b7e457505d993ba0c1ab4458ab9c1c49e200a077422b152",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.59,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12359
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16106
+        }
+      },
+      "loop_text_sha256": "6d0efbe70625ed9d4b0cb90b520c2e366064e5d248ae15dbad4dde516090bbae",
+      "profile": "alderlake",
+      "source": "order_3201"
+    },
+    "order_3201__generic": {
+      "assembly_sha256": "310ec81ea8abc3e23bf6940dd89c6efcadbb23360c746097ebe021534bd732fb",
+      "binary_sha256": "217edf963089492e9fbdbb85b430e3b08b559cef0bc09ac6816e2949578e60b7",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 122.15,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12215
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "4173543a7ce0c75e6e50a1758378339b32b75c3b58e6aca5bae69026ff95573b",
+      "profile": "generic",
+      "source": "order_3201"
+    },
+    "order_3210__alder_ira": {
+      "assembly_sha256": "55f8685c6929737468de68e341ea5f5f84a534b241fde58e59714dcecfd62902",
+      "binary_sha256": "0aa2ebdbc3301ff300f55649a3098322ef5bde2399029884e73b505dd2d529cc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104
+        }
+      },
+      "loop_text_sha256": "7cec998ed3d594c20481dbe4dc32cf4c55ddd073642d486dff35d47e9e7af3ea",
+      "profile": "alder_ira",
+      "source": "order_3210"
+    },
+    "order_3210__alderlake": {
+      "assembly_sha256": "23b8316a912b8d834ac8e60651b41923a5481936b42369c0ae61e6d239b33713",
+      "binary_sha256": "bf1728875df24fa94167c140e13410f7cebe9774e68c82c9691a2dc0e4a87394",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 87.0,
+          "cycles_per_iteration": 123.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12306
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "fa9214417da612666d06353c2e0e292f3177360636ce8db2be73d5e6180fb6a0",
+      "profile": "alderlake",
+      "source": "order_3210"
+    },
+    "order_3210__generic": {
+      "assembly_sha256": "386d01860a02a381553d01ae2deebed1bcb03457878f58d63acd1460e8002939",
+      "binary_sha256": "35d8ca1124ec440812eabf7bf0e8ec7d1b0aaa666c732d07a031da7e400cc38d",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 87.0,
+          "cycles_per_iteration": 123.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12306
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105
+        }
+      },
+      "loop_text_sha256": "bb055a456e61f012253ccb7584b79829029cb050af5db76dab35e1604a35fce3",
+      "profile": "generic",
+      "source": "order_3210"
+    }
+  },
+  "schema_version": 1,
+  "source_hashes": {
+    "order_0123": "74771905f982eb99846d26084a5dc9d3e8d4b36bcabba290e990cced80c1732b",
+    "order_0132": "76ad7f2b39385953348b4889580e5137ce87e820f03d2e949520a9e829ed367a",
+    "order_0213": "1b0720605c9d6ec43d2924b341d43c4821b44cc42838b74170f932be35372338",
+    "order_0231": "73c124d8bebff125aeee1355161d8c83bea63fadefddc8b84c79562bdc637224",
+    "order_0312": "23647b326f57639c5acc000b233cdf936f7caa2d3831898f9b4f9ab75a8218a4",
+    "order_0321": "2c705955a2fbe979adcd3dc75804bbe0a8cae66f8d1fd16029a41491f881c665",
+    "order_1023": "2bbff9518bd3cb5d827342c6b50db536dfc6bd2cd0096f0d8d02c24780de57d7",
+    "order_1032": "b174be908e8304544d62bf13f62e8889f84d4ac0639792f7be7a6b821118760d",
+    "order_1203": "33b1eeffd8a1ea5f0107f316f325b5843422d2165f9d6947bc2e5b9180308827",
+    "order_1230": "258389585add658c0922bacae4f2a43e23fdcb5021bb74a270f42e7933c352c8",
+    "order_1302": "d7cd8960098773a95c402b49e396b939813a554ccd258750c9814f099a42f6b9",
+    "order_1320": "e94e6fc793d7f14323e82a28dd49d42c62ef79d9e05a86f51ab0416d8c019739",
+    "order_2013": "2d83e4e49a0e142d0b2738294ef9bb8522c11edbb8fc40b47ded283f411ff2e1",
+    "order_2031": "b2e4e83fdd09e0b947955b7abbec62e33a365c40c3272c5f96c95e2dba6c8b7d",
+    "order_2103": "20c625340e40c661a52bacfbee814471e98d13ce0b1c35ea410bf1f557dc0a07",
+    "order_2130": "509225b2115184db406c3c9ed3821b71db314dbb9b3d67a5da84aa63c540112b",
+    "order_2301": "bea50162c7c4a9b09641a81da7614690216d7d0f67e320832cff5e67b6f6fb75",
+    "order_2310": "88c4925b920b99bfb771630b6d740fcbe873efeab26ce81fe3bf5e60fee85821",
+    "order_3012": "37c437be3a15dcde7de8ce61745b8db7405644d5e28950a69f79067ce5b1f020",
+    "order_3021": "77e955e663ba81d8da8cb155298d979605cd25c5a7576d4e87a2f3025f22372e",
+    "order_3102": "e62c8973559fee8064a88968259469b01be9ea4b261366f47ed63fa3a3766665",
+    "order_3120": "823a7522f3a76a190e2069cb009a8048cabe2fc21c2bcb2ece5cf459751c6bbe",
+    "order_3201": "2dfe51630597e182425e8db285bcfa5ae607072c699f0418b46308c2f9c01fed",
+    "order_3210": "2b29e04fc6d538d45bcf6c405cf029c177880e5823fe15f4381763df0f15c201"
+  },
+  "top_candidate": {
+    "adoption": "deferred pending independent measurements on the 255H target",
+    "order": [
+      2,
+      1,
+      0,
+      3
+    ],
+    "path": "solutions/02_optimization/contest_source_order_2103.c",
+    "semantic_change": "none; four independent assignments commute",
+    "sha256": "20c625340e40c661a52bacfbee814471e98d13ce0b1c35ea410bf1f557dc0a07"
+  },
+  "top_correctness_gate": {
+    "candidate_translation_unit_cflags": [
+      "-O3",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-mbmi2",
+      "-finline-limit=2000",
+      "-Dmain=contest_candidate_main"
+    ],
+    "random_cases": 100000,
+    "random_state_and_constants": true,
+    "returncode": 0,
+    "round_counts": [
+      1,
+      20
+    ],
+    "stderr": "",
+    "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+    "verifier_translation_unit_cflags": [
+      "-O3",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror"
+    ]
+  },
+  "top_full_inline_audits": {
+    "alder_ira": {
+      "binary_sha256": "5ce3c4685ea6a63f237a45ec7f189eec579756975cfac3e1c1d55588252e59cc",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 80,
+        "bswap": 80,
+        "rotate": 80,
+        "xor": 80
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "abc62026a455c3853b903a165e0749c077f2b713af61b009e287f0cfefc5df70",
+      "loop_bytes": 1210,
+      "loop_instructions": 322,
+      "loop_start": "0x401520",
+      "loop_start_mod_16": 0,
+      "loop_start_mod_32": 0,
+      "loop_start_mod_64": 32,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "add": 80,
+        "bswap": 80,
+        "jne": 1,
+        "rorx": 80,
+        "sub": 1,
+        "xor": 80
+      },
+      "mode": "full-inline-320",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "61198ec39bf108fef1121e095c127b93fcd6c442a274f2b0d6fb821236d51d59",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 7199
+    },
+    "alderlake": {
+      "binary_sha256": "41c6354bae4021edaff6bc11a60ea255941bfeb1854557451df75d91997eda7c",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 80,
+        "bswap": 80,
+        "rotate": 80,
+        "xor": 80
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "1b31d90d57685e8b4423f8d0e7975d3cb4df119fbde07f98fa3a1be74d3c683d",
+      "loop_bytes": 1211,
+      "loop_instructions": 322,
+      "loop_start": "0x401528",
+      "loop_start_mod_16": 8,
+      "loop_start_mod_32": 8,
+      "loop_start_mod_64": 40,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "add": 79,
+        "bswap": 80,
+        "jne": 1,
+        "lea": 1,
+        "rorx": 80,
+        "sub": 1,
+        "xor": 80
+      },
+      "mode": "full-inline-320",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "2977e9cc02555334fac6aeb8843ee142bc3ddaad76159406cef80d66b3776522",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 7246
+    },
+    "generic": {
+      "binary_sha256": "44a40e4342cacc290721bfbfc9cd3a4ceb3d537f1de8b364f12c6b2d76200619",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 80,
+        "bswap": 80,
+        "rotate": 80,
+        "xor": 80
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "fe66490b3dd2045b03e92a9e642652aa9c802c8e501b29b0e5e59294b9e6c035",
+      "loop_bytes": 1211,
+      "loop_instructions": 322,
+      "loop_start": "0x401528",
+      "loop_start_mod_16": 8,
+      "loop_start_mod_32": 8,
+      "loop_start_mod_64": 40,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "add": 79,
+        "bswap": 80,
+        "jne": 1,
+        "lea": 1,
+        "rorx": 80,
+        "sub": 1,
+        "xor": 80
+      },
+      "mode": "full-inline-320",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "cf5f70c56dfc3e9b78895db0de856910c057b94078fafbfec7eab34edbac8659",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 7246
+    }
+  }
+}

@@ -112,14 +112,10 @@ static inline uint64_t transform_word(uint64_t value,
  */
 #define APPLY_TWO_ROUNDS()                                                    \
     do {                                                                      \
-        x0 = transform_word(transform_word(x0, 43U, k0, a3),                 \
-                            14U, k3, a0);                                     \
-        x1 = transform_word(transform_word(x1, 7U, k1, a2),                  \
-                            29U, k2, a1);                                     \
-        x2 = transform_word(transform_word(x2, 29U, k2, a1),                 \
-                            7U, k1, a2);                                      \
-        x3 = transform_word(transform_word(x3, 14U, k3, a0),                 \
-                            43U, k0, a3);                                     \
+        x2 = transform_word(transform_word(x2, 29U, k2, a1), 7U, k1, a2);    \
+        x1 = transform_word(transform_word(x1, 7U, k1, a2), 29U, k2, a1);    \
+        x0 = transform_word(transform_word(x0, 43U, k0, a3), 14U, k3, a0);   \
+        x3 = transform_word(transform_word(x3, 14U, k3, a0), 43U, k0, a3);   \
     } while (0)
 
 PERMUTE20_ATTRIBUTE static void permute_20rounds_unrolled(

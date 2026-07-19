@@ -1,0 +1,288 @@
+{
+  "analysis": "challenge02_simple_operation_fold_checks",
+  "projection_argument": "A 64-bit identity must hold after reduction modulo 2^n; one impossible low-bit projection therefore disproves the identity.",
+  "schema_version": 1,
+  "top_bit_identity_exhaustive_width": 16,
+  "top_bit_identity_pass": true,
+  "transforms": [
+    {
+      "destination_add": "0x5d0f3a8e2c6b4197",
+      "first_impossible_projection_width": 5,
+      "instruction_removed_by_top_bit_fold": false,
+      "low_bit_projections": [
+        {
+          "solution": {
+            "leading_add": 3,
+            "trailing_xor": 1
+          },
+          "width": 2
+        },
+        {
+          "solution": {
+            "leading_add": 5,
+            "trailing_xor": 3
+          },
+          "width": 3
+        },
+        {
+          "solution": {
+            "leading_add": 9,
+            "trailing_xor": 7
+          },
+          "width": 4
+        },
+        {
+          "solution": null,
+          "width": 5
+        },
+        {
+          "solution": null,
+          "width": 6
+        },
+        {
+          "solution": null,
+          "width": 7
+        },
+        {
+          "solution": null,
+          "width": 8
+        },
+        {
+          "solution": null,
+          "width": 9
+        },
+        {
+          "solution": null,
+          "width": 10
+        }
+      ],
+      "remaining_xor_after_top_bit_fold": "0x35801f6c4a2db9e7",
+      "source_word": 0,
+      "top_bit_folded": false,
+      "xor_after_bswap": "0x35801f6c4a2db9e7"
+    },
+    {
+      "destination_add": "0xa7e2d9c4b1f60853",
+      "first_impossible_projection_width": 3,
+      "instruction_removed_by_top_bit_fold": false,
+      "low_bit_projections": [
+        {
+          "solution": {
+            "leading_add": 1,
+            "trailing_xor": 0
+          },
+          "width": 2
+        },
+        {
+          "solution": null,
+          "width": 3
+        },
+        {
+          "solution": null,
+          "width": 4
+        },
+        {
+          "solution": null,
+          "width": 5
+        },
+        {
+          "solution": null,
+          "width": 6
+        },
+        {
+          "solution": null,
+          "width": 7
+        },
+        {
+          "solution": null,
+          "width": 8
+        },
+        {
+          "solution": null,
+          "width": 9
+        },
+        {
+          "solution": null,
+          "width": 10
+        }
+      ],
+      "remaining_xor_after_top_bit_fold": "0x74602b9d3e8c4f1a",
+      "source_word": 1,
+      "top_bit_folded": false,
+      "xor_after_bswap": "0x74602b9d3e8c4f1a"
+    },
+    {
+      "destination_add": "0x3c6e9a1d5b7f2840",
+      "first_impossible_projection_width": 10,
+      "instruction_removed_by_top_bit_fold": false,
+      "low_bit_projections": [
+        {
+          "solution": {
+            "leading_add": 2,
+            "trailing_xor": 1
+          },
+          "width": 2
+        },
+        {
+          "solution": {
+            "leading_add": 0,
+            "trailing_xor": 3
+          },
+          "width": 3
+        },
+        {
+          "solution": {
+            "leading_add": 0,
+            "trailing_xor": 3
+          },
+          "width": 4
+        },
+        {
+          "solution": {
+            "leading_add": 0,
+            "trailing_xor": 3
+          },
+          "width": 5
+        },
+        {
+          "solution": {
+            "leading_add": 0,
+            "trailing_xor": 3
+          },
+          "width": 6
+        },
+        {
+          "solution": {
+            "leading_add": 0,
+            "trailing_xor": 3
+          },
+          "width": 7
+        },
+        {
+          "solution": {
+            "leading_add": 64,
+            "trailing_xor": 67
+          },
+          "width": 8
+        },
+        {
+          "solution": {
+            "leading_add": 448,
+            "trailing_xor": 195
+          },
+          "width": 9
+        },
+        {
+          "solution": null,
+          "width": 10
+        }
+      ],
+      "remaining_xor_after_top_bit_fold": "0x3794618d2e5af0c3",
+      "source_word": 2,
+      "top_bit_folded": true,
+      "xor_after_bswap": "0xb794618d2e5af0c3"
+    },
+    {
+      "destination_add": "0x8f4a2c1e9b7d3f61",
+      "first_impossible_projection_width": 4,
+      "instruction_removed_by_top_bit_fold": false,
+      "low_bit_projections": [
+        {
+          "solution": {
+            "leading_add": 1,
+            "trailing_xor": 1
+          },
+          "width": 2
+        },
+        {
+          "solution": {
+            "leading_add": 7,
+            "trailing_xor": 3
+          },
+          "width": 3
+        },
+        {
+          "solution": null,
+          "width": 4
+        },
+        {
+          "solution": null,
+          "width": 5
+        },
+        {
+          "solution": null,
+          "width": 6
+        },
+        {
+          "solution": null,
+          "width": 7
+        },
+        {
+          "solution": null,
+          "width": 8
+        },
+        {
+          "solution": null,
+          "width": 9
+        },
+        {
+          "solution": null,
+          "width": 10
+        }
+      ],
+      "remaining_xor_after_top_bit_fold": "0x05307c4f1a9d2e6b",
+      "source_word": 3,
+      "top_bit_folded": true,
+      "xor_after_bswap": "0x85307c4f1a9d2e6b"
+    }
+  ],
+  "two_round_linear_parts": [
+    {
+      "cycle_lengths": [
+        64
+      ],
+      "rotations": [
+        43,
+        14
+      ],
+      "simple_matches": []
+    },
+    {
+      "cycle_lengths": [
+        64
+      ],
+      "rotations": [
+        14,
+        43
+      ],
+      "simple_matches": []
+    },
+    {
+      "cycle_lengths": [
+        16,
+        16,
+        16,
+        16
+      ],
+      "rotations": [
+        7,
+        29
+      ],
+      "simple_matches": []
+    },
+    {
+      "cycle_lengths": [
+        16,
+        16,
+        16,
+        16
+      ],
+      "rotations": [
+        29,
+        7
+      ],
+      "simple_matches": []
+    }
+  ],
+  "xor_add_equation": "(x xor C) + A == (x + B) xor E"
+}

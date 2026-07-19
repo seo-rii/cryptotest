@@ -1,8 +1,9 @@
 # Problem 2 optimization experiments
 
 This directory is isolated from the existing submission and solution files. It
-contains a correctness oracle, eight implementation candidates, and a benchmark
-driver designed to avoid two common sources of misleading results:
+contains eight default one-state candidates, one combined-mode-only batch
+candidate, a correctness oracle, and a benchmark driver designed to avoid two
+common sources of misleading results:
 
 - every candidate is warmed up before measurement;
 - candidates are built into separate binaries, then measured in randomized
@@ -35,8 +36,8 @@ can materially change scalar timing through code layout alone.
 
 ## Candidates
 
-- `current_submission`: one state-writing helper in each of 20 iterations,
-  matching the current `submissions/02/contest.c` structure.
+- `current_submission` (historical internal name): one state-writing helper in
+  each of 20 iterations, preserving the pre-optimization submission structure.
 - `register_loop`: the existing solution strategy, holding four words and eight
   constants in scalar registers for all 20 rounds.
 - `paired_loop`: two rounds at a time; GCC recognizes the four independent word
@@ -70,9 +71,9 @@ Environment: AMD EPYC 7B12 VM, GCC 12.2.0, `-O3 -march=native`, logical CPU 2,
 2,000,000 calls per sample, 300,000-call warmup, five randomized blocks of three
 samples (15 total), and 100,000 randomized differential cases.
 
-| Candidate | Median ns / 20 rounds | MAD ns | vs current submission | vs register loop |
+| Candidate | Median ns / 20 rounds | MAD ns | vs pre-opt submission | vs register loop |
 |---|---:|---:|---:|---:|
-| current submission | 41.894 | 2.834 | 1.000x | 0.970x |
+| `current_submission` (historical pre-opt name) | 41.894 | 2.834 | 1.000x | 0.970x |
 | register loop | 40.655 | 3.083 | 1.031x | 1.000x |
 | paired AVX2 loop | 39.718 | 0.131 | 1.055x | 1.024x |
 | paired scalar loop | 37.751 | 2.649 | 1.110x | 1.077x |
@@ -114,7 +115,347 @@ shows that the remaining difference is dominated by frontend/code-layout and
 shared-host effects rather than a portable reduction in work.  Alignment,
 literal constants, forced inline, and the SIMD variants did not produce a
 repeatable improvement.  The full-unroll implementation therefore remains the
-default; only full-unroll versus `unroll5_bmi2` needs target-machine A/B testing.
+arithmetic core.
+
+## Adaptive cross-call inlining and second-wave review
+
+The current source keeps the local noinline BMI2 helper under the supplied
+plain `gcc -O3` command.  When compiled with global BMI2 enabled, its attribute
+changes to `always_inline`; a larger inline threshold then carries the same
+320-operation core through the public wrapper and into `main`'s timing loop:
+
+```bash
+gcc -O3 -Wall -Wextra -mbmi2 -finline-limit=2000 \
+  -o contest submissions/02/contest.c
+```
+
+This is not a new permutation or a hard-coded output. It removes the repeated
+call boundary, four callee-saved push/pop pairs, four state loads/stores, and
+eight constant loads from the timed recurrence. The state and constants remain
+in registers across outer calls. `-mbmi2` alone only merges the private core
+into the public function and did not improve timing; the public-to-`main`
+boundary must disappear as well.
+
+Two 3,000,000-call campaigns used three discarded warm-up processes, 21
+interleaved samples, CPU affinity, and the correctness gate before timing:
+
+| CPU | default median | inline median | paired median | bootstrap 95% CI |
+|---:|---:|---:|---:|---:|
+| 0 | 44.467 ns | 39.859 ns | **1.116x** | 1.110--1.143x |
+| 4 | 45.924 ns | 40.801 ns | **1.118x** | 1.095--1.140x |
+
+The raw JSON is in [`inline_results_02.json`](inline_results_02.json) and
+[`inline_results_02_cpu4.json`](inline_results_02_cpu4.json). A three-stage
+default/`-mbmi2`/outer-inline ablation is in the older schema-2
+[`inline_stages_results_02.json`](inline_stages_results_02.json). The two main
+inline files are schema 3: they link each candidate to an independent verifier
+and compare one and twenty rounds for 100,000 random states and random add/XOR
+constants before timing. With `--audit-mode`, current schema 4 additionally
+audits each named case's exact performance executable against its timed-loop
+contract before warm-up. GCC 12 emitted
+byte-identical binaries for inline limits 700 and 2000.
+The digest-pinned GCC 13.3.0 reproduction now confirms the same equality for the
+complete binaries and the fully inlined timing loop.
+
+[`audit_inline_02.py`](audit_inline_02.py) makes the assembly check executable
+rather than visual. Its saved
+[`inline_assembly_audit_02.json`](inline_assembly_audit_02.json) reports a
+1,216-byte, 322-instruction score loop containing exactly 80 each of `RORX`,
+XOR, `BSWAP`, and ADD/LEA, with no call, push/pop, or state/constant memory
+operand. Limits 700 and 2000 have the same normalized loop hash.
+
+Explicit 32/64/128-byte alignment moved the inlined loop entry as requested but
+measured paired 1.006x, 0.991x, and 0.990x, with every bootstrap interval
+touching or crossing 1. The default 16-byte loop alignment is retained; raw
+samples are in
+[`inline_alignment_results_02.json`](inline_alignment_results_02.json).
+
+The complete inline binary also rejected extra tuning: IRA priority measured
+paired 1.016x (CI 0.951--1.038x), native tune 0.985x (0.946--1.010x), and their
+combination 0.970x (0.958--1.014x). They changed the generated binaries but did
+not beat the simpler score build. Raw samples are in
+[`inline_codegen_results_02.json`](inline_codegen_results_02.json).
+
+## Third-wave operation and backend search
+
+The smaller portable forced-inline control replaced 80 non-destructive `RORX`
+instructions with destructive `ROL`/`ROR`. It reduced complete text from 7,537
+to 7,245 bytes and the timed loop from 1,216 to 1,060 bytes, but added a move and
+measured paired **0.985x** (95% CI 0.958--1.002x). Smaller code therefore did
+not beat BMI2; raw samples are in
+[`inline_rol_results_02.json`](inline_rol_results_02.json).
+
+[`analyze_transform_lower_bound_02.py`](analyze_transform_lower_bound_02.py)
+checks two possible algebraic reductions. For the four actual transforms, the
+identity `(x xor C)+A = (x+B) xor E` is already impossible in 5-, 3-, 10-, and
+4-bit projections. A 64-bit identity would have to survive every such
+projection. Folding XOR's top bit into ADD applies to two constants, but their
+remaining XOR masks are nonzero, so no instruction disappears. The four
+two-round linear bit permutations also match neither one rotate nor one
+rotate/byte-swap composition. Exact fallback forms were slower: post-BSWAP XOR
+0.980x, top-bit fold 0.983x, arithmetic-XOR 0.620x, and 32-bit halves 0.251x.
+The deterministic result is saved in
+[`transform_lower_bound_02.json`](transform_lower_bound_02.json).
+
+A separate complete-binary screen compiled 120 GCC/link combinations and found
+26 distinct hot-loop streams. LTO, whole-program, semantic-interposition, and
+section-GC variants left the 1,216-byte loop byte-identical. An initial IRA
+1.0217x result disappeared when loop offsets were controlled: four IRA layouts
+measured 0.985--0.995x and every interval crossed 1. PGO and scheduler variants
+also failed to win. `-mtune=alderlake` remains a judge-only A/B candidate: one
+AMD codegen campaign measured 1.0148x (CI 1.0001--1.0207x), but the host is not
+the 255H and the available Arrow-Lake LLVM model is only an Alder-Lake port
+approximation. It is not part of the default score command.
+
+## Exact GCC 13.3 and fourth-wave search
+
+[`reproduce_gcc133_02.py`](reproduce_gcc133_02.py) runs the source in the
+digest-pinned official `gcc:13.3.0` image, checks the unmodified complete binary,
+then directly verifies every candidate on 100,000 random states and random
+ADD/XOR constants. The saved
+[`gcc133_codegen_results_02.json`](gcc133_codegen_results_02.json) records:
+
+| GCC 13.3 build | text | timed loop | calls / memory | result |
+|---|---:|---:|---:|---|
+| default `-O3` | 5,972 B | 31 B / 6 insn | 1 / 0 | compatibility path |
+| BMI2 inline 700 or 2000 | 7,246 B | 1,216 B / 322 insn | 0 / 0 | binaries identical |
+| above + `-mtune=alderlake` | 7,246 B | 1,216 B / 322 insn | 0 / 0 | different schedule |
+| above + Alder tune + IRA priority | 7,199 B | 1,210 B / 322 insn | 0 / 0 | third schedule |
+
+All six correctness-smoke candidates passed the supplied vectors and the direct
+100,000-case 1/20-round gate. GCC 13.3 gives `alderlake`, `raptorlake`, and
+`meteorlake` the same complete binary for this source, while `-mtune=arrowlake`
+is not supported by this release. Keeping the documented name `alderlake` is
+therefore sufficient.
+
+A 34-configuration GCC 13.3 scheduler/allocator screen produced 32 valid builds
+and eight distinct loop streams. It is reproduced by
+[`screen_gcc133_schedules_02.py`](screen_gcc133_schedules_02.py), with all flags,
+hashes and static metrics in
+[`gcc133_schedule_screen_02.json`](gcc133_schedule_screen_02.json). LLVM-MCA
+16's Alder/Raptor/Meteor models
+predicted 125.06 cycles for generic, 123.62 for Alder tune, and 121.06 for Alder
+tune plus IRA priority; all have the same 320 core operations. These are only
+approximate port/latency screens, not measurements of Lion Cove or Skymont.
+Digest-pinned GCC 13.3 confirmation on the available AMD host compared the last
+two builds with 5,000,000 calls, six discarded warmups, and 40 samples:
+
+| affinity | Alder / Alder+IRA paired median | bootstrap 95% CI |
+|---:|---:|---:|
+| CPU 0 | 1.011x | 1.001--1.015x |
+| CPU 4 | 1.008x | 0.998--1.025x |
+
+The inconsistent intervals and wrong microarchitecture prevent promotion, but
+the distinct 1,210-byte code stream is retained as a high-priority target-only
+candidate. The schema-4 raw samples and exact measured-binary audits are
+[`gcc133_schedule_results_02_cpu0.json`](gcc133_schedule_results_02_cpu0.json)
+and [`gcc133_schedule_results_02_cpu4.json`](gcc133_schedule_results_02_cpu4.json).
+
+```bash
+python3 solutions/02_optimization/screen_gcc133_schedules_02.py \
+  --json /tmp/challenge02-gcc133-schedule-screen.json
+```
+
+The constant/coordinate axis was also closed more tightly. Moving XOR after
+BSWAP or before rotate is an exact identity for arbitrary state and constants;
+100,000-case direct tests passed. Fresh schema-4, 24-sample campaigns on CPU
+0/4 measured post-BSWAP at 0.959x/0.963x and pre-rotate at 0.965x/0.960x; all
+four 95% intervals stayed below 1. Both alternatives still contain 320 core
+operations. Forcing constants into memory creates 160 hot memory operands and
+grows the loop from 1,216 to 2,015 bytes. Two 21-sample campaigns measured
+0.979x (CI 0.964--0.992x) and 0.988x (0.969--1.002x), so it also has no winning
+evidence. Raw exact-binary runs are in
+[`constant_reordering_results_02_cpu0.json`](constant_reordering_results_02_cpu0.json),
+[`constant_reordering_results_02_cpu4.json`](constant_reordering_results_02_cpu4.json),
+[`constant_memory_results_02_cpu0.json`](constant_memory_results_02_cpu0.json),
+and [`constant_memory_results_02_cpu4.json`](constant_memory_results_02_cpu4.json).
+Literal specialization fails the random-constant contract and does not reduce the core.
+[`analyze_constant_placement_02.py`](analyze_constant_placement_02.py) proves for
+the supplied constants that the original, byte-swapped, inverse-rotated, and
+top-bit-folded masks all miss x86-64's sign-extended `imm32` form and that no
+remaining XOR is `{0,2^63}`. Its deterministic output is
+[`constant_placement_analysis_02.json`](constant_placement_analysis_02.json).
+The same script can emit byte-identical copies of the three measured controls:
+
+```bash
+python3 solutions/02_optimization/analyze_constant_placement_02.py \
+  --json /tmp/ch2-constants/analysis.json \
+  --emit-dir /tmp/ch2-constants/candidates
+
+python3 solutions/benchmark_02_permutation.py \
+  --case baseline=submissions/02/contest.c \
+  --case post_bswap=/tmp/ch2-constants/candidates/post_bswap.c \
+  --case pre_rotate=/tmp/ch2-constants/candidates/pre_rotate.c \
+  --baseline baseline --extra-cflag=-mbmi2 \
+  --extra-cflag=-finline-limit=2000 \
+  --audit-mode baseline=full-inline-320 \
+  --audit-mode post_bswap=full-inline-320 \
+  --audit-mode pre_rotate=full-inline-320 \
+  --cpu 0 --iterations 3000000 --warmups 3 --samples 24 \
+  --random-cases 100000 --json /tmp/ch2-constants/reordering.json
+```
+
+## Fifth-wave source ordering and backend layout screen
+
+The four assignments in one two-round macro are independent, so their C source
+order may be permuted without changing the function.  The digest-pinned GCC
+13.3 screen in
+[`screen_gcc133_source_orders_02.py`](screen_gcc133_source_orders_02.py)
+compiled all 24 orders under generic, Alder, and Alder+IRA profiles.  Order
+`2,1,0,3`, retained as
+[`contest_source_order_2103.c`](contest_source_order_2103.c), was the unique
+static winner for generic and Alder code generation:
+
+| GCC 13.3 profile | original order | order `2,1,0,3` |
+|---|---:|---:|
+| generic | 125.06 cycles | **121.06 cycles** |
+| `-mtune=alderlake` | 123.62 cycles | **121.06 cycles** |
+| Alder + IRA priority | 121.06 cycles | 121.06 cycles |
+
+The generic/Alder loop shrank from 1,216 to 1,211 bytes while retaining 322
+instructions and all 320 core operations.  All three top-profile binaries had
+no call, push/pop, spill, or hot memory operand and passed the neutral verifier
+on 100,000 random states and random constants at one and twenty rounds.  Local
+state/constant declaration permutations were byte-identical controls.  Full
+hashes, rankings, exact audits, and the pinned image digest are in
+[`gcc133_source_order_results_02.json`](gcc133_source_order_results_02.json).
+
+A separate
+[`screen_gcc133_layout_02.py`](screen_gcc133_layout_02.py) run compiled and
+audited 106 stable GCC/link flag candidates, yielding nine distinct loop
+streams.  Its shortlist plus three source-order cross-products all passed the
+supplied vectors and the same 100,000-case direct gate.  On LLVM-MCA 16's
+approximate Alder model, the strongest new streams were:
+
+| Alder+IRA extension | estimated cycles | loop effect |
+|---|---:|---|
+| incumbent | 121.06 | 1,210 B, 322 insn |
+| `-fselective-scheduling2` | **120.06** | distinct stream |
+| `-fno-schedule-insns2` | **120.07** | distinct stream |
+| `-fno-sched-critical-path-heuristic` | 120.14 | distinct stream |
+| `-falign-loops=64` / `-flto` | 121.06 | same stream, different placement |
+
+Combining order `2,1,0,3` with the first two flags produced the same
+120.06/120.07 estimates, so the static improvements do not stack.  Diagnostic
+AMD measurements disagreed by CPU and selective scheduling was slower there;
+neither fact predicts Lion Cove or Skymont.  The complete structured evidence
+is [`gcc133_layout_screen_02.json`](gcc133_layout_screen_02.json).  These
+variants are screen/confirm candidates only; the incumbent source and score
+command remain unchanged until two independent 255H sessions pass the guarded
+decision rule.  This use of LLVM-MCA follows its role as a scheduling-model
+diagnostic, whose accuracy is limited by the model rather than a hardware
+measurement ([official LLVM guide](https://llvm.org/docs/CommandGuide/llvm-mca.html)).
+
+```bash
+python3 solutions/02_optimization/screen_gcc133_source_orders_02.py \
+  --json /tmp/challenge02-gcc133-source-orders.json
+python3 solutions/02_optimization/screen_gcc133_layout_02.py \
+  --json /tmp/challenge02-gcc133-layout.json
+```
+
+## Core-aware 255H decision tool
+
+[`autotune_02_255h.py`](autotune_02_255h.py) and
+[`autotune_02_candidates.json`](autotune_02_candidates.json) turn the remaining
+target measurement into a guarded workflow:
+
+```bash
+python3 solutions/02_optimization/autotune_02_255h.py probe \
+  --compiler /path/to/gcc-13.3.0 --out /tmp/ch2-255h/topology.json
+
+python3 solutions/02_optimization/autotune_02_255h.py screen \
+  --topology /tmp/ch2-255h/topology.json --session screen-a \
+  --out-dir /tmp/ch2-255h/screen-a
+
+python3 solutions/02_optimization/autotune_02_255h.py confirm \
+  --screen /tmp/ch2-255h/screen-a/index.json \
+  --compiler /path/to/gcc-13.3.0 --session confirm-a \
+  --out-dir /tmp/ch2-255h/confirm-a
+
+# Run this in a genuinely separate time window.
+python3 solutions/02_optimization/autotune_02_255h.py confirm \
+  --screen /tmp/ch2-255h/screen-a/index.json \
+  --compiler /path/to/gcc-13.3.0 --session confirm-b \
+  --out-dir /tmp/ch2-255h/confirm-b
+
+python3 solutions/02_optimization/autotune_02_255h.py decide \
+  --screen /tmp/ch2-255h/screen-a/index.json \
+  --confirm /tmp/ch2-255h/confirm-a/index.json \
+  --confirm /tmp/ch2-255h/confirm-b/index.json \
+  --out /tmp/ch2-255h/decision.json
+```
+
+`probe` pins a CPUID helper to every allowed CPU. It distinguishes P from Atom
+cores directly and labels the two LP-E cores only when at least two independent
+topology/frequency/capacity signals agree; ambiguity remains provisional.
+`screen` is candidate reduction only. `confirm` runs incumbent/candidate pairs
+on two physical representatives of each requested core type, and `decide`
+requires two distinct sessions, exact compiler/source/manifest hashes,
+correctness and measured-binary assembly gates. A replacement needs paired
+median `>= 1.010` and adjusted lower bound `> 1.005` on every P campaign without
+regressing E/LP-E safety. Missing topology, sessions, or artifacts can never
+silently select a flag. If more than one candidate qualifies, `decide` keeps the
+incumbent and requests a direct head-to-head instead of choosing arbitrarily.
+It also rejects a renamed session that reuses the same benchmark path or SHA-256,
+so two labels cannot masquerade as two independent sessions. Every run also has
+a fresh 128-bit campaign id in both index and benchmark JSON. Canonical evidence
+and paired-sample hashes catch a copied result even if its JSON whitespace,
+filename, or nonce is changed.
+
+Each index and schema-4 benchmark now carries one canonical measurement-protocol
+fingerprint: the autotuner and benchmark drivers, timed-loop audit, independent
+oracle and candidate verifier, official problem archive, Python executable, and
+the actual `objdump`/`size` binaries are all SHA-256 pinned. `confirm` refuses a stale `screen`, and `decide` refuses
+sessions made by different or since-modified protocol code; `screen` likewise
+requires a probe from the current protocol. The correctness
+record must explicitly cover random states and random ADD/XOR constants at both
+one and twenty rounds; the runner parses the verifier's exact count, seed, round,
+constant, and PASS lines. The reference verifier translation unit is compiled
+once with fixed neutral flags, candidate flags touch only the candidate object
+and final link, and any verifier-only candidate override is ineligible. Source
+bytes are snapshotted once and both original and rewritten-performance hashes
+are retained, closing a hash/compile time-of-check gap.
+Nested topology records are also validated down to every cache-list element;
+malformed input exits with a scoped user error rather than a traceback.
+
+An initial eight-case end-to-end integration screen found one manifest-only error:
+the non-eligible `portable_rol` control declared `portable-inline-320` without
+the `-finline-limit=2000` needed to inline it. The manifest now carries that
+flag; the smoke screen then produced the expected 1,060-byte/323-instruction
+portable loop and all eight exact-binary audits passed.  After adding the fifth-wave
+source/backend candidates, a balanced 15-case integration screen passed all 15
+direct verifications and all 15 exact-binary audits.  Its 1,000-call timings
+are only tool regression tests, not performance evidence.  Two deliberately
+undersized confirmation sessions on AMD/GCC 12 also left `inline_2000` selected
+and enumerated every missing 255H/GCC13/sample/warm-up/random-case gate.
+
+The same fast flags were also applied to full unroll, pair loop, and
+`unroll5_bmi2`; medians were 37.279, 38.618, and 38.727 ns, respectively. Full
+unroll therefore stays ahead after the call-boundary gain. Further alternatives
+were correctness-tested but rejected: BSWAP/XOR commutation had the same
+instruction count and a layout-sensitive false win; conjugacy-based two-lane
+SIMD measured about 0.845x; byte tables failed mixed-derivative separability
+checks; manual assembly/compiler scheduling did not produce a portable stable
+gain. [`analyze_table_decomposition_02.py`](analyze_table_decomposition_02.py)
+reproduces the influence, mixed-derivative, and restricted-ANF evidence.
+
+```bash
+python3 solutions/02_optimization/analyze_table_decomposition_02.py
+```
+
+The repeated comparison can be reproduced without duplicating the source:
+
+```bash
+python3 solutions/benchmark_02_permutation.py \
+  --case default=submissions/02/contest.c \
+  --case inline=submissions/02/contest.c --baseline default \
+  --case-cflag inline=-mbmi2 \
+  --case-cflag inline=-finline-limit=2000 \
+  --audit-mode default=default-call-allowed \
+  --audit-mode inline=full-inline-320 \
+  --cpu auto --iterations 3000000 --warmups 3 --samples 21 \
+  --random-cases 100000 --json /tmp/challenge02-inline.json
+```
 
 ## Recommendation and constraint compliance
 
@@ -122,11 +463,17 @@ default; only full-unroll versus `unroll5_bmi2` needs target-machine A/B testing
 uses no fixed input or output, only the fixed recovered permutation parameters,
 and obeys the statement's edit policy by adding an external helper and invoking
 it from the permitted 20-round-loop location. The `r = 19` assignment exits the
-supplied redundant loop after the helper has computed all 20 rounds.
+supplied redundant loop after the helper has computed all 20 rounds. The same
+file supports both the default compatibility build and the faster adaptive
+inline build.
 
-Do not choose the final submission solely from the AMD result. The judge uses an
-Intel Core Ultra 7 255H with GCC 13.3.0. Benchmark both
-`paired_unrolled_bmi2` and `paired_loop` on that CPU: the former won here, while
-the latter had exceptionally stable timing and may have a different latency
-balance on Intel. The direct one-state AVX2 implementation should not be used;
-its seven-instruction dependent round path was consistently much slower.
+Do not choose the final submission solely from AMD measurements or LLVM-MCA.
+The exact GCC 13.3 call-removal and 700/2000 equality are already established;
+what remains unknown is the performance ordering on Core Ultra 7 255H. Use the
+core-aware tool to A/B `-mtune=alderlake`, its IRA-priority combination,
+source order `2,1,0,3`, the selective/no-post-reload scheduler streams, and the
+diagnostic native tune. Keep a source/flag only if it passes two independent sessions
+and every required P/E/LP-E gate. Until then, the simpler
+`-mbmi2 -finline-limit=2000` build remains the score recommendation. The direct
+one-state and conjugate SIMD implementations should not be used because their
+longer dependent paths were consistently slower.

@@ -1,0 +1,902 @@
+{
+  "checks": {
+    "alderlake_700_binary_equals_2000": true,
+    "alderlake_and_alderlake_ira_hot_loops_differ": true,
+    "alderlake_ira_700_binary_equals_2000": true,
+    "all_direct_random_differential_gates_pass": true,
+    "all_exact_measured_binary_audits_pass": true,
+    "compiler_is_exact_gcc_13_3_0": true,
+    "generic_700_binary_equals_2000": true,
+    "generic_and_alderlake_hot_loops_differ": true,
+    "source_hash_matches_all_audits": true
+  },
+  "compiler": "gcc (GCC) 13.3.0",
+  "container_image": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+  "correctness_gate": {
+    "alderlake_2000": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_only_flag_overrides": []
+    },
+    "alderlake_700": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_only_flag_overrides": []
+    },
+    "alderlake_ira": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_only_flag_overrides": []
+    },
+    "default": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_only_flag_overrides": []
+    },
+    "inline_2000": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_only_flag_overrides": []
+    },
+    "inline_700": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_only_flag_overrides": []
+    }
+  },
+  "experiment": "challenge02_exact_gcc133_codegen",
+  "measured_binary_audits": {
+    "alderlake_2000": {
+      "binary_sha256": "20472af1efaabf53a94b8fd58bc7c87d398d4c0a6296b1a7b77bb99167707813",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 80,
+        "bswap": 80,
+        "rotate": 80,
+        "xor": 80
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "1e603406cefb993f8ec68e5efa40176cc571754705a466d4eba4a77d5d57931f",
+      "loop_bytes": 1216,
+      "loop_instructions": 322,
+      "loop_start": "0x401528",
+      "loop_start_mod_16": 8,
+      "loop_start_mod_32": 8,
+      "loop_start_mod_64": 40,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "add": 74,
+        "bswap": 80,
+        "jne": 1,
+        "lea": 6,
+        "rorx": 80,
+        "sub": 1,
+        "xor": 80
+      },
+      "mode": "full-inline-320",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "c850dd5224321dfdae66fc07d40cb6c865d11c482689ddaaad925141bb955938",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 7254
+    },
+    "alderlake_700": {
+      "binary_sha256": "8c5326d7360740a05cadc01fa6613bb96e3e57ae8fc4dc10602cb8943534e54d",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 80,
+        "bswap": 80,
+        "rotate": 80,
+        "xor": 80
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "1e603406cefb993f8ec68e5efa40176cc571754705a466d4eba4a77d5d57931f",
+      "loop_bytes": 1216,
+      "loop_instructions": 322,
+      "loop_start": "0x401528",
+      "loop_start_mod_16": 8,
+      "loop_start_mod_32": 8,
+      "loop_start_mod_64": 40,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "add": 74,
+        "bswap": 80,
+        "jne": 1,
+        "lea": 6,
+        "rorx": 80,
+        "sub": 1,
+        "xor": 80
+      },
+      "mode": "full-inline-320",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "c850dd5224321dfdae66fc07d40cb6c865d11c482689ddaaad925141bb955938",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 7254
+    },
+    "alderlake_ira": {
+      "binary_sha256": "67a9064d58d927b3aeda2dcbe213757d7edcb374330bf6f6173d260f304ea3cd",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 80,
+        "bswap": 80,
+        "rotate": 80,
+        "xor": 80
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "d29b758f80deaf442ffe5d35c31afc608ca2f07b9e43a4b292db3f7828c0f217",
+      "loop_bytes": 1210,
+      "loop_instructions": 322,
+      "loop_start": "0x401520",
+      "loop_start_mod_16": 0,
+      "loop_start_mod_32": 0,
+      "loop_start_mod_64": 32,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "add": 80,
+        "bswap": 80,
+        "jne": 1,
+        "rorx": 80,
+        "sub": 1,
+        "xor": 80
+      },
+      "mode": "full-inline-320",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "e0e62e1b598890734db04f0983d66c6121a8fb8b4d12cc456f15b7d5c0740d52",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 7207
+    },
+    "default": {
+      "binary_sha256": "405556314320fb796bc05c1d75925973c1cb7c805e7a8d894da9cad994829521",
+      "calls": 1,
+      "core_counts": {
+        "add_or_lea": 3,
+        "bswap": 0,
+        "rotate": 0,
+        "xor": 0
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "7ef9ab01853a60c14939c20f1faee992f2924585f5c3849f925db395b363619a",
+      "loop_bytes": 34,
+      "loop_instructions": 6,
+      "loop_start": "0x4014b0",
+      "loop_start_mod_16": 0,
+      "loop_start_mod_32": 16,
+      "loop_start_mod_64": 48,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "call": 1,
+        "jne": 1,
+        "lea": 3,
+        "sub": 1
+      },
+      "mode": "default-call-allowed",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "f3b28a6e4c64336b71a43be64efc67b914045c00d11371abdfdfb777127c0cec",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 6044
+    },
+    "inline_2000": {
+      "binary_sha256": "d55c318859df631879cc11424caa9c1d80f71ea15469d01de89af8c46f227b06",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 80,
+        "bswap": 80,
+        "rotate": 80,
+        "xor": 80
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "cbbef56326fbc4437dff78afaf7eb3229d5cce8a9858a8628d04e194ca01f770",
+      "loop_bytes": 1216,
+      "loop_instructions": 322,
+      "loop_start": "0x401528",
+      "loop_start_mod_16": 8,
+      "loop_start_mod_32": 8,
+      "loop_start_mod_64": 40,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "add": 74,
+        "bswap": 80,
+        "jne": 1,
+        "lea": 6,
+        "rorx": 80,
+        "sub": 1,
+        "xor": 80
+      },
+      "mode": "full-inline-320",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "6b803105c59776a62b75848692307bbe611286ee1d1806d23c4577f974dc2683",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 7254
+    },
+    "inline_700": {
+      "binary_sha256": "13e3d3449fe54611b305d06176729f652ac6b5ecb46d8f1516533d5667933f00",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 80,
+        "bswap": 80,
+        "rotate": 80,
+        "xor": 80
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "cbbef56326fbc4437dff78afaf7eb3229d5cce8a9858a8628d04e194ca01f770",
+      "loop_bytes": 1216,
+      "loop_instructions": 322,
+      "loop_start": "0x401528",
+      "loop_start_mod_16": 8,
+      "loop_start_mod_32": 8,
+      "loop_start_mod_64": 40,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "add": 74,
+        "bswap": 80,
+        "jne": 1,
+        "lea": 6,
+        "rorx": 80,
+        "sub": 1,
+        "xor": 80
+      },
+      "mode": "full-inline-320",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "6b803105c59776a62b75848692307bbe611286ee1d1806d23c4577f974dc2683",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 7254
+    }
+  },
+  "notes": [
+    "Every completed smoke process also passed the supplied one-round and twenty-round vectors; otherwise the benchmark exits nonzero.",
+    "The 1000-iteration smoke timings are deliberately excluded: the container host is not evidence about Core Ultra 7 255H performance.",
+    "The digest-pinned Docker image uses its own default link settings, so complete binary hashes are provenance for this exact reproducer."
+  ],
+  "objdump": "GNU objdump (GNU Binutils for Debian) 2.40",
+  "random_differential_cases_per_candidate": 100000,
+  "schema_version": 1,
+  "source": {
+    "path": "submissions/02/contest.c",
+    "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+  },
+  "unmodified_source_audits": {
+    "alderlake": {
+      "audit": "challenge02_main_timing_loop",
+      "builds": {
+        "default": {
+          "audit_errors": [],
+          "audit_mode": "default-call-allowed",
+          "audit_status": "PASS",
+          "binary_sha256": "67918201237813654f9813429c1ef5f8edbd482a90eb91162409ee22c794adf2",
+          "calls": 1,
+          "core_counts": {
+            "add_or_lea": 3,
+            "bswap": 0,
+            "rotate": 0,
+            "xor": 0
+          },
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-mtune=alderlake"
+          ],
+          "legacy_addressed_loop_sha256": "4819c0c30f18f32d61b7ca5d5acd577e8ad55b21f8382896f912b4056c5e79d0",
+          "loop_bytes": 31,
+          "loop_instructions": 6,
+          "loop_start": "0x4014a8",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 40,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "call": 1,
+            "jne": 1,
+            "lea": 3,
+            "sub": 1
+          },
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "63d1fbd859598b2fe0a865d7554a87ea2a384782c9fa2c012876ec7a06a60973",
+          "push_pop": 0,
+          "source": {
+            "path": "submissions/02/contest.c",
+            "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+          },
+          "text_bytes": 5972
+        },
+        "inline_2000": {
+          "audit_errors": [],
+          "audit_mode": "full-inline-320",
+          "audit_status": "PASS",
+          "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-mtune=alderlake",
+            "-mbmi2",
+            "-finline-limit=2000"
+          ],
+          "legacy_addressed_loop_sha256": "1e603406cefb993f8ec68e5efa40176cc571754705a466d4eba4a77d5d57931f",
+          "loop_bytes": 1216,
+          "loop_instructions": 322,
+          "loop_start": "0x401528",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 40,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 74,
+            "bswap": 80,
+            "jne": 1,
+            "lea": 6,
+            "rorx": 80,
+            "sub": 1,
+            "xor": 80
+          },
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "c850dd5224321dfdae66fc07d40cb6c865d11c482689ddaaad925141bb955938",
+          "push_pop": 0,
+          "source": {
+            "path": "submissions/02/contest.c",
+            "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+          },
+          "text_bytes": 7246
+        },
+        "inline_700": {
+          "audit_errors": [],
+          "audit_mode": "full-inline-320",
+          "audit_status": "PASS",
+          "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-mtune=alderlake",
+            "-mbmi2",
+            "-finline-limit=700"
+          ],
+          "legacy_addressed_loop_sha256": "1e603406cefb993f8ec68e5efa40176cc571754705a466d4eba4a77d5d57931f",
+          "loop_bytes": 1216,
+          "loop_instructions": 322,
+          "loop_start": "0x401528",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 40,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 74,
+            "bswap": 80,
+            "jne": 1,
+            "lea": 6,
+            "rorx": 80,
+            "sub": 1,
+            "xor": 80
+          },
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "c850dd5224321dfdae66fc07d40cb6c865d11c482689ddaaad925141bb955938",
+          "push_pop": 0,
+          "source": {
+            "path": "submissions/02/contest.c",
+            "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+          },
+          "text_bytes": 7246
+        },
+        "portable_inline": {
+          "audit_errors": [],
+          "audit_mode": "portable-inline-320",
+          "audit_status": "PASS",
+          "binary_sha256": "096df711ef67c6b0247d7173d8ec8346aa20e624807f13257634e245ed168871",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-mtune=alderlake",
+            "-finline-limit=2000"
+          ],
+          "legacy_addressed_loop_sha256": "9c858c6c572a414750b6fbab90f7163582fe595c993201ebe04b83ab35f5a60b",
+          "loop_bytes": 1060,
+          "loop_instructions": 323,
+          "loop_start": "0x401528",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 40,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 73,
+            "bswap": 80,
+            "jne": 1,
+            "lea": 7,
+            "mov": 1,
+            "rol": 60,
+            "ror": 20,
+            "sub": 1,
+            "xor": 80
+          },
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "35cac54c7ea52eaa1d1c20229439a5baef08197ea451d8870da4d015d5dabfdd",
+          "push_pop": 0,
+          "source": {
+            "path": "solutions/02_optimization/contest_inline_unrolled.c",
+            "sha256": "ff1e080f2cdee30e87b9cd8d8c3f97df8088095babf127cc8d6d48145c995f21"
+          },
+          "text_bytes": 6938
+        }
+      },
+      "compiler": "gcc (GCC) 13.3.0",
+      "inline_binaries_equal": true,
+      "inline_limits": [
+        700,
+        2000
+      ],
+      "inline_loop_hashes_equal": true,
+      "objdump": "GNU objdump (GNU Binutils for Debian) 2.40",
+      "portable_source": {
+        "path": "solutions/02_optimization/contest_inline_unrolled.c",
+        "sha256": "ff1e080f2cdee30e87b9cd8d8c3f97df8088095babf127cc8d6d48145c995f21"
+      },
+      "schema_version": 2,
+      "source": {
+        "path": "submissions/02/contest.c",
+        "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+      }
+    },
+    "alderlake_ira_priority": {
+      "audit": "challenge02_main_timing_loop",
+      "builds": {
+        "default": {
+          "audit_errors": [],
+          "audit_mode": "default-call-allowed",
+          "audit_status": "PASS",
+          "binary_sha256": "1292547908fff9659da0203067ccd4c9e267fdfe10ff8c9963cbe486845a036a",
+          "calls": 1,
+          "core_counts": {
+            "add_or_lea": 3,
+            "bswap": 0,
+            "rotate": 0,
+            "xor": 0
+          },
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-mtune=alderlake",
+            "-fira-algorithm=priority"
+          ],
+          "legacy_addressed_loop_sha256": "4819c0c30f18f32d61b7ca5d5acd577e8ad55b21f8382896f912b4056c5e79d0",
+          "loop_bytes": 31,
+          "loop_instructions": 6,
+          "loop_start": "0x4014a8",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 40,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "call": 1,
+            "jne": 1,
+            "lea": 3,
+            "sub": 1
+          },
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "63d1fbd859598b2fe0a865d7554a87ea2a384782c9fa2c012876ec7a06a60973",
+          "push_pop": 0,
+          "source": {
+            "path": "submissions/02/contest.c",
+            "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+          },
+          "text_bytes": 5956
+        },
+        "inline_2000": {
+          "audit_errors": [],
+          "audit_mode": "full-inline-320",
+          "audit_status": "PASS",
+          "binary_sha256": "35adefa3154778f36bb8a0b93630c7bac90bd348550ffb4ab868cf59e30597af",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-mtune=alderlake",
+            "-fira-algorithm=priority",
+            "-mbmi2",
+            "-finline-limit=2000"
+          ],
+          "legacy_addressed_loop_sha256": "d29b758f80deaf442ffe5d35c31afc608ca2f07b9e43a4b292db3f7828c0f217",
+          "loop_bytes": 1210,
+          "loop_instructions": 322,
+          "loop_start": "0x401520",
+          "loop_start_mod_16": 0,
+          "loop_start_mod_32": 0,
+          "loop_start_mod_64": 32,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 80,
+            "bswap": 80,
+            "jne": 1,
+            "rorx": 80,
+            "sub": 1,
+            "xor": 80
+          },
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "e0e62e1b598890734db04f0983d66c6121a8fb8b4d12cc456f15b7d5c0740d52",
+          "push_pop": 0,
+          "source": {
+            "path": "submissions/02/contest.c",
+            "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+          },
+          "text_bytes": 7199
+        },
+        "inline_700": {
+          "audit_errors": [],
+          "audit_mode": "full-inline-320",
+          "audit_status": "PASS",
+          "binary_sha256": "35adefa3154778f36bb8a0b93630c7bac90bd348550ffb4ab868cf59e30597af",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-mtune=alderlake",
+            "-fira-algorithm=priority",
+            "-mbmi2",
+            "-finline-limit=700"
+          ],
+          "legacy_addressed_loop_sha256": "d29b758f80deaf442ffe5d35c31afc608ca2f07b9e43a4b292db3f7828c0f217",
+          "loop_bytes": 1210,
+          "loop_instructions": 322,
+          "loop_start": "0x401520",
+          "loop_start_mod_16": 0,
+          "loop_start_mod_32": 0,
+          "loop_start_mod_64": 32,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 80,
+            "bswap": 80,
+            "jne": 1,
+            "rorx": 80,
+            "sub": 1,
+            "xor": 80
+          },
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "e0e62e1b598890734db04f0983d66c6121a8fb8b4d12cc456f15b7d5c0740d52",
+          "push_pop": 0,
+          "source": {
+            "path": "submissions/02/contest.c",
+            "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+          },
+          "text_bytes": 7199
+        },
+        "portable_inline": {
+          "audit_errors": [],
+          "audit_mode": "portable-inline-320",
+          "audit_status": "PASS",
+          "binary_sha256": "65af063ef3851e230461ff7eca1bd9fc5be2cc450043f0a336c21d4e34c63e30",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-mtune=alderlake",
+            "-fira-algorithm=priority",
+            "-finline-limit=2000"
+          ],
+          "legacy_addressed_loop_sha256": "ef2d346f36843e3c1f3078ad66066b3773453f863a8710ec2015ff2eb9976ea5",
+          "loop_bytes": 1050,
+          "loop_instructions": 322,
+          "loop_start": "0x401520",
+          "loop_start_mod_16": 0,
+          "loop_start_mod_32": 0,
+          "loop_start_mod_64": 32,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 80,
+            "bswap": 80,
+            "jne": 1,
+            "rol": 60,
+            "ror": 20,
+            "sub": 1,
+            "xor": 80
+          },
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "1e6c74e74a1706d1d32a6c18d6ad0d0a2474fc4bac8cfcea20ae586aabf5a747",
+          "push_pop": 0,
+          "source": {
+            "path": "solutions/02_optimization/contest_inline_unrolled.c",
+            "sha256": "ff1e080f2cdee30e87b9cd8d8c3f97df8088095babf127cc8d6d48145c995f21"
+          },
+          "text_bytes": 6891
+        }
+      },
+      "compiler": "gcc (GCC) 13.3.0",
+      "inline_binaries_equal": true,
+      "inline_limits": [
+        700,
+        2000
+      ],
+      "inline_loop_hashes_equal": true,
+      "objdump": "GNU objdump (GNU Binutils for Debian) 2.40",
+      "portable_source": {
+        "path": "solutions/02_optimization/contest_inline_unrolled.c",
+        "sha256": "ff1e080f2cdee30e87b9cd8d8c3f97df8088095babf127cc8d6d48145c995f21"
+      },
+      "schema_version": 2,
+      "source": {
+        "path": "submissions/02/contest.c",
+        "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+      }
+    },
+    "generic": {
+      "audit": "challenge02_main_timing_loop",
+      "builds": {
+        "default": {
+          "audit_errors": [],
+          "audit_mode": "default-call-allowed",
+          "audit_status": "PASS",
+          "binary_sha256": "8b2ea159a57db434a26334594c4e949c7b093c9e2fb42afbbc31d215af604353",
+          "calls": 1,
+          "core_counts": {
+            "add_or_lea": 3,
+            "bswap": 0,
+            "rotate": 0,
+            "xor": 0
+          },
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra"
+          ],
+          "legacy_addressed_loop_sha256": "4819c0c30f18f32d61b7ca5d5acd577e8ad55b21f8382896f912b4056c5e79d0",
+          "loop_bytes": 31,
+          "loop_instructions": 6,
+          "loop_start": "0x4014a8",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 40,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "call": 1,
+            "jne": 1,
+            "lea": 3,
+            "sub": 1
+          },
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "63d1fbd859598b2fe0a865d7554a87ea2a384782c9fa2c012876ec7a06a60973",
+          "push_pop": 0,
+          "source": {
+            "path": "submissions/02/contest.c",
+            "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+          },
+          "text_bytes": 5972
+        },
+        "inline_2000": {
+          "audit_errors": [],
+          "audit_mode": "full-inline-320",
+          "audit_status": "PASS",
+          "binary_sha256": "df7da5f1f98311bfcf4472f6eab2077586fd264966aa6952b306fedbb6572f2e",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-mbmi2",
+            "-finline-limit=2000"
+          ],
+          "legacy_addressed_loop_sha256": "cbbef56326fbc4437dff78afaf7eb3229d5cce8a9858a8628d04e194ca01f770",
+          "loop_bytes": 1216,
+          "loop_instructions": 322,
+          "loop_start": "0x401528",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 40,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 74,
+            "bswap": 80,
+            "jne": 1,
+            "lea": 6,
+            "rorx": 80,
+            "sub": 1,
+            "xor": 80
+          },
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "6b803105c59776a62b75848692307bbe611286ee1d1806d23c4577f974dc2683",
+          "push_pop": 0,
+          "source": {
+            "path": "submissions/02/contest.c",
+            "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+          },
+          "text_bytes": 7246
+        },
+        "inline_700": {
+          "audit_errors": [],
+          "audit_mode": "full-inline-320",
+          "audit_status": "PASS",
+          "binary_sha256": "df7da5f1f98311bfcf4472f6eab2077586fd264966aa6952b306fedbb6572f2e",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-mbmi2",
+            "-finline-limit=700"
+          ],
+          "legacy_addressed_loop_sha256": "cbbef56326fbc4437dff78afaf7eb3229d5cce8a9858a8628d04e194ca01f770",
+          "loop_bytes": 1216,
+          "loop_instructions": 322,
+          "loop_start": "0x401528",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 40,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 74,
+            "bswap": 80,
+            "jne": 1,
+            "lea": 6,
+            "rorx": 80,
+            "sub": 1,
+            "xor": 80
+          },
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "6b803105c59776a62b75848692307bbe611286ee1d1806d23c4577f974dc2683",
+          "push_pop": 0,
+          "source": {
+            "path": "submissions/02/contest.c",
+            "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+          },
+          "text_bytes": 7246
+        },
+        "portable_inline": {
+          "audit_errors": [],
+          "audit_mode": "portable-inline-320",
+          "audit_status": "PASS",
+          "binary_sha256": "8b86aed7946ed5b7ebcd4458171dbcf6e817e579436d8b011fe6c68cb3bcd27b",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-finline-limit=2000"
+          ],
+          "legacy_addressed_loop_sha256": "9c858c6c572a414750b6fbab90f7163582fe595c993201ebe04b83ab35f5a60b",
+          "loop_bytes": 1060,
+          "loop_instructions": 323,
+          "loop_start": "0x401528",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 40,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 73,
+            "bswap": 80,
+            "jne": 1,
+            "lea": 7,
+            "mov": 1,
+            "rol": 60,
+            "ror": 20,
+            "sub": 1,
+            "xor": 80
+          },
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "35cac54c7ea52eaa1d1c20229439a5baef08197ea451d8870da4d015d5dabfdd",
+          "push_pop": 0,
+          "source": {
+            "path": "solutions/02_optimization/contest_inline_unrolled.c",
+            "sha256": "ff1e080f2cdee30e87b9cd8d8c3f97df8088095babf127cc8d6d48145c995f21"
+          },
+          "text_bytes": 6938
+        }
+      },
+      "compiler": "gcc (GCC) 13.3.0",
+      "inline_binaries_equal": true,
+      "inline_limits": [
+        700,
+        2000
+      ],
+      "inline_loop_hashes_equal": true,
+      "objdump": "GNU objdump (GNU Binutils for Debian) 2.40",
+      "portable_source": {
+        "path": "solutions/02_optimization/contest_inline_unrolled.c",
+        "sha256": "ff1e080f2cdee30e87b9cd8d8c3f97df8088095babf127cc8d6d48145c995f21"
+      },
+      "schema_version": 2,
+      "source": {
+        "path": "submissions/02/contest.c",
+        "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+      }
+    }
+  }
+}

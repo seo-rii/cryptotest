@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify and repeatedly benchmark contest-shaped challenge 2 submissions."""
+"""Differentially verify and benchmark contest-shaped challenge 2 submissions."""
 
 from __future__ import annotations
 
@@ -10,13 +10,22 @@ import os
 import platform
 import random
 import re
+import shutil
 import shlex
 import statistics
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
 from zipfile import ZipFile
+
+from challenge02_loop_audit import (
+    AUDIT_MODES,
+    audit_main_timing_loop,
+    format_loop_summary,
+    validate_loop_audit,
+)
 
 
 TIMING_PATTERN = re.compile(r"average per 20rounds = ([0-9.]+) us")
@@ -26,8 +35,8 @@ ITERATIONS_PATTERN = re.compile(r"const int iterations = [0-9]+;")
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Compile complete contest.c variants separately, discard warmups, "
-            "interleave repeated runs, and report robust paired statistics."
+            "Compile and directly differential-test complete contest.c variants, "
+            "discard warmups, interleave runs, and report paired statistics."
         )
     )
     parser.add_argument(
@@ -47,7 +56,15 @@ def main() -> None:
     )
     parser.add_argument("--warmups", type=int, default=3)
     parser.add_argument("--samples", "--repeats", dest="samples", type=int, default=21)
-    parser.add_argument("--random-cases", type=int, default=100_000)
+    parser.add_argument(
+        "--random-cases",
+        type=int,
+        default=100_000,
+        help=(
+            "random states and add/XOR constants checked directly against every "
+            "candidate before timing"
+        ),
+    )
     parser.add_argument(
         "--cpu",
         default="auto",
@@ -58,6 +75,36 @@ def main() -> None:
         action="store_true",
         help="add -march=native; default flags match the supplied run script",
     )
+    parser.add_argument(
+        "--extra-cflag",
+        action="append",
+        default=[],
+        metavar="FLAG",
+        help="compiler flag applied to every case (repeatable)",
+    )
+    parser.add_argument(
+        "--case-cflag",
+        action="append",
+        default=[],
+        metavar="NAME=FLAG",
+        help="compiler flag applied only to one named case (repeatable)",
+    )
+    parser.add_argument(
+        "--audit-mode",
+        action="append",
+        default=[],
+        metavar="NAME=MODE",
+        help=(
+            "audit the exact measured binary before warmup; MODE is one of "
+            + ", ".join(sorted(AUDIT_MODES))
+        ),
+    )
+    parser.add_argument("--objdump", default="objdump")
+    parser.add_argument("--size-tool", default="size")
+    parser.add_argument(
+        "--campaign-id",
+        help="opaque run nonce supplied by a higher-level campaign orchestrator",
+    )
     parser.add_argument("--json", type=Path, help="write metadata, raw samples, and summaries")
     args = parser.parse_args()
 
@@ -67,6 +114,12 @@ def main() -> None:
         parser.error("--warmups must be at least 1")
     if args.samples < 5:
         parser.error("--samples must be at least 5")
+    if args.campaign_id is not None and not re.fullmatch(
+        r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", args.campaign_id
+    ):
+        parser.error(
+            "--campaign-id must use 1-128 letters, digits, dots, underscores, or hyphens"
+        )
 
     root = Path(__file__).resolve().parents[1]
     specifications = args.case or [
@@ -92,9 +145,55 @@ def main() -> None:
     if len(cases) < 2:
         parser.error("provide at least two cases so speedup can be measured")
 
+    case_flags: dict[str, list[str]] = {name: [] for name, _ in cases}
+    for specification in args.case_cflag:
+        if "=" not in specification:
+            parser.error(
+                f"invalid --case-cflag {specification!r}; expected NAME=FLAG"
+            )
+        name, flag = specification.split("=", 1)
+        name = name.strip()
+        flag = flag.strip()
+        if name not in case_flags:
+            parser.error(f"unknown --case-cflag case: {name!r}")
+        if not flag:
+            parser.error(f"empty flag in --case-cflag {specification!r}")
+        case_flags[name].append(flag)
+
+    audit_modes: dict[str, str] = {}
+    for specification in args.audit_mode:
+        if "=" not in specification:
+            parser.error(f"invalid --audit-mode {specification!r}; expected NAME=MODE")
+        name, mode = (part.strip() for part in specification.split("=", 1))
+        if name not in case_flags:
+            parser.error(f"unknown --audit-mode case: {name!r}")
+        if name in audit_modes:
+            parser.error(f"duplicate --audit-mode case: {name!r}")
+        if mode not in AUDIT_MODES:
+            parser.error(
+                f"unknown audit mode {mode!r}; choose one of {sorted(AUDIT_MODES)}"
+            )
+        audit_modes[name] = mode
+
     baseline = args.baseline or cases[0][0]
     if baseline not in seen_names:
         parser.error(f"unknown --baseline case: {baseline}")
+
+    resolved_objdump: Path | None = None
+    resolved_size_tool: Path | None = None
+    if args.json or audit_modes:
+        for label, requested in (
+            ("objdump", args.objdump),
+            ("size", args.size_tool),
+        ):
+            located = shutil.which(requested)
+            executable = Path(located or requested).expanduser().resolve()
+            if not executable.is_file():
+                parser.error(f"{label} executable does not exist: {requested}")
+            if label == "objdump":
+                resolved_objdump = executable
+            else:
+                resolved_size_tool = executable
 
     affinity: list[int] | None = None
     if hasattr(os, "sched_getaffinity"):
@@ -127,25 +226,55 @@ def main() -> None:
         text=True,
         stdout=subprocess.PIPE,
     ).stdout.splitlines()[0]
+    objdump_version: str | None = None
+    size_tool_version: str | None = None
+    if audit_modes:
+        assert resolved_objdump is not None and resolved_size_tool is not None
+        objdump_version = subprocess.run(
+            [str(resolved_objdump), "--version"],
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+        ).stdout.splitlines()[0]
+        size_tool_version = subprocess.run(
+            [str(resolved_size_tool), "--version"],
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+        ).stdout.splitlines()[0]
     flags = ["-O3", "-Wall", "-Wextra"]
     if args.native:
         flags.append("-march=native")
+    flags.extend(args.extra_cflag)
 
     print(f"host={platform.platform()}")
     print(f"cpu={cpu}")
     print(f"affinity={affinity if affinity is not None else 'unsupported'}")
     print(f"compiler={compiler_version}")
+    if objdump_version is not None:
+        print(f"objdump={objdump_version}")
+        print(f"size_tool={size_tool_version}")
     print(f"cflags={shlex.join(flags)}")
+    for name, _ in cases:
+        print(
+            f"case_cflags[{name}]="
+            f"{shlex.join(case_flags[name]) if case_flags[name] else '(none)'}"
+        )
     print("inner_timer=clock() from supplied contest harness")
     print("outer_timer=time.perf_counter_ns")
     print(f"iterations={args.iterations} warmups={args.warmups} samples={args.samples}")
     print("order=balanced cyclic rotations, then reversed rotations", flush=True)
 
     archive = root / "problems" / "2_암호구현.zip"
+    candidate_verifier_source = (
+        root / "solutions" / "02_optimization" / "verify_contest_candidate_02.c"
+    )
     internal_samples: dict[str, list[float]] = {name: [] for name, _ in cases}
     wall_samples: dict[str, list[float]] = {name: [] for name, _ in cases}
+    source_snapshots = {name: source.read_bytes() for name, source in cases}
     source_hashes = {
-        name: hashlib.sha256(source.read_bytes()).hexdigest() for name, source in cases
+        name: hashlib.sha256(source_snapshots[name]).hexdigest()
+        for name, _ in cases
     }
 
     with tempfile.TemporaryDirectory(prefix="challenge02-repeat-") as directory:
@@ -181,10 +310,13 @@ def main() -> None:
         subprocess.run(oracle_run, check=True)
 
         executables: dict[str, Path] = {}
+        candidate_verification: dict[str, dict[str, object]] = {}
+        assembly_audits: dict[str, dict[str, object]] = {}
+        rewritten_source_hashes: dict[str, str] = {}
         for name, source in cases:
             rewritten, replacements = ITERATIONS_PATTERN.subn(
                 f"const int iterations = {args.iterations};",
-                source.read_text(),
+                source_snapshots[name].decode("utf-8"),
             )
             if replacements != 1:
                 raise RuntimeError(
@@ -192,12 +324,154 @@ def main() -> None:
                     f"found {replacements}"
                 )
             temporary_source = temporary / f"{name}.c"
-            temporary_source.write_text(rewritten)
+            rewritten_bytes = rewritten.encode("utf-8")
+            temporary_source.write_bytes(rewritten_bytes)
+            rewritten_source_hashes[name] = hashlib.sha256(
+                rewritten_bytes
+            ).hexdigest()
+
+            candidate_object = temporary / f"{name}_candidate.o"
+            verifier_flag_overrides = []
+            if "-fwhole-program" in [*flags, *case_flags[name]]:
+                # The standalone verifier must call the public permutation
+                # symbols. This override affects only its object, never the
+                # separately compiled performance executable.
+                verifier_flag_overrides.append("-fno-whole-program")
+            object_command = [
+                args.compiler,
+                *flags,
+                *case_flags[name],
+                *verifier_flag_overrides,
+                "-Dmain=challenge02_contest_main",
+                "-c",
+                str(temporary_source),
+                "-o",
+                str(candidate_object),
+            ]
+            print("$", shlex.join(object_command), flush=True)
+            subprocess.run(object_command, check=True)
+            candidate_verifier = temporary / f"{name}_candidate_verifier"
+            verifier_object = temporary / f"{name}_verifier.o"
+            verifier_compile_command = [
+                args.compiler,
+                "-O3",
+                "-std=c11",
+                "-Wall",
+                "-Wextra",
+                "-Wpedantic",
+                "-Werror",
+                "-c",
+                str(candidate_verifier_source),
+                "-o",
+                str(verifier_object),
+            ]
+            print("$", shlex.join(verifier_compile_command), flush=True)
+            subprocess.run(verifier_compile_command, check=True)
+            verifier_link_command = [
+                args.compiler,
+                *flags,
+                *case_flags[name],
+                str(verifier_object),
+                str(candidate_object),
+                "-o",
+                str(candidate_verifier),
+            ]
+            print("$", shlex.join(verifier_link_command), flush=True)
+            subprocess.run(verifier_link_command, check=True)
+            verifier_run = [str(candidate_verifier), str(args.random_cases)]
+            print("$", shlex.join(verifier_run), flush=True)
+            verified = subprocess.run(
+                verifier_run,
+                check=False,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            expected_verifier_stdout = (
+                f"candidate_random_differential_cases={args.random_cases}\n"
+                "candidate_random_seed=0x243f6a8885a308d3\n"
+                "candidate_random_state_and_constants=PASS\n"
+                "candidate_round_counts=1,20\n"
+                "candidate_differential=PASS\n"
+            )
+            if (
+                verified.returncode != 0
+                or verified.stdout != expected_verifier_stdout
+                or verified.stderr
+            ):
+                parser.error(
+                    f"candidate differential validation contract failed for {name} "
+                    f"(exit {verified.returncode})\nstdout:\n{verified.stdout}\n"
+                    f"stderr:\n{verified.stderr}"
+                )
+            print(verified.stdout, end="", flush=True)
+            verification_fields = dict(
+                line.split("=", 1) for line in verified.stdout.splitlines()
+            )
+            candidate_verification[name] = {
+                "random_cases": int(
+                    verification_fields["candidate_random_differential_cases"]
+                ),
+                "seed": verification_fields["candidate_random_seed"],
+                "random_state_and_constants": verification_fields[
+                    "candidate_random_state_and_constants"
+                ]
+                == "PASS",
+                "round_counts": [
+                    int(value)
+                    for value in verification_fields[
+                        "candidate_round_counts"
+                    ].split(",")
+                ],
+                "verifier_translation_unit_cflags": [
+                    "-O3",
+                    "-std=c11",
+                    "-Wall",
+                    "-Wextra",
+                    "-Wpedantic",
+                    "-Werror",
+                ],
+                "verifier_link_cflags": [*flags, *case_flags[name]],
+                "verifier_only_flag_overrides": verifier_flag_overrides,
+                "status": verification_fields["candidate_differential"],
+            }
+
             executable = temporary / name
-            command = [args.compiler, *flags, str(temporary_source), "-o", str(executable)]
+            command = [
+                args.compiler,
+                *flags,
+                *case_flags[name],
+                str(temporary_source),
+                "-o",
+                str(executable),
+            ]
             print("$", shlex.join(command), flush=True)
             subprocess.run(command, check=True)
             executables[name] = executable
+
+            if name in audit_modes:
+                mode = audit_modes[name]
+                audit = audit_main_timing_loop(
+                    executable,
+                    objdump=str(resolved_objdump),
+                    size_tool=str(resolved_size_tool),
+                )
+                errors = validate_loop_audit(audit, mode)
+                audit["mode"] = mode
+                audit["status"] = "PASS" if not errors else "FAIL"
+                audit["errors"] = errors
+                assembly_audits[name] = audit
+                print(format_loop_summary(name, audit), flush=True)
+                print(
+                    f"assembly_audit[{name}]={audit['status']} mode={mode} "
+                    f"hash={audit['normalized_loop_sha256']}",
+                    flush=True,
+                )
+                if errors:
+                    parser.error(
+                        f"assembly audit failed for measured case {name}: "
+                        + "; ".join(errors)
+                    )
 
         for warmup in range(args.warmups):
             shift = warmup % len(cases)
@@ -347,14 +621,70 @@ def main() -> None:
         )
 
     if args.json:
-        report = {
+        assert resolved_objdump is not None and resolved_size_tool is not None
+        source_paths: dict[str, str] = {}
+        for name, source in cases:
+            try:
+                source_paths[name] = str(source.relative_to(root))
+            except ValueError:
+                # --case explicitly accepts absolute paths so temporary
+                # out-of-tree candidates must also be serializable.
+                source_paths[name] = str(source)
+        protocol_paths = {
+            "autotune_driver": (
+                root / "solutions" / "02_optimization" / "autotune_02_255h.py"
+            ),
+            "benchmark_driver": Path(__file__).resolve(),
+            "loop_audit": root / "solutions" / "challenge02_loop_audit.py",
+            "reference_oracle": root / "solutions" / "solve_02_permutation.c",
+            "candidate_verifier": candidate_verifier_source,
+            "problem_archive": archive,
+            "objdump_executable": resolved_objdump,
+            "size_executable": resolved_size_tool,
+        }
+        protocol_files: dict[str, dict[str, str]] = {}
+        for name, path in protocol_paths.items():
+            resolved = path.resolve()
+            try:
+                serialized_path = str(resolved.relative_to(root))
+            except ValueError:
+                serialized_path = str(resolved)
+            protocol_files[name] = {
+                "path": serialized_path,
+                "sha256": hashlib.sha256(resolved.read_bytes()).hexdigest(),
+            }
+        python_executable = Path(sys.executable).resolve()
+        protocol_payload = {
             "schema_version": 1,
+            "files": protocol_files,
+            "python": {
+                "implementation": platform.python_implementation(),
+                "version": platform.python_version(),
+                "executable": str(python_executable),
+                "executable_sha256": hashlib.sha256(
+                    python_executable.read_bytes()
+                ).hexdigest(),
+            },
+        }
+        protocol_fingerprint = hashlib.sha256(
+            json.dumps(
+                protocol_payload,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode()
+        ).hexdigest()
+        report = {
+            "schema_version": 4,
             "benchmark": "challenge02_contest_shaped",
+            "campaign_id": args.campaign_id,
             "environment": {
                 "host": platform.platform(),
                 "cpu": cpu,
                 "affinity": affinity,
                 "compiler": compiler_version,
+                "objdump": objdump_version,
+                "size_tool": size_tool_version,
                 "flags": flags,
                 "inner_timer": "clock()",
                 "outer_timer": "time.perf_counter_ns",
@@ -364,14 +694,35 @@ def main() -> None:
                 "official_iterations": 1_000_000,
                 "warmups": args.warmups,
                 "samples_per_case": args.samples,
+                "oracle_selftest_random_cases": args.random_cases,
+                "candidate_random_differential_cases": args.random_cases,
+                "random_differential_cases": args.random_cases,
+                "candidate_random_differential": True,
                 "order": "balanced-cyclic-reversed",
                 "bootstrap_resamples": 5_000,
             },
             "baseline": baseline,
             "sources": {
-                name: {"path": str(source.relative_to(root)), "sha256": source_hashes[name]}
+                name: {
+                    "path": source_paths[name],
+                    "sha256": source_hashes[name],
+                    "rewritten_sha256": rewritten_source_hashes[name],
+                    "case_cflags": case_flags[name],
+                }
                 for name, source in cases
             },
+            "verification_harness": {
+                "path": str(candidate_verifier_source.relative_to(root)),
+                "sha256": hashlib.sha256(
+                    candidate_verifier_source.read_bytes()
+                ).hexdigest(),
+            },
+            "measurement_protocol": {
+                **protocol_payload,
+                "fingerprint_sha256": protocol_fingerprint,
+            },
+            "candidate_verification": candidate_verification,
+            "assembly_audits": assembly_audits,
             "internal_ns_per_20round": internal_samples,
             "outer_wall_seconds": wall_samples,
             "summaries": summaries,

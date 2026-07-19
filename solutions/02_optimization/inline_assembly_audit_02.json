@@ -1,0 +1,177 @@
+{
+  "audit": "challenge02_main_timing_loop",
+  "builds": {
+    "default": {
+      "binary_sha256": "3ad93a68ca7340e92f5af4cac0205cbe7567eac58268b6863fb640d3fb3c362d",
+      "calls": 1,
+      "core_counts": {
+        "add_or_lea": 0,
+        "bswap": 0,
+        "rotate": 0,
+        "xor": 0
+      },
+      "flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra"
+      ],
+      "loop_bytes": 19,
+      "loop_instructions": 6,
+      "loop_start": "0x14f8",
+      "loop_start_mod_16": 8,
+      "loop_start_mod_32": 24,
+      "loop_start_mod_64": 56,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "call": 1,
+        "jne": 1,
+        "mov": 3,
+        "sub": 1
+      },
+      "normalized_loop_sha256": "217b74a42a615e6b352fcfe4cdaad2b2023be8f1472fc9cdd6fbbdb3c6cb5e71",
+      "push_pop": 0,
+      "source": {
+        "path": "submissions/02/contest.c",
+        "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+      },
+      "text_bytes": 6319
+    },
+    "inline_2000": {
+      "binary_sha256": "376386ba570cafde9bdb29f74185516f2da39a03d15df9525af7219b6abe187b",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 80,
+        "bswap": 80,
+        "rotate": 80,
+        "xor": 80
+      },
+      "flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "loop_bytes": 1216,
+      "loop_instructions": 322,
+      "loop_start": "0x1550",
+      "loop_start_mod_16": 0,
+      "loop_start_mod_32": 16,
+      "loop_start_mod_64": 16,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "add": 74,
+        "bswap": 80,
+        "jne": 1,
+        "lea": 6,
+        "rorx": 80,
+        "sub": 1,
+        "xor": 80
+      },
+      "normalized_loop_sha256": "fc3de2566570551bc966fb779d907a187f88f269d7100324e4fe14322c77d7e7",
+      "push_pop": 0,
+      "source": {
+        "path": "submissions/02/contest.c",
+        "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+      },
+      "text_bytes": 7537
+    },
+    "inline_700": {
+      "binary_sha256": "376386ba570cafde9bdb29f74185516f2da39a03d15df9525af7219b6abe187b",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 80,
+        "bswap": 80,
+        "rotate": 80,
+        "xor": 80
+      },
+      "flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-mbmi2",
+        "-finline-limit=700"
+      ],
+      "loop_bytes": 1216,
+      "loop_instructions": 322,
+      "loop_start": "0x1550",
+      "loop_start_mod_16": 0,
+      "loop_start_mod_32": 16,
+      "loop_start_mod_64": 16,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "add": 74,
+        "bswap": 80,
+        "jne": 1,
+        "lea": 6,
+        "rorx": 80,
+        "sub": 1,
+        "xor": 80
+      },
+      "normalized_loop_sha256": "fc3de2566570551bc966fb779d907a187f88f269d7100324e4fe14322c77d7e7",
+      "push_pop": 0,
+      "source": {
+        "path": "submissions/02/contest.c",
+        "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+      },
+      "text_bytes": 7537
+    },
+    "portable_inline": {
+      "binary_sha256": "239f3b040992464aedea59bbf323924c1e65d4ba7f0a926a8f68c2669b6b8134",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 80,
+        "bswap": 80,
+        "rotate": 80,
+        "xor": 80
+      },
+      "flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-finline-limit=2000"
+      ],
+      "loop_bytes": 1060,
+      "loop_instructions": 323,
+      "loop_start": "0x1550",
+      "loop_start_mod_16": 0,
+      "loop_start_mod_32": 16,
+      "loop_start_mod_64": 16,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "add": 73,
+        "bswap": 80,
+        "jne": 1,
+        "lea": 7,
+        "mov": 1,
+        "rol": 60,
+        "ror": 20,
+        "sub": 1,
+        "xor": 80
+      },
+      "normalized_loop_sha256": "fea795adc534e355ffdb9e76137b8a1b781b339ceea98fe9a818691547583c65",
+      "push_pop": 0,
+      "source": {
+        "path": "solutions/02_optimization/contest_inline_unrolled.c",
+        "sha256": "ff1e080f2cdee30e87b9cd8d8c3f97df8088095babf127cc8d6d48145c995f21"
+      },
+      "text_bytes": 7245
+    }
+  },
+  "compiler": "gcc (Debian 12.2.0-14+deb12u1) 12.2.0",
+  "inline_limits": [
+    700,
+    2000
+  ],
+  "inline_loop_hashes_equal": true,
+  "objdump": "GNU objdump (GNU Binutils for Debian) 2.40",
+  "portable_source": {
+    "path": "solutions/02_optimization/contest_inline_unrolled.c",
+    "sha256": "ff1e080f2cdee30e87b9cd8d8c3f97df8088095babf127cc8d6d48145c995f21"
+  },
+  "schema_version": 1,
+  "source": {
+    "path": "submissions/02/contest.c",
+    "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+  }
+}

@@ -3,11 +3,16 @@
  * helpers are explicitly allowed by the statement.  state256_t must already
  * be defined by contest.c.
  */
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__) && defined(__BMI2__)
+#define P2_FAST_ATTRIBUTE                                                    \
+    __attribute__((always_inline, optimize("no-tree-vectorize"))) inline
+#elif defined(__GNUC__) && !defined(__clang__)
 #define P2_FAST_ATTRIBUTE                                                    \
     __attribute__((noinline, noclone, target("bmi2"),                       \
                    optimize("no-tree-vectorize"), aligned(64)))
-#elif defined(__GNUC__) || defined(__clang__)
+#elif defined(__clang__) && defined(__BMI2__)
+#define P2_FAST_ATTRIBUTE __attribute__((always_inline)) inline
+#elif defined(__clang__)
 #define P2_FAST_ATTRIBUTE __attribute__((noinline, target("bmi2"), aligned(64)))
 #else
 #define P2_FAST_ATTRIBUTE
@@ -85,4 +90,14 @@ P2_FAST_ATTRIBUTE static void p2_permute_20rounds_unrolled(
  *
  * The helper performs all 20 rounds during the first outer-loop iteration;
  * assigning r=19 then terminates the now-redundant supplied loop.
+ *
+ * The source remains compatible with the supplied `gcc -O3` command.  For the
+ * faster score-facing build allowed by the statement, use:
+ *
+ * gcc -O3 -Wall -Wextra -mbmi2 -finline-limit=2000 -o contest contest.c
+ *
+ * `-mbmi2` makes caller and callee target options match, while the larger
+ * inline limit lets GCC integrate the public wrapper into the timing loop.
+ * GCC 12 emitted byte-identical binaries for limits 700 and 2000; use the
+ * repeated benchmark and inspect main's assembly again on the judge's GCC 13.
  */

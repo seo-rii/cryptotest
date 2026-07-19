@@ -1,0 +1,206 @@
+{
+  "baseline": "default",
+  "benchmark": "challenge02_contest_shaped",
+  "candidate_verification": {
+    "default": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_only_flag_overrides": []
+    },
+    "inline": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_only_flag_overrides": []
+    }
+  },
+  "comparisons": {
+    "inline": {
+      "paired_bootstrap_ci95_high": 1.143275415186714,
+      "paired_bootstrap_ci95_low": 1.1095114526672987,
+      "paired_mad": 0.028077554987120834,
+      "paired_median": 1.1155527638190954,
+      "paired_p05": 1.0472607075040437,
+      "paired_p95": 1.2170896476173088,
+      "ratio_of_medians": 1.1156075164956472
+    }
+  },
+  "config": {
+    "bootstrap_resamples": 5000,
+    "candidate_random_differential": true,
+    "iterations": 3000000,
+    "official_iterations": 1000000,
+    "order": "balanced-cyclic-reversed",
+    "random_differential_cases": 100000,
+    "samples_per_case": 21,
+    "warmups": 3
+  },
+  "environment": {
+    "affinity": [
+      0
+    ],
+    "compiler": "gcc (Debian 12.2.0-14+deb12u1) 12.2.0",
+    "cpu": "AMD EPYC 7B12",
+    "flags": [
+      "-O3",
+      "-Wall",
+      "-Wextra"
+    ],
+    "host": "Linux-6.1.0-51-cloud-amd64-x86_64-with-glibc2.36",
+    "inner_timer": "clock()",
+    "outer_timer": "time.perf_counter_ns"
+  },
+  "internal_ns_per_20round": {
+    "default": [
+      46.769,
+      47.638,
+      45.587999999999994,
+      44.399,
+      58.579,
+      47.779,
+      43.064,
+      49.338,
+      46.425000000000004,
+      44.245,
+      43.069,
+      43.132999999999996,
+      43.217,
+      44.672999999999995,
+      44.292,
+      44.373999999999995,
+      43.624,
+      43.53,
+      46.662,
+      45.54,
+      44.467
+    ],
+    "inline": [
+      40.321999999999996,
+      41.668,
+      42.783,
+      39.800000000000004,
+      39.849000000000004,
+      40.273,
+      39.859,
+      44.367999999999995,
+      41.768,
+      38.748999999999995,
+      39.643,
+      38.762,
+      41.838,
+      42.657000000000004,
+      38.635999999999996,
+      38.801,
+      39.410000000000004,
+      38.123,
+      38.339,
+      40.021,
+      40.078
+    ]
+  },
+  "outer_wall_seconds": {
+    "default": [
+      0.594904436,
+      0.344815313,
+      0.517554869,
+      0.522485062,
+      0.552858908,
+      0.419575361,
+      0.458384044,
+      0.767297317,
+      0.579937118,
+      0.326100912,
+      0.622134152,
+      0.612334238,
+      0.501599058,
+      0.470342721,
+      0.418353799,
+      0.325739576,
+      0.510258552,
+      0.635511947,
+      0.474422428,
+      0.780809263,
+      0.516250128
+    ],
+    "inline": [
+      0.627488821,
+      0.377864239,
+      0.662001117,
+      0.454953684,
+      0.527751009,
+      0.316421413,
+      0.47789826,
+      0.487166295,
+      0.677808905,
+      0.561079767,
+      0.382571404,
+      0.393763966,
+      0.308798218,
+      0.355800418,
+      0.341168894,
+      0.325819066,
+      0.620667789,
+      0.562638509,
+      0.494947568,
+      0.36542141,
+      0.441130442
+    ]
+  },
+  "schema_version": 3,
+  "sources": {
+    "default": {
+      "case_cflags": [],
+      "path": "submissions/02/contest.c",
+      "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+    },
+    "inline": {
+      "case_cflags": [
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "path": "submissions/02/contest.c",
+      "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+    }
+  },
+  "summaries": {
+    "default": {
+      "bootstrap_median_ci95_high_ns": 46.425000000000004,
+      "bootstrap_median_ci95_low_ns": 44.245,
+      "mad_ns": 1.25,
+      "mad_percent": 2.8110733802595185,
+      "max_ns": 58.579,
+      "median_ns": 44.467,
+      "min_ns": 43.064,
+      "outliers_beyond_3mad": 2,
+      "p05_ns": 43.069,
+      "p25_ns": 43.624,
+      "p75_ns": 46.662,
+      "p95_ns": 49.338
+    },
+    "inline": {
+      "bootstrap_median_ci95_high_ns": 40.321999999999996,
+      "bootstrap_median_ci95_low_ns": 39.410000000000004,
+      "mad_ns": 1.0970000000000013,
+      "mad_percent": 2.752201510323895,
+      "max_ns": 44.367999999999995,
+      "median_ns": 39.859,
+      "min_ns": 38.123,
+      "outliers_beyond_3mad": 1,
+      "p05_ns": 38.339,
+      "p25_ns": 38.801,
+      "p75_ns": 41.668,
+      "p95_ns": 42.783
+    }
+  }
+}

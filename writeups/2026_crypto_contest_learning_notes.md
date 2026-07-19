@@ -1,6 +1,6 @@
 # 2026 암호분석경진대회 전체 정리
 
-> 최종 갱신: 2026-07-18
+> 최종 갱신: 2026-07-19
 
 이 문서는 `cryptotest`의 8개 문제에 대한 현재 완료 상태, 핵심 결과,
 재현 진입점과 검증 수준을 한곳에 모은 전체 색인이다. 문제별 수식,
@@ -11,7 +11,7 @@
 | 번호 | 주제 | 상태 | 최종 결과 | 상세 writeup |
 |---:|---|---|---|---|
 | 1 | 고전 암호와 분류 | 완료 | Caesar shift `6`, Vigenère key `KLVOJ`, 재현 가능한 분류 모델과 식별 불가능성 분석 | [01_암호분석](01_암호분석.md) |
-| 2 | 256비트 permutation 구현 | 풀이·현 제출 최적화 완료 | `rot={43,7,29,14}`, 2-round 합성과 scalar full-unroll/BMI2 제출 구현 | [02_암호구현](02_암호구현.md) |
+| 2 | 256비트 permutation 구현 | 현 incumbent 완료·source/backend 255H 후보 추가·실측 미정 | `rot={43,7,29,14}`, 2-round scalar full-unroll과 adaptive BMI2 cross-call inline | [02_암호구현](02_암호구현.md) |
 | 3 | TLS 1.2 AES-GCM 위조 | 완료 | nonce 재사용으로 `H`와 `E_K(J0)`를 복원하고 유효한 급여 변경 record 생성 | [03_네트워크보안](03_네트워크보안.md) |
 | 4 | LLM weight steganography | 완료 | `CRYPTO{G00D_J0B!_y0u_f0und_7h3_h1dd3n_s3cr37_1n_LLM}` 추출 | [04_디지털포렌식](04_디지털포렌식.md) |
 | 5 | textbook-BGV | 완료 | ternary secret 64계수, 날짜 `20260410→20260411`, 고정 `State` 복원 | [05_동형암호](05_동형암호.md) |
@@ -35,17 +35,74 @@
 
 - 20라운드를 두 라운드씩 합성하면 word reversal이 상쇄되어 네 개의
   독립 scalar chain이 된다.
-- 최종 제출은 ten-pair full-unroll과 local BMI2 target을 사용한다.
+- 최종 source는 ten-pair full-unroll을 사용하며, 기본 build에서는 local
+  BMI2 noinline helper, score build에서는 timing loop까지 adaptive inline한다.
 - 제공 1-round vector 1,000개, 20-round vector, 무작위 differential
   100,000개를 통과한 후보만 측정한다.
-- AMD EPYC 호스트의 10,000,000-iteration, 3-warmup, 15-sample 반복
-  실행에서는 최적화 전후 paired 중앙값이 1.068x였다. shared VM 변동과
-  Intel frontend 차이 때문에 Core Ultra 7 255H로 이식할 때는
-  full-unroll과 `unroll5_bmi2`를 다시 A/B하는 것을 권장한다. 이는 완료된
-  현 제출 구현의 정확성이나 현재 호스트 선택을 바꾸지 않는 이식 점검이다.
+- 동일 최종 source를 기본 flag와 `-mbmi2 -finline-limit=2000`으로 비교한
+  3,000,000-iteration, 3-warmup, 21-sample 캠페인은 두 CPU affinity에서
+  paired `1.116x`, `1.118x`였다. bootstrap 95% interval도 각각
+  `1.110--1.143x`, `1.095--1.140x`였다.
+- `-mbmi2`만으로는 public-to-`main` call이 남아 `0.999x`였고, outer inline
+  단계에서 `1.124x`가 됐다. digest로 고정한 공식 GCC 13.3.0 image에서도
+  inline limit 700/2000은 complete binary까지 같았고, 실제 timing loop는
+  1,216 bytes/322 instructions, call·stack·memory operand 0으로 확인됐다.
+- full-unroll은 같은 fast flag 아래 pair loop와 `unroll5_bmi2`보다 각각
+  약 2.6%, 3.5% 빨랐다. 켤레 SIMD, table, BSWAP/XOR 재배열과 수동 scheduling은
+  검증된 실패 전략으로 상세 writeup에 기록했다.
+- schema-4 측정 도구는 후보를 직접 링크해 무작위 상태·ADD/XOR 상수 100,000건의
+  1/20라운드를 먼저 검증하고, warm-up 직전 실제 측정 binary 자체를 감사한다.
+  score loop의 320개 core 연산과 call/stack/memory 부재, codegen hash와 정렬을
+  같은 JSON에 남긴다.
+- 292-byte 작은 portable ROL은 `0.985x (0.958--1.002)`였고, XOR/ADD 저비트
+  완전탐색과 120개 GCC/link 조합에서도 채택할 승자가 없었다.
+  GCC 13.3에서 `-mtune=alderlake`는 실제 hot-loop schedule을 바꿨고 근사
+  LLVM-MCA 모델은 generic 대비 약 1.012x를 예측했다. Alder tune과 IRA priority를
+  합친 변형은 1,210-byte loop와 약 1.021x 추가 정적 예측을 얻었지만 AMD의 두
+  확인 캠페인은 `1.011x (1.001--1.015)`와 `1.008x (0.998--1.025)`로 엇갈렸다.
+  둘 다 실제 255H에서만 판정할 A/B 후보다.
+- XOR을 BSWAP 뒤 또는 rotate 앞으로 옮긴 정확한 두 표현은 schema 4의 두
+  affinity 재측정에서 각각 `0.959--0.963x`, `0.960--0.965x`였고 네 CI가 모두
+  1 아래였다. 상수를 memory operand로 강제하면 hot loop에 160개 memory
+  operand가 생기며 두 재측정은 `0.979x`, `0.988x`로 개선되지 않았다.
+  실제 상수의 모든 pre/post 변환값도 sign-extended imm32에 들어가지 않아
+  명령 한 개를 줄일 수 없었다.
+- 5차 탐색은 독립 chain 문장의 24개 순열과 scheduler/layout flag
+  106개를 exact GCC 13.3으로 전수 검사했다. `2,1,0,3` source 순서는
+  generic/Alder LLVM-MCA 근사를 `125.06/123.62 -> 121.06` cycles로
+  줄였고, Alder+IRA에 `-fselective-scheduling2` 또는
+  `-fno-schedule-insns2`를 더한 stream은 `120.06/120.07` cycles였다.
+  109/109 build audit와 shortlist의 임의 state/상수 100,000건이 통과했지만,
+  모델은 Lion Cove/Skymont 실측이 아니고 AMD 보조 결과도 엇갈렸다.
+  따라서 새 255H A/B 후보로만 보존하고 incumbent는 유지했다.
+- `autotune_02_255h.py`는 pinned CPUID와 Linux topology로 P/E/LP-E를 보수적으로
+  분류하고 `probe → screen → confirm → decide`를 실행한다. 두 session·core type별
+  두 physical core·correctness/assembly gate가 갖춰지지 않으면 winner 대신
+  `provisional` 또는 incumbent 유지로 끝낸다. 복수 후보가 동시에 기준을 넘겨도
+  임의 선택하지 않고 직접 head-to-head를 요구한다. runner/audit/oracle/verifier,
+  공식 ZIP, Python, `objdump`/`size`까지 한 protocol fingerprint로 고정해 코드가
+  바뀐 세션끼리 섞이지 않게 했다. 128-bit run id와 canonical evidence/raw-sample
+  hash는 공백만 바꾼 동일 측정 재사용도 막는다. verifier reference TU는 후보
+  flag와 분리하고 출력 count/seed/round/PASS를 정확히 파싱한다. cache
+  배열의 malformed nested 원소도 fail-closed한다. 8-case 초기 통합 smoke로
+  portable control의 누락된 inline flag를 찾아 고쳤고, 확장된 15-case
+  screen은 15개 직접 검증과 15개 assembly audit를 모두 통과했다.
 - 측정 도구와 raw 기록은 [02 optimization README](../solutions/02_optimization/README.md),
   [deep review](../solutions/02_optimization/deep_review_02.md),
-  [raw samples](../solutions/02_optimization/deep_results_02.txt)에 있다.
+  [inline raw samples](../solutions/02_optimization/inline_results_02.json),
+  [GCC 13.3 결과](../solutions/02_optimization/gcc133_codegen_results_02.json),
+  [GCC 13.3 schedule screen](../solutions/02_optimization/gcc133_schedule_screen_02.json),
+  [GCC 13.3 source-order screen](../solutions/02_optimization/gcc133_source_order_results_02.json),
+  [GCC 13.3 layout/backend screen](../solutions/02_optimization/gcc133_layout_screen_02.json),
+  [schedule CPU 0 raw](../solutions/02_optimization/gcc133_schedule_results_02_cpu0.json),
+  [schedule CPU 4 raw](../solutions/02_optimization/gcc133_schedule_results_02_cpu4.json),
+  [상수 배치 분석](../solutions/02_optimization/constant_placement_analysis_02.json),
+  [상수 재배치 CPU 0 raw](../solutions/02_optimization/constant_reordering_results_02_cpu0.json),
+  [상수 재배치 CPU 4 raw](../solutions/02_optimization/constant_reordering_results_02_cpu4.json),
+  [상수 memory CPU 0 raw](../solutions/02_optimization/constant_memory_results_02_cpu0.json),
+  [상수 memory CPU 4 raw](../solutions/02_optimization/constant_memory_results_02_cpu4.json),
+  [255H autotuner](../solutions/02_optimization/autotune_02_255h.py),
+  [기존 18-candidate raw samples](../solutions/02_optimization/deep_results_02.txt)에 있다.
 
 ### 6번
 
@@ -79,9 +136,10 @@ score-facing 성능 경쟁은 없다.
 | 5 | [`solve_05_bgv.py`](../solutions/solve_05_bgv.py) | GF(257) 선형계로 secret과 두 평문 복원 |
 | 6 | [`solve_06_prng.py`](../solutions/solve_06_prng.py), [`deep_native_06.cpp`](../solutions/06_optimization/deep_native_06.cpp), [`benchmark_deep_native_06.py`](../solutions/06_optimization/benchmark_deep_native_06.py) | dependency-free Python 정답 경로, 최종 native 경로와 warmup 후 반복 benchmark |
 | 7 | [`solve_07_final.py`](../solutions/solve_07_final.py), [`solve_07_grouped_hm_flatter.cpp`](../solutions/solve_07_grouped_hm_flatter.cpp) | 결과 검증/RSA 복호화와 grouped HM 공격 재실행 |
-| 8 | [`solve_08_aes_key.py`](../solutions/solve_08_aes_key.py) | leak 기반 MITM key 복원과 전체 pair 재검증 |
+| 8 | [`solve_08_aes_key.py`](../solutions/solve_08_aes_key.py) | leak 기반 후보 join으로 key 복원과 전체 pair 재검증 |
 
-먼저 빠른 정답·smoke 검증은 다음과 같다.
+먼저 기본 정답·smoke 검증은 다음과 같다. 8번 전체 key 복원은 이 호스트에서
+약 1분 이상 걸릴 수 있다.
 
 ```bash
 python3 solutions/solve_01_classical.py
@@ -97,13 +155,20 @@ python3 solutions/solve_07_final.py
 python3 solutions/solve_08_aes_key.py
 ```
 
-2번의 1.068x 장기 캠페인과 6번의 165.42x native matrix를 같은 protocol로
+2번의 adaptive-inline 장기 캠페인과 6번의 165.42x native matrix를 같은 protocol로
 다시 측정하려면 각각 다음을 실행한다. 절대 시간과 speedup은 CPU 및 shared
 VM 부하에 따라 달라질 수 있으므로 raw sample, median과 MAD를 함께 본다.
 
 ```bash
 python3 solutions/benchmark_02_permutation.py \
-  --warmups 3 --samples 15 --iterations 10000000 --random-cases 100000
+  --case default=submissions/02/contest.c \
+  --case inline=submissions/02/contest.c --baseline default \
+  --case-cflag inline=-mbmi2 \
+  --case-cflag inline=-finline-limit=2000 \
+  --audit-mode default=default-call-allowed \
+  --audit-mode inline=full-inline-320 \
+  --warmups 3 --samples 21 --iterations 3000000 --random-cases 100000 \
+  --json /tmp/challenge02-inline.json
 
 python3 solutions/06_optimization/benchmark_deep_native_06.py \
   --warmup 1 --repetitions 5 --threads 1,8 \

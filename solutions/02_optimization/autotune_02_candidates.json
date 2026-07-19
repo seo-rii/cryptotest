@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "description": "Contest-shaped challenge 2 builds for Intel Core Ultra 7 255H confirmation",
+  "baseline": "inline_2000",
+  "common_cflags": [
+    "-Werror"
+  ],
+  "candidates": [
+    {
+      "name": "official_o3",
+      "source": "submissions/02/contest.c",
+      "cflags": [],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": false,
+      "role": "compatibility-control",
+      "expected_audit": {
+        "mode": "default-call-allowed"
+      }
+    },
+    {
+      "name": "inline_700",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=700"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "minimum-observed-inline-threshold",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "inline_2000",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "incumbent-score-build",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "inline_alderlake",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "reproducible-gcc13-hybrid-tune",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "inline_ira_priority",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-fira-algorithm=priority"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "register-allocation-control",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "inline_alderlake_ira",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-255h-scheduling-candidate",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "inline_alderlake_ira_selective2",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority",
+        "-fselective-scheduling2"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-selective-scheduler-candidate",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "inline_alderlake_ira_no_sched2",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority",
+        "-fno-schedule-insns2"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-postreload-scheduler-control",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "order_2103",
+      "source": "solutions/02_optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-source-schedule-generic-candidate",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "order_2103_alderlake",
+      "source": "solutions/02_optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-source-schedule-alder-candidate",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "order_2103_alderlake_ira",
+      "source": "solutions/02_optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-source-schedule-alder-ira-control",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "order_2103_alderlake_ira_selective2",
+      "source": "solutions/02_optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority",
+        "-fselective-scheduling2"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-source-and-selective-scheduler-candidate",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "order_2103_alderlake_ira_no_sched2",
+      "source": "solutions/02_optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority",
+        "-fno-schedule-insns2"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-source-and-postreload-scheduler-candidate",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "inline_native",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=native"
+      ],
+      "submission_eligible": false,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "diagnostic-nonreproducible-native-tune",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "portable_rol",
+      "source": "solutions/02_optimization/contest_inline_unrolled.c",
+      "cflags": [
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": false,
+      "edit_scope_reviewed": false,
+      "target_only": true,
+      "role": "frontend-size-control",
+      "expected_audit": {
+        "mode": "portable-inline-320"
+      }
+    }
+  ]
+}
