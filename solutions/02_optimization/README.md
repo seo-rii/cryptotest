@@ -1,9 +1,11 @@
 # Problem 2 optimization experiments
 
-This directory is isolated from the existing submission and solution files. It
-contains eight default one-state candidates, one combined-mode-only batch
-candidate, a correctness oracle, and a benchmark driver designed to avoid two
-common sources of misleading results:
+This directory contains the original scalar candidate matrix plus the later
+GCC 13.3, source-order, SIMD, autotuning, split-width, code-generation, and
+timing-stability experiments.  Every promoted or retained target candidate is
+paired with an independent correctness oracle and an exact measured-binary
+audit.  The benchmark drivers are designed to avoid common sources of
+misleading results:
 
 - every candidate is warmed up before measurement;
 - candidates are built into separate binaries, then measured in randomized
@@ -418,6 +420,55 @@ name support, and model limits are preserved in
 [`255h_toolchain_screen_02.json`](255h_toolchain_screen_02.json).  Consequently
 the scalar source remains the incumbent, while the 122-instruction AVX2 source
 is now the highest-priority target-only algorithmic candidate.
+
+## Seventh-wave split SIMD, code generation, and timing diagnosis
+
+The four-lane YMM design has one long vector dependency chain, so a final SIMD
+experiment split it into two independent 128-bit groups.  Four layouts cover
+contiguous lanes, reversal-orbit pairs, serialized live ranges, and explicit
+lane recomputation.  All passed the exact GCC 13.3 audit, official vectors, and
+100,000 random states with random constants.  None reached host timing:
+[`screen_split_simd_02.py`](screen_split_simd_02.py) reports 242--288 timed-loop
+instructions, 1,303--1,509 bytes, 30--50 hot memory operands, and
+1.36--2.35 times the current YMM LLVM-MCA estimate.  The sources and complete
+negative record are retained in the `contest_simd_avx2_split*.c` files and
+[`split_simd_results_02.json`](split_simd_results_02.json), but are not added to
+the 255H manifest.
+
+[`screen_avx2_codegen_02.py`](screen_avx2_codegen_02.py) then screened exact GCC
+13.3 and Clang 21 target, scheduler, register-allocation, alignment, and source
+expression variants.  Of 112 attempted builds, 100 passed the exact complete
+loop audit; 13 Pareto/source controls also passed the 100,000-case direct gate.
+GCC's `-fira-region=one` only shortened the loop from 579 to 569 bytes while
+leaving 122 instructions and both static cycle estimates unchanged.  Clang
+made a 548-byte loop with the same instruction count and estimates, but the
+judge compiler is GCC 13.3.  Replacing rotate's `VPOR` with `VPXOR` is exact
+because the complementary shifts have disjoint set-bit positions; GCC and
+Clang both verified it, yet it merely changed 20 `VPOR` to `VPXOR` with no
+byte, instruction, memory, or model-cycle improvement.  No source rewrite was
+promoted; all code-generation evidence is in
+[`avx2_codegen_screen_02.json`](avx2_codegen_screen_02.json).
+
+A source-only attempt to force immediate `RORX` through inline assembly also
+passed 100,000 random cases, but the supplied default GCC command still left a
+public wrapper call (25-byte, eight-instruction timed loop).  Raising the inline
+limit was still necessary, so duplicating the source around inline assembly did
+not replace the existing score flags.
+
+Finally, [`benchmark_timing_stability_02.py`](benchmark_timing_stability_02.py)
+and its page-aligned C helper separate process layout and timer effects from the
+CPU-2 reversal.  A fresh process-isolated run measured scalar/AVX2 speedup
+0.8768x (95% CI 0.859--0.891); the same-process AB/BA control measured 0.9225x
+(0.8845--0.9290).  Wall time, thread CPU time, and invariant-TSC ratios agreed
+within 0.000003 and no migration or `TSC_AUX` change occurred.  Across CPUs
+1/2/3 the exact binaries and normalized loops are identical; AVX2 medians vary
+only 0.78%, while scalar medians vary 45.89%.  This localizes the sign reversal
+to shared-host scalar throughput rather than source or timer choice.  SMT
+sibling load is correlated with the result, but unavailable APERF/MPERF,
+cpufreq, and performance counters prevent a causal frequency/SMT conclusion.
+The full 32-sample, six-warm-up record is
+[`timing_stability_results_02.json`](timing_stability_results_02.json) and is
+explicitly not evidence about the 255H.
 
 ## Core-aware 255H decision tool
 

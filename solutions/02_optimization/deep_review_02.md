@@ -674,6 +674,61 @@ timing 없이 exact GCC 13.3 추가 47조합과 Clang 21의 53조합을 검사�
 scalar는 안전한 incumbent, lane-wise AVX2는 255H에서 가장 먼저 비교할
 target-only 후보다.
 
+### 7차: split-width SIMD, backend 재탐색과 측정 역전 진단
+
+YMM 한 개의 긴 dependency chain을 두 XMM 그룹으로 나누면 instruction-level
+parallelism을 다시 얻을 가능성이 있다. 이를 확인하려고 연속 lane, reversal
+orbit pair, 두 그룹 직렬 계산, invariant를 lane shuffle로 재계산하는 네
+구현을 만들었다. 모든 구현은 exact GCC 13.3, 공식 vector, 무작위 state와
+ADD/XOR 상수 100,000건을 통과했다. 그러나 256-bit 명령 하나가 하던 일을
+128-bit 명령 두 개가 반복하면서 loop가 242--288 instructions,
+1,303--1,509 bytes로 커졌고 register pressure 때문에 hot memory operand도
+30--50개 생겼다. LLVM-MCA 근사는 현 YMM loop 대비 Alder에서
+`1.78--2.35x`, Zen 2에서 `1.36--2.08x`의 cycle을 요구했다. 이 정도 정적
+열세는 noisy host timing으로 뒤집힐 합리적 근거가 없어 측정을 생략하고
+manifest에도 넣지 않았다. 재현 도구와 결과는
+[`screen_split_simd_02.py`](screen_split_simd_02.py),
+[`split_simd_results_02.json`](split_simd_results_02.json)에 있다.
+
+다음으로 [`screen_avx2_codegen_02.py`](screen_avx2_codegen_02.py)는 exact GCC
+13.3과 Clang 21에서 target/tune, scheduler, IRA, loop alignment와 다섯 source
+표현을 112개 build로 검사했다. 100개 complete timed loop가 exact audit를
+통과했고 Pareto 후보와 모든 source rewrite 13개는 다시 100,000-case 직접
+검증을 통과했다. GCC `-fira-region=one`은 579-byte loop를 569 bytes로만
+줄였고 122 instructions, memory 0, Alder `100.03`, Zen 2 `180.03` cycle
+근사는 그대로였다. Clang은 548-byte loop를 만들었지만 같은 instruction과
+근사 cycle이었고 최종 compiler도 아니다.
+
+rotate의 left/right shift 결과는 각 lane에서 서로 겹치지 않으므로 OR 대신
+XOR로 합쳐도 정확하다. 실제 변형도 GCC/Clang 모두 1/20-round 100,000-case를
+통과했지만 `20 VPOR + 20 VPXOR`가 `40 VPXOR`로 바뀌었을 뿐 instruction 수,
+loop bytes, memory와 두 모델의 cycle이 전혀 줄지 않았다. inline assembly로
+즉시값 `RORX`를 source에 강제한 compact pair loop도 정답성은 통과했지만
+기본 `gcc -O3` complete binary에는 여전히 public wrapper call 하나가 남았다
+(25 bytes, 8 instructions). 결국 `-finline-limit=2000`이 필요했으므로 기존
+adaptive score build를 대체하지 않는다. 전체 backend 기록은
+[`avx2_codegen_screen_02.json`](avx2_codegen_screen_02.json)에 있다.
+
+마지막으로 CPU별 순위 역전이 timer·migration·standalone layout 때문인지
+분리했다. [`benchmark_timing_stability_02.py`](benchmark_timing_stability_02.py)는
+기존 process-isolated schema-4 측정과, 두 runner를 각각 4 KiB 정렬한 한
+프로세스의 AB/BA 측정을 함께 수행한다. 후자는 wall, thread CPU,
+serialized `RDTSCP`, 시작/종료 CPU와 `TSC_AUX`, context switch, selected CPU와
+SMT sibling의 busy fraction을 각 sample에 기록한다.
+
+CPU 2의 새 6-warm-up, 32-sample, 3,000,000-call 측정에서 process-isolated
+scalar/AVX2 비는 `0.8768x (0.859--0.891)`, same-process 비는
+`0.9225x (0.8845--0.9290)`였다. wall/thread/TSC 중앙값 차이는 0.000003
+미만이고 migration과 `TSC_AUX` 변화는 0이었다. CPU 1/2/3 artifact를 비교하면
+scalar와 AVX2의 exact binary 및 normalized loop hash가 모두 같다. 그런데
+AVX2 median 범위는 0.78%인 반면 scalar는 45.89%다. 따라서 부호 역전은 AVX2
+codegen이나 timer 선택이 아니라 이 공유 VM의 scalar 처리율 변화에 국소화된다.
+SMT sibling busy fraction과 scalar time의 상관이 더 컸지만, APERF/MPERF,
+cpufreq와 performance counter를 사용할 수 없어 SMT 또는 가상화된 frequency의
+인과관계는 단정하지 않는다. 이 진단은
+[`timing_stability_results_02.json`](timing_stability_results_02.json)에 보존하며
+255H 성능 근거로 사용하지 않는다.
+
 ### 255H용 보수적 판정 절차
 
 [`autotune_02_255h.py`](autotune_02_255h.py)는 `probe -> screen -> confirm ->
@@ -780,11 +835,12 @@ AVX2 지원 여부보다 scalar rotate/byte-swap latency와 frontend 특성이 �
 complete binary까지 같았으므로 둘을 별도 성능 후보로 반복 측정할 필요는 없다.
 2000을 incumbent로 두고 700은 release/codegen 동등성 진단에만 사용한다.
 
-다만 문제의 수정 가능 범위는 `contest.c` 세 위치와 external helper로 제한되어
-있고 `run_contest.sh` 수정 권한은 명시적으로 분명하지 않다. 따라서 최종 코드는
-추가 flag 없이도 compile되는 현재 경로를 반드시 유지해야 한다. source에 특정
-세대의 `arch=`를 하드코딩하는 것보다, 허용될 때 build command에서 native
-tuning을 적용하는 편이 안전하다.
+문제의 source 수정 범위는 `contest.c` 세 위치와 external helper로 제한된다.
+따라서 제출 source는 추가 flag 없이도 compile되는 현재 경로를 유지한다.
+저장소의 `submissions/02/run_contest.sh`는 문제에서 별도로 허용한 추가 최적화
+flag를 빠뜨리지 않기 위한 재현 wrapper이며 제공 ZIP을 바꾸지 않는다. source에
+특정 세대의 `arch=`를 하드코딩하는 것보다, score 실행 시 build command에서
+검증된 flag만 적용하는 편이 안전하다.
 
 최종 채택 판단은 다음 조합을 Intel 실기에서 같은 runner로 비교한다.
 
@@ -827,8 +883,11 @@ tune/IRA/scheduler flag를 더하지 않는다.
 - [de Moura and Bjørner, *Z3: An Efficient SMT Solver*, TACAS 2008](https://doi.org/10.1007/978-3-540-78800-3_24)와 [Z3 공식 publication 목록](https://www.microsoft.com/en-us/research/project/z3-3/publications/) — 64-bit bit-vector 동치와 연산 삭제 후보의 SAT/UNSAT 판정 근거다.
 - [Solar-Lezama et al., *Combinatorial Sketching for Finite Programs*, ASPLOS 2006](https://people.csail.mit.edu/asolar/papers/asplos06-final.pdf) — 연산 template의 빈칸을 반례로 반복 보강하는 CEGIS식 합성 절차의 배경이다.
 - [LLVM, *llvm-mca Machine Code Analyzer*](https://llvm.org/docs/CommandGuide/llvm-mca.html) — scheduling model 기반 throughput/resource-pressure 분석의 용도와 모델 정확도 한계를 확인했다.
+- [Abel and Reineke, *uops.info: Characterizing Latency, Throughput, and Port Usage of Instructions on Intel Microarchitectures*, ASPLOS 2019](https://arxiv.org/abs/1810.04610) — instruction count만으로 성능을 단정하지 않고 latency, reciprocal throughput과 execution port를 분리해서 해석하는 근거다.
+- [Abel and Reineke, *nanoBench: A Low-Overhead Tool for Running Microbenchmarks on x86 Systems*, 2019](https://arxiv.org/abs/1911.03282) — warm-up, serialization, counter overhead와 반복 가능한 low-level 측정 설계의 참고 자료다. 이 VM에서는 필요한 performance counter가 없어 동일 수준의 port/frequency 판정을 주장하지 않았다.
 - [Intel, Intrinsics Guide](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html) — AVX2 variable shift, byte shuffle와 packed addition 후보의 ISA 형태를 확인했다.
 - [Intel, Intel® 64 and IA-32 Architectures Optimization Reference Manual](https://www.intel.com/content/www/us/en/content-details/671488/intel-64-and-ia-32-architectures-optimization-reference-manual-volume-1.html) — loop unrolling, instruction frontend, code layout은 microarchitecture별 실측으로 결정해야 한다는 분석 기준으로 사용했다.
+- [Intel, *Processors and Processor Cores Based on Skymont Microarchitecture: Instruction Throughput and Latency*](https://www.intel.com/content/www/us/en/content-details/837381/intel-processors-and-processor-cores-based-on-skymont-microarchitecture-instruction-throughput-and-latency.html) — 255H E-core 계열의 실제 instruction 특성을 최종 target 측정에서 확인해야 하는 이유와 정적 Alder proxy의 한계를 뒷받침한다.
 - [Intel, Core™ Ultra 7 Processor 255H specifications](https://www.intel.com/content/www/us/en/products/sku/241751/intel-core-ultra-7-processor-255h-24m-cache-up-to-5-10-ghz/specifications.html) — 최종 CPU가 AVX2를 지원함을 확인했다.
 - [Intel, *Game Dev Guide for 12th Gen Intel® Core™ Processor*](https://www.intel.com/content/www/us/en/developer/articles/guide/12th-gen-intel-core-processor-gamedev-guide.html) — hybrid flag와 logical CPU별 CPUID leaf `0x1a` core type, probe 중 affinity 고정이 필요한 이유를 확인했다.
 - [Linux kernel, CPU topology](https://docs.kernel.org/admin-guide/cputopology.html)와 [CPU sysfs ABI](https://github.com/torvalds/linux/blob/master/Documentation/ABI/testing/sysfs-devices-system-cpu) — physical package/core/thread sibling과 capacity를 교차 확인하고 서로 다른 physical representative를 선택할 때 사용했다.

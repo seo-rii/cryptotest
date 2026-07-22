@@ -3,6 +3,7 @@
 Files:
 
 - `contest.c`: final two-round-composed BMI2 implementation using the provided harness
+- `run_contest.sh`: reproducible score build using the statement-permitted flags
 - `report.pdf`: required analysis, implementation, verification, and benchmark report
 - `report.tex`: reproducible source for the PDF
 
@@ -15,8 +16,7 @@ gcc -O3 -Wall -Wextra -o contest contest.c
 ./contest
 
 # Faster score-facing build allowed by the statement:
-gcc -O3 -Wall -Wextra -mbmi2 -finline-limit=2000 -o contest contest.c
-./contest
+./run_contest.sh
 cd ../..
 ```
 
@@ -26,6 +26,10 @@ limit also carries the public wrapper into `main`'s timing loop. This removes
 the repeated call/prologue and keeps four state words plus eight constants in
 registers across timed calls without changing the permutation or hard-coding a
 benchmark value.
+
+The wrapper changes only the build flags; it does not modify the official test
+vectors, harness I/O, or permutation. The source itself remains compatible with
+the supplied plain `gcc -O3` command.
 
 The repository-level reproducible reference comparison is:
 
@@ -146,6 +150,26 @@ scope limits are in the
 [`SIMD screen`](../../solutions/02_optimization/simd_results_02.json),
 [`superoptimization result`](../../solutions/02_optimization/two_round_superopt_results_02.json),
 and [`toolchain screen`](../../solutions/02_optimization/255h_toolchain_screen_02.json).
+
+A seventh pass tested the remaining split-width and measurement hypotheses.
+Four two-XMM implementations passed the exact GCC 13.3 and 100,000-case gates,
+but emitted 242--288 instructions, 30--50 hot memory operands, and at least
+1.36x the current YMM static cycle estimate, so host timing and manifest
+registration were skipped. A separate 112-build GCC/Clang screen found no GCC
+source rewrite with fewer instructions or model cycles. The exact OR-to-XOR
+rotate merge passed 100,000 cases under both compilers but only exchanged
+mnemonics. Records are in
+[`split_simd_results_02.json`](../../solutions/02_optimization/split_simd_results_02.json)
+and
+[`avx2_codegen_screen_02.json`](../../solutions/02_optimization/avx2_codegen_screen_02.json).
+
+The CPU-affinity reversal was also reproduced with page-aligned same-process
+AB/BA runners and wall, thread-CPU, and serialized-TSC timers. The three timer
+ratios agreed within 0.000003, with no migration. Across CPU 1/2/3 the exact
+binaries were identical and AVX2 medians varied only 0.78%, while scalar medians
+varied 45.89%. This confirms that the AMD VM cannot select the 255H winner; the
+raw diagnosis is
+[`timing_stability_results_02.json`](../../solutions/02_optimization/timing_stability_results_02.json).
 
 On the actual 255H, use
 [`../../solutions/02_optimization/autotune_02_255h.py`](../../solutions/02_optimization/autotune_02_255h.py)

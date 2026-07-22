@@ -1,6 +1,6 @@
 # 2026 암호분석경진대회 전체 정리
 
-> 최종 갱신: 2026-07-19
+> 최종 갱신: 2026-07-23
 
 이 문서는 `cryptotest`의 8개 문제에 대한 현재 완료 상태, 핵심 결과,
 재현 진입점과 검증 수준을 한곳에 모은 전체 색인이다. 문제별 수식,
@@ -11,7 +11,7 @@
 | 번호 | 주제 | 상태 | 최종 결과 | 상세 writeup |
 |---:|---|---|---|---|
 | 1 | 고전 암호와 분류 | 완료 | Caesar shift `6`, Vigenère key `KLVOJ`, 재현 가능한 분류 모델과 식별 불가능성 분석 | [01_암호분석](01_암호분석.md) |
-| 2 | 256비트 permutation 구현 | scalar incumbent 완료·122-insn AVX2/255H 후보 추가·target 실측 미정 | `rot={43,7,29,14}`, 2-round scalar full-unroll과 4-lane AVX2 | [02_암호구현](02_암호구현.md) |
+| 2 | 256비트 permutation 구현 | scalar incumbent 완료·7차 SIMD/codegen/측정 진단 완료·255H 실측 미정 | `rot={43,7,29,14}`, 2-round scalar full-unroll과 122-insn 4-lane AVX2 | [02_암호구현](02_암호구현.md) |
 | 3 | TLS 1.2 AES-GCM 위조 | 완료 | nonce 재사용으로 `H`와 `E_K(J0)`를 복원하고 유효한 급여 변경 record 생성 | [03_네트워크보안](03_네트워크보안.md) |
 | 4 | LLM weight steganography | 완료 | `CRYPTO{G00D_J0B!_y0u_f0und_7h3_h1dd3n_s3cr37_1n_LLM}` 추출 | [04_디지털포렌식](04_디지털포렌식.md) |
 | 5 | textbook-BGV | 완료 | ternary secret 64계수, 날짜 `20260410→20260411`, 고정 `State` 복원 | [05_동형암호](05_동형암호.md) |
@@ -83,6 +83,17 @@
   후보일 뿐 incumbent는 아니다. 부분 pair loop의 첫 `1.035x`도 더 큰
   확인에서 `1.0004x (0.9855--1.0176)`로 사라졌다. Z3/완전탐색으로 제한된
   rotate/XOR/BSWAP/ADD grammar의 연산 삭제 32개가 모두 UNSAT임도 기록했다.
+- 7차 탐색은 YMM의 긴 dependency chain을 두 XMM 그룹으로 나눈 네 구현을
+  만들었지만 242--288 instructions, 30--50 hot memory와 현 YMM 대비 최소
+  1.36배 정적 cycle로 모두 기각했다. exact GCC 13.3/Clang 21의 112-build
+  codegen matrix도 새 GCC source 승자를 만들지 못했다. OR-to-XOR rotate merge는
+  두 compiler에서 100,000-case 검증을 통과했지만 instruction/byte/model cycle을
+  줄이지 못했다.
+- CPU 2 역전 진단은 page-aligned same-process AB/BA와 wall/thread/TSC 세 timer로
+  재현했다. migration은 없었고 세 timer 비는 0.000003 이내로 같았다. CPU
+  1/2/3의 exact binary가 같은데 AVX2 median 범위는 0.78%, scalar는 45.89%여서
+  공유 VM의 scalar 처리율 변동으로 국소화했다. counter가 없어 SMT/frequency
+  인과는 단정하지 않았으며 이 결과는 255H 선택에 쓰지 않는다.
 - `autotune_02_255h.py`는 pinned CPUID와 Linux topology로 P/E/LP-E를 보수적으로
   분류하고 `probe → screen → confirm → decide`를 실행한다. 두 session·core type별
   두 physical core·correctness/assembly gate가 갖춰지지 않으면 winner 대신
@@ -104,6 +115,9 @@
   [GCC 13.3 schedule screen](../solutions/02_optimization/gcc133_schedule_screen_02.json),
   [GCC 13.3 source-order screen](../solutions/02_optimization/gcc133_source_order_results_02.json),
   [GCC 13.3 layout/backend screen](../solutions/02_optimization/gcc133_layout_screen_02.json),
+  [split-width SIMD screen](../solutions/02_optimization/split_simd_results_02.json),
+  [AVX2 codegen screen](../solutions/02_optimization/avx2_codegen_screen_02.json),
+  [timing stability 진단](../solutions/02_optimization/timing_stability_results_02.json),
   [schedule CPU 0 raw](../solutions/02_optimization/gcc133_schedule_results_02_cpu0.json),
   [schedule CPU 4 raw](../solutions/02_optimization/gcc133_schedule_results_02_cpu4.json),
   [상수 배치 분석](../solutions/02_optimization/constant_placement_analysis_02.json),

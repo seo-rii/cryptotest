@@ -18,7 +18,7 @@
 
 \title{Challenge 2: Reconstruction and Optimization of a 256-bit Permutation}
 \author{Crypto Contest Submission}
-\date{19 July 2026}
+\date{23 July 2026}
 
 \begin{document}
 \maketitle
@@ -51,7 +51,10 @@ of 1.116x and 1.118x over the default build.  A later lane-wise AVX2 candidate
 reduces the exact score loop from 322 scalar instructions to 122 vector
 instructions, but AMD affinities disagree on whether it beats scalar.  It is
 therefore a high-priority 255H experiment while the scalar source remains the
-submission incumbent.
+submission incumbent.  Follow-up split-width, 112-build code-generation, and
+page-aligned three-timer experiments found no new winner and localized the AMD
+sign reversal to unstable scalar throughput on the shared host rather than a
+different binary or timer.
 
 \section{Recovering the structure}
 
@@ -381,6 +384,72 @@ Arrow Lake stream scored 133.79 on the approximate Alder model, and LLVM-MCA 16
 has no Lion Cove or Skymont model.  The scalar build therefore remains the
 incumbent; the 122-instruction AVX2 build is the leading target-only candidate.
 
+\subsection{Seventh-wave split SIMD, code generation, and timing controls}
+
+The YMM implementation minimizes instruction count but retains one vector
+dependency chain.  I therefore tested four two-XMM layouts: contiguous lanes,
+reversal-orbit pairs, serialized groups, and explicit lane recomputation.  All
+passed exact GCC 13.3 auditing, supplied vectors, and 100,000 random states with
+random add/XOR constants.  They were nevertheless clear static rejects:
+
+\begin{center}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Design & Instructions & Bytes & Hot memory & Alder/YMM \\
+\midrule
+Contiguous XMM & 242 & 1,349 & 50 & 2.23x \\
+Orbit pairs & 248 & 1,383 & 50 & 2.35x \\
+Serialized & 250 & 1,303 & 30 & 1.78x \\
+Recompute lanes & 288 & 1,509 & 30 & 1.91x \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Even the best cross-architecture static ratio was 1.36x the current YMM loop.
+The duplicated 128-bit operations and invariant spills provide no rational
+basis for a noisy host campaign, so these sources remain reproducible negative
+experiments and are not in the 255H manifest.
+
+A second screen compiled 112 exact GCC 13.3 and Clang 21 target, scheduler,
+register-allocation, alignment, and source-expression builds.  One hundred
+complete timed loops passed exact audits, and all Pareto/source controls passed
+the direct 100,000-case gate.  GCC's \texttt{-fira-region=one} shortened 579
+bytes to 569 without changing 122 instructions, hot memory, or either model's
+cycle estimate.  Clang emitted 548 bytes with the same instruction/model
+result, but it is not the judge compiler.  Complementary rotate shifts are
+bit-disjoint, so replacing \texttt{VPOR} by \texttt{VPXOR} is exact; both
+compilers verified it, but only the mnemonic mix changed.  A source-only inline
+assembly \texttt{RORX} control also left a public call under plain
+\texttt{gcc -O3}, so the score inline flag remains necessary.
+
+Finally, a timing-stability tool compared separate complete processes with two
+4-KiB-aligned same-process runners in alternating AB/BA order.  Each sample
+records wall time, thread CPU time, serialized \texttt{RDTSCP}, CPU and
+\texttt{TSC\_AUX}, context switches, and SMT-sibling load.  On CPU 2, six
+warm-ups and 32 samples of 3,000,000 calls gave:
+
+\begin{center}
+\small
+\begin{tabular}{lrr}
+\toprule
+Control & Scalar/AVX2 paired & 95\% CI \\
+\midrule
+Process isolated & 0.8768x & 0.859--0.891 \\
+Same process, page aligned & 0.9225x & 0.8845--0.9290 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Wall, thread-CPU, and invariant-TSC ratios agreed within 0.000003; no migration
+or \texttt{TSC\_AUX} change occurred.  CPU 1/2/3 used byte-identical scalar and
+AVX2 binaries and normalized loops.  AVX2 medians varied only 0.78\%, whereas
+scalar medians varied 45.89\%.  The reversal is therefore localized to shared
+host scalar throughput, not code generation or timer choice.  SMT load is a
+plausible contributor, but unavailable APERF/MPERF, cpufreq, and performance
+counters prevent a causal frequency/SMT claim.  This diagnostic does not
+predict 255H performance.
+
 The remaining target experiment is encoded as a guarded
 \texttt{probe--screen--confirm--decide} workflow.  It pins a CPUID probe to every
 allowed logical CPU, combines core type with Linux topology signals, and leaves
@@ -541,6 +610,13 @@ python3 solutions/02_optimization/screen_simd_02.py \
   --json /tmp/challenge02-simd.json
 python3 solutions/02_optimization/screen_255h_toolchains_02.py \
   --json /tmp/challenge02-toolchains.json
+python3 solutions/02_optimization/screen_split_simd_02.py \
+  --output /tmp/challenge02-split-simd.json
+python3 solutions/02_optimization/screen_avx2_codegen_02.py \
+  --output /tmp/challenge02-avx2-codegen.json
+python3 solutions/02_optimization/benchmark_timing_stability_02.py \
+  --cpu 2 --iterations 3000000 --warmups 6 --samples 32 \
+  --random-cases 100000 --json /tmp/challenge02-timing-stability.json
 python3 solutions/02_optimization/autotune_02_255h.py probe \
   --compiler /path/to/gcc-13.3.0 \
   --out /tmp/ch2-255h/topology.json
@@ -570,9 +646,7 @@ recommended score command:
 gcc -O3 -Wall -Wextra -o contest contest.c
 ./contest
 
-gcc -O3 -Wall -Wextra -mbmi2 -finline-limit=2000 \
-  -o contest contest.c
-./contest
+./run_contest.sh
 \end{lstlisting}
 
 \section{References}
@@ -609,11 +683,25 @@ gcc -O3 -Wall -Wextra -mbmi2 -finline-limit=2000 \
     \href{https://llvm.org/docs/CommandGuide/llvm-mca.html}
     {llvm-mca Machine Code Analyzer}: scheduling-model throughput and resource
     analysis, including the model-accuracy limitation of static estimates.
+  \item Abel and Reineke,
+    \href{https://arxiv.org/abs/1810.04610}
+    {uops.info: Characterizing Latency, Throughput, and Port Usage of
+    Instructions on Intel Microarchitectures}, ASPLOS 2019: separating
+    instruction count from latency, throughput, and execution-port behavior.
+  \item Abel and Reineke,
+    \href{https://arxiv.org/abs/1911.03282}
+    {nanoBench: A Low-Overhead Tool for Running Microbenchmarks on x86
+    Systems}: warm-up, serialization, repetition, and counter-aware low-level
+    measurement design.  Required counters were unavailable on this VM.
   \item Intel,
     \href{https://www.intel.com/content/www/us/en/developer/articles/technical/intel64-and-ia32-architectures-optimization.html}
     {Intel 64 and IA-32 Optimization Reference Manual}, and the
     \href{https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html}
     {Intrinsics Guide}: scalar/BMI2 and AVX2 candidate analysis.
+  \item Intel,
+    \href{https://www.intel.com/content/www/us/en/content-details/837381/intel-processors-and-processor-cores-based-on-skymont-microarchitecture-instruction-throughput-and-latency.html}
+    {Skymont Instruction Throughput and Latency}: target E-core instruction
+    behavior and why an Alder scheduling proxy cannot replace 255H measurement.
   \item GCC,
     \href{https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/x86-Options.html}
     {GCC 13.3 x86 Options}: Alder Lake tuning availability and why AMD
