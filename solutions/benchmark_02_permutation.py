@@ -313,6 +313,7 @@ def main() -> None:
         candidate_verification: dict[str, dict[str, object]] = {}
         assembly_audits: dict[str, dict[str, object]] = {}
         rewritten_source_hashes: dict[str, str] = {}
+        source_context_flags: dict[str, list[str]] = {}
         for name, source in cases:
             rewritten, replacements = ITERATIONS_PATTERN.subn(
                 f"const int iterations = {args.iterations};",
@@ -329,6 +330,12 @@ def main() -> None:
             rewritten_source_hashes[name] = hashlib.sha256(
                 rewritten_bytes
             ).hexdigest()
+            # Rewriting the iteration count into a temporary file must not
+            # change the meaning of quoted relative includes in the original
+            # contest source.  Search its original directory after the
+            # temporary file's directory, matching the compiler's source-local
+            # include semantics without modifying the candidate.
+            source_context_flags[name] = ["-iquote", str(source.parent)]
 
             candidate_object = temporary / f"{name}_candidate.o"
             verifier_flag_overrides = []
@@ -341,6 +348,7 @@ def main() -> None:
                 args.compiler,
                 *flags,
                 *case_flags[name],
+                *source_context_flags[name],
                 *verifier_flag_overrides,
                 "-Dmain=challenge02_contest_main",
                 "-c",
@@ -441,6 +449,7 @@ def main() -> None:
                 args.compiler,
                 *flags,
                 *case_flags[name],
+                *source_context_flags[name],
                 str(temporary_source),
                 "-o",
                 str(executable),
@@ -708,6 +717,7 @@ def main() -> None:
                     "sha256": source_hashes[name],
                     "rewritten_sha256": rewritten_source_hashes[name],
                     "case_cflags": case_flags[name],
+                    "source_context_cflags": source_context_flags[name],
                 }
                 for name, source in cases
             },

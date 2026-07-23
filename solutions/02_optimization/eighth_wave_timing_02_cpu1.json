@@ -1,0 +1,600 @@
+{
+  "assembly_audits": {
+    "current": {
+      "binary_sha256": "508c1ba3c379792d93f78c56829d605548fcf49971b7f187747f854c80de3b1c",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 0,
+        "bswap": 0,
+        "rotate": 0,
+        "xor": 0
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "86c3330762547729d81566a3c0bdc1d7bd062e974f4eb95c49778f076befb776",
+      "loop_bytes": 579,
+      "loop_instructions": 122,
+      "loop_start": "0x1540",
+      "loop_start_mod_16": 0,
+      "loop_start_mod_32": 0,
+      "loop_start_mod_64": 0,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "jne": 1,
+        "sub": 1,
+        "vpaddq": 20,
+        "vpor": 20,
+        "vpshufb": 20,
+        "vpsllvq": 20,
+        "vpsrlvq": 20,
+        "vpxor": 20
+      },
+      "mode": "avx2-inline-lanewise",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 6600
+    },
+    "inline_asm": {
+      "binary_sha256": "9f3c1d9ae40ee67ae2d69c64d03876e6240f02ee8032095c50078c13606d58a4",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 0,
+        "bswap": 0,
+        "rotate": 0,
+        "xor": 0
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "5edd0e2fe95c3f0baebfb0907d3e67982ce08d0f8f1f58c47ebe13ff843c2ca4",
+      "loop_bytes": 569,
+      "loop_instructions": 122,
+      "loop_start": "0x1530",
+      "loop_start_mod_16": 0,
+      "loop_start_mod_32": 16,
+      "loop_start_mod_64": 48,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "jne": 1,
+        "sub": 1,
+        "vpaddq": 20,
+        "vpor": 20,
+        "vpshufb": 20,
+        "vpsllvq": 20,
+        "vpsrlvq": 20,
+        "vpxor": 20
+      },
+      "mode": "avx2-inline-lanewise",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "0ada8ea58890adea7e23cdf2226754737ee9e7a05a2f9b238d25d1bad9577af1",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 6577
+    },
+    "phase": {
+      "binary_sha256": "d946bc1a732df2c1d957b0d789f9bbf5a34654bc28f538aa8009509ad771efdd",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 4,
+        "bswap": 4,
+        "rotate": 4,
+        "xor": 4
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "87c56e06d458b163b6a865e98918288bcd1c20eeaa160061b7a1545363cb1abc",
+      "loop_bytes": 1253,
+      "loop_instructions": 257,
+      "loop_start": "0x1a75",
+      "loop_start_mod_16": 5,
+      "loop_start_mod_32": 21,
+      "loop_start_mod_64": 53,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "add": 4,
+        "bswap": 4,
+        "jne": 1,
+        "movabs": 1,
+        "rorx": 4,
+        "sub": 1,
+        "vmovq": 5,
+        "vpaddq": 38,
+        "vpextrq": 2,
+        "vpinsrq": 2,
+        "vpor": 38,
+        "vpshufb": 38,
+        "vpsllq": 38,
+        "vpsrlq": 38,
+        "vpunpcklqdq": 1,
+        "vpxor": 38,
+        "xor": 4
+      },
+      "mode": "report-only",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "dd15d9499d05d6ee0bc95c4128fd93402a1a448adbdf1e60e0685c39c2e652e0",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 14435
+    }
+  },
+  "baseline": "current",
+  "benchmark": "challenge02_contest_shaped",
+  "campaign_id": null,
+  "candidate_verification": {
+    "current": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_link_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "verifier_only_flag_overrides": [],
+      "verifier_translation_unit_cflags": [
+        "-O3",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Werror"
+      ]
+    },
+    "inline_asm": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_link_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "verifier_only_flag_overrides": [],
+      "verifier_translation_unit_cflags": [
+        "-O3",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Werror"
+      ]
+    },
+    "phase": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_link_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-mavx2",
+        "-mbmi2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "verifier_only_flag_overrides": [],
+      "verifier_translation_unit_cflags": [
+        "-O3",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Werror"
+      ]
+    }
+  },
+  "comparisons": {
+    "inline_asm": {
+      "paired_bootstrap_ci95_high": 1.0024301213062654,
+      "paired_bootstrap_ci95_low": 0.9983929066223333,
+      "paired_mad": 0.003718795411982445,
+      "paired_median": 0.9992718530235116,
+      "paired_p05": 0.9894513978515391,
+      "paired_p95": 1.0095147570767564,
+      "ratio_of_medians": 0.9973480268220293
+    },
+    "phase": {
+      "paired_bootstrap_ci95_high": 0.7643806240013455,
+      "paired_bootstrap_ci95_low": 0.7541273583117587,
+      "paired_mad": 0.00792818168038012,
+      "paired_median": 0.7583693527132552,
+      "paired_p05": 0.7473581656494965,
+      "paired_p95": 0.7953078012247643,
+      "ratio_of_medians": 0.757667174680056
+    }
+  },
+  "config": {
+    "bootstrap_resamples": 5000,
+    "candidate_random_differential": true,
+    "candidate_random_differential_cases": 100000,
+    "iterations": 3000000,
+    "official_iterations": 1000000,
+    "oracle_selftest_random_cases": 100000,
+    "order": "balanced-cyclic-reversed",
+    "random_differential_cases": 100000,
+    "samples_per_case": 32,
+    "warmups": 6
+  },
+  "environment": {
+    "affinity": [
+      1
+    ],
+    "compiler": "gcc (Debian 12.2.0-14+deb12u1) 12.2.0",
+    "cpu": "AMD EPYC 7B12",
+    "flags": [
+      "-O3",
+      "-Wall",
+      "-Wextra"
+    ],
+    "host": "Linux-6.1.0-51-cloud-amd64-x86_64-with-glibc2.36",
+    "inner_timer": "clock()",
+    "objdump": "GNU objdump (GNU Binutils for Debian) 2.40",
+    "outer_timer": "time.perf_counter_ns",
+    "size_tool": "GNU size (GNU Binutils for Debian) 2.40"
+  },
+  "internal_ns_per_20round": {
+    "current": [
+      36.477000000000004,
+      36.357,
+      36.33,
+      36.702,
+      36.693000000000005,
+      36.601,
+      36.971,
+      36.83,
+      36.802,
+      36.82,
+      36.646,
+      36.269000000000005,
+      36.236,
+      36.979,
+      36.926,
+      36.263999999999996,
+      36.314,
+      36.132,
+      36.471999999999994,
+      36.458,
+      36.057,
+      36.039,
+      36.198,
+      36.05,
+      36.036,
+      36.032000000000004,
+      36.122,
+      36.033,
+      35.939,
+      35.873000000000005,
+      35.92,
+      36.199000000000005
+    ],
+    "inline_asm": [
+      36.492999999999995,
+      36.555,
+      36.599,
+      36.43,
+      36.411,
+      36.4,
+      36.881,
+      36.915000000000006,
+      36.843,
+      36.712,
+      36.412,
+      36.44,
+      37.122,
+      37.146,
+      36.873999999999995,
+      36.796,
+      36.351,
+      36.376,
+      36.051,
+      35.934,
+      36.111,
+      36.077,
+      35.992000000000004,
+      36.099,
+      35.967,
+      36.089999999999996,
+      36.002,
+      36.159,
+      35.932,
+      36.012,
+      35.882999999999996,
+      35.924
+    ],
+    "phase": [
+      48.143,
+      47.564,
+      47.559999999999995,
+      47.898,
+      47.633,
+      47.149,
+      47.222,
+      47.012,
+      47.486,
+      48.351,
+      48.122,
+      47.9,
+      45.667,
+      46.136,
+      46.300000000000004,
+      46.267999999999994,
+      47.953,
+      47.739999999999995,
+      48.049,
+      47.915,
+      47.89,
+      48.188,
+      48.104,
+      47.908,
+      47.859,
+      48.059999999999995,
+      48.207,
+      48.389,
+      48.005,
+      48.041,
+      47.868,
+      47.924
+    ]
+  },
+  "measurement_protocol": {
+    "files": {
+      "autotune_driver": {
+        "path": "solutions/02_optimization/autotune_02_255h.py",
+        "sha256": "36ba5ce6d130aa117c621844cd8c1f8bcb4c96e4518580d25afa688d3b976d09"
+      },
+      "benchmark_driver": {
+        "path": "solutions/benchmark_02_permutation.py",
+        "sha256": "4262926ecd8e4fcfabcc7c4e74a4c87bbc0450f995b31d4a60137f888bd59d42"
+      },
+      "candidate_verifier": {
+        "path": "solutions/02_optimization/verify_contest_candidate_02.c",
+        "sha256": "8245f1baf23fe82e1a1b22dc7c25e5e1fd5b102ca833f26d4c88342088c80b35"
+      },
+      "loop_audit": {
+        "path": "solutions/challenge02_loop_audit.py",
+        "sha256": "e73d27abfbb7eea9ee84e0216baaf7f39f128db0cffdcb79b469656f9c185e23"
+      },
+      "objdump_executable": {
+        "path": "/usr/bin/x86_64-linux-gnu-objdump",
+        "sha256": "19717049e8ecd98cfbb17fd9eb25e9fd896ecec2fc4af6b931f3dd0bc4e903de"
+      },
+      "problem_archive": {
+        "path": "problems/2_\uc554\ud638\uad6c\ud604.zip",
+        "sha256": "d0c3158adda8ba258becfc0e347267c0f2f0112738ec732be6dcb5477342e88e"
+      },
+      "reference_oracle": {
+        "path": "solutions/solve_02_permutation.c",
+        "sha256": "fb6b5128f6777bdb5c9c940541d7052a317b596775d7ec0d7820d0610cb9aa42"
+      },
+      "size_executable": {
+        "path": "/usr/bin/x86_64-linux-gnu-size",
+        "sha256": "d2dc6eb962bfc841403cc8b72191bfd829b50d8796b611689e92cfb051cf10ee"
+      }
+    },
+    "fingerprint_sha256": "9ac895a6b1de464070fb1590b0e7152075a7467585625a6b1679422e67030bf6",
+    "python": {
+      "executable": "/usr/bin/python3.11",
+      "executable_sha256": "6d972cf21be56fe3c947ab6ba257ff8d08c342dd2714442986791bd9a6dfabfe",
+      "implementation": "CPython",
+      "version": "3.11.2"
+    },
+    "schema_version": 1
+  },
+  "outer_wall_seconds": {
+    "current": [
+      0.112864505,
+      0.112559428,
+      0.112395389,
+      0.113628085,
+      0.113968424,
+      0.11303945,
+      0.114791776,
+      0.114683098,
+      0.114878148,
+      0.113740572,
+      0.113395664,
+      0.112201747,
+      0.112152787,
+      0.1614221,
+      0.171867525,
+      0.112400531,
+      0.112278172,
+      0.111652565,
+      0.113240442,
+      0.112854414,
+      0.111538757,
+      0.111351458,
+      0.111768828,
+      0.111374161,
+      0.11133338,
+      0.111423613,
+      0.111767892,
+      0.111362863,
+      0.111065736,
+      0.110889807,
+      0.110867286,
+      0.111885137
+    ],
+    "inline_asm": [
+      0.112763115,
+      0.113090024,
+      0.113219447,
+      0.112969447,
+      0.113265899,
+      0.112509991,
+      0.114046007,
+      0.114329059,
+      0.114136449,
+      0.113401432,
+      0.112704126,
+      0.112964934,
+      0.11558318,
+      0.115986359,
+      0.138574018,
+      0.12131052,
+      0.112794609,
+      0.112767991,
+      0.111443525,
+      0.110966407,
+      0.111615627,
+      0.111611718,
+      0.111351101,
+      0.111666599,
+      0.110990861,
+      0.111513431,
+      0.111313753,
+      0.112164412,
+      0.110943167,
+      0.111389724,
+      0.110903456,
+      0.110774239
+    ],
+    "phase": [
+      0.147786467,
+      0.146081091,
+      0.146183854,
+      0.147258791,
+      0.147194414,
+      0.14501834,
+      0.145499439,
+      0.144842644,
+      0.147145098,
+      0.148461125,
+      0.147851599,
+      0.146930972,
+      0.141540758,
+      0.160018034,
+      0.179122617,
+      0.186642093,
+      0.147314258,
+      0.146594342,
+      0.1474001,
+      0.146826302,
+      0.147674164,
+      0.148058722,
+      0.147411754,
+      0.146883468,
+      0.146881618,
+      0.147526379,
+      0.147754129,
+      0.148267989,
+      0.147271673,
+      0.147271893,
+      0.146858547,
+      0.146868607
+    ]
+  },
+  "schema_version": 4,
+  "sources": {
+    "current": {
+      "case_cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "path": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+      "rewritten_sha256": "c122e17ed0e06279273877e26fd33b2460a398486a723cb56bfc82c3feff1f4f",
+      "sha256": "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751",
+      "source_context_cflags": [
+        "-iquote",
+        "/home/seorii/dev/hancomac/cryptotest/solutions/02_optimization"
+      ]
+    },
+    "inline_asm": {
+      "case_cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "path": "solutions/02_optimization/contest_simd_avx2_inline_asm.c",
+      "rewritten_sha256": "6e29d7a87fc2a4cea5bc3de49f7ca32f08fffb20bc3c3755d6a4a27514ab6e55",
+      "sha256": "778187b61a0a769cb012e5205edb5782df2c25418681651cb76d05739198307c",
+      "source_context_cflags": [
+        "-iquote",
+        "/home/seorii/dev/hancomac/cryptotest/solutions/02_optimization"
+      ]
+    },
+    "phase": {
+      "case_cflags": [
+        "-mavx2",
+        "-mbmi2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "path": "solutions/02_optimization/contest_simd_avx2_phase_staggered.c",
+      "rewritten_sha256": "22fe36ef57f8a64dad5e587ce263baf4ec0a893a99d4f03ca0c032b3ba0f2c82",
+      "sha256": "1824843868e3747634fd5eb8f39f08ce0b79588da8ca0f19fcaee810c2b12983",
+      "source_context_cflags": [
+        "-iquote",
+        "/home/seorii/dev/hancomac/cryptotest/solutions/02_optimization"
+      ]
+    }
+  },
+  "summaries": {
+    "current": {
+      "bootstrap_median_ci95_high_ns": 36.477000000000004,
+      "bootstrap_median_ci95_low_ns": 36.16,
+      "mad_ns": 0.2539999999999978,
+      "mad_percent": 0.6998884036206765,
+      "max_ns": 36.979,
+      "median_ns": 36.2915,
+      "min_ns": 35.873000000000005,
+      "outliers_beyond_3mad": 0,
+      "p05_ns": 35.93045,
+      "p25_ns": 36.05525,
+      "p75_ns": 36.65775000000001,
+      "p95_ns": 36.94625
+    },
+    "inline_asm": {
+      "bootstrap_median_ci95_high_ns": 36.492999999999995,
+      "bootstrap_median_ci95_low_ns": 36.089999999999996,
+      "mad_ns": 0.3305000000000007,
+      "mad_percent": 0.9082664614708166,
+      "max_ns": 37.146,
+      "median_ns": 36.388,
+      "min_ns": 35.882999999999996,
+      "outliers_beyond_3mad": 0,
+      "p05_ns": 35.928399999999996,
+      "p25_ns": 36.041250000000005,
+      "p75_ns": 36.62724999999999,
+      "p95_ns": 37.00815
+    },
+    "phase": {
+      "bootstrap_median_ci95_high_ns": 47.979,
+      "bootstrap_median_ci95_low_ns": 47.686499999999995,
+      "mad_ns": 0.23349999999999937,
+      "mad_percent": 0.4874840810872865,
+      "max_ns": 48.389,
+      "median_ns": 47.899,
+      "min_ns": 45.667,
+      "outliers_beyond_3mad": 6,
+      "p05_ns": 46.208600000000004,
+      "p25_ns": 47.5415,
+      "p75_ns": 48.05175,
+      "p95_ns": 48.2718
+    }
+  },
+  "verification_harness": {
+    "path": "solutions/02_optimization/verify_contest_candidate_02.c",
+    "sha256": "8245f1baf23fe82e1a1b22dc7c25e5e1fd5b102ca833f26d4c88342088c80b35"
+  }
+}

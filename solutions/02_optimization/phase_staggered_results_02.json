@@ -1,0 +1,564 @@
+{
+  "algebra": {
+    "constant_generality": "each T_j broadcasts its own arbitrary XOR constant and the arbitrary add constant of destination 3-j; no equality or fixed-value assumption is used",
+    "orbit_03": {
+      "epilogue": "apply T3 only to lane 0; lane 1 is final x3",
+      "packing": "[x0, T3(x3)]",
+      "shared_stage_order": "(T0,T3)^9,T0 (19 stages)"
+    },
+    "orbit_12": {
+      "epilogue": "apply T2 only to lane 0; lane 1 is final x2",
+      "packing": "[x1, T2(x2)]",
+      "shared_stage_order": "(T1,T2)^9,T1 (19 stages)"
+    },
+    "transform": "T_j(x)=BSWAP(ROL(x,r_j) XOR constants2[j]) + constants1[3-j]"
+  },
+  "all_required_checks_passed": true,
+  "checks": {
+    "exact_timed_loop_audits_passed": true,
+    "host_protocol_ran": true,
+    "official_vectors_passed": true,
+    "pinned_gcc_is_exact_13_3_0": true,
+    "random_state_and_constants_100k_passed": true,
+    "round_counts_verified": [
+      1,
+      20
+    ]
+  },
+  "comparison_summary": {
+    "avx2_current": {
+      "bytes": 579,
+      "calls": 0,
+      "instructions": 122,
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 20.3,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "uops_per_iteration": 122.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "uops_per_iteration": 122.0
+        }
+      },
+      "memory_operands": 0,
+      "mnemonics": {
+        "jne": 1,
+        "sub": 1,
+        "vpaddq": 20,
+        "vpor": 20,
+        "vpshufb": 20,
+        "vpsllvq": 20,
+        "vpsrlvq": 20,
+        "vpxor": 20
+      },
+      "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+      "push_pop": 0
+    },
+    "byte_ratio": 2.164075993091537,
+    "instruction_ratio": 2.1065573770491803,
+    "phase_cycles_relative_to_current": {
+      "alderlake": 1.1600519844046786,
+      "znver2": 0.7945897905904572
+    },
+    "phase_staggered": {
+      "bytes": 1253,
+      "calls": 0,
+      "instructions": 257,
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 44.2,
+          "cycles_per_iteration": 116.04,
+          "instructions_per_iteration": 257.0,
+          "iterations": 100,
+          "total_cycles": 11604,
+          "uops_per_iteration": 265.0
+        },
+        "znver2": {
+          "block_rthroughput": 85.0,
+          "cycles_per_iteration": 143.05,
+          "instructions_per_iteration": 257.0,
+          "iterations": 100,
+          "total_cycles": 14305,
+          "uops_per_iteration": 257.0
+        }
+      },
+      "memory_operands": 0,
+      "mnemonics": {
+        "add": 4,
+        "bswap": 4,
+        "jne": 1,
+        "movabs": 1,
+        "rorx": 4,
+        "sub": 1,
+        "vmovq": 5,
+        "vpaddq": 38,
+        "vpextrq": 2,
+        "vpinsrq": 2,
+        "vpor": 38,
+        "vpshufb": 38,
+        "vpsllq": 38,
+        "vpsrlq": 38,
+        "vpunpcklqdq": 1,
+        "vpxor": 38,
+        "xor": 4
+      },
+      "normalized_loop_sha256": "dd15d9499d05d6ee0bc95c4128fd93402a1a448adbdf1e60e0685c39c2e652e0",
+      "push_pop": 0
+    }
+  },
+  "decision": {
+    "classification": "exploration-only host-rejected candidate",
+    "promote_over_scalar_incumbent": false,
+    "reason": "the phase construction removes variable-count shifts and is 0.795x the current YMM cycle estimate on the znver2 proxy, but duplicates the vector stream (257 versus 122 exact loop instructions), is 1.160x on the Intel-adjacent Alder Lake proxy, and measured only 0.758x/0.756x on two AMD affinities; without a 255H result it cannot replace the incumbent",
+    "register_in_autotuner": false,
+    "retain_source": true
+  },
+  "dependencies": {
+    "candidate_verifier": {
+      "path": "solutions/02_optimization/verify_contest_candidate_02.c",
+      "sha256": "8245f1baf23fe82e1a1b22dc7c25e5e1fd5b102ca833f26d4c88342088c80b35"
+    },
+    "included_scalar_source": {
+      "path": "submissions/02/contest.c",
+      "reason": "the experimental source reuses the contest utility, one-round implementation, and harness while replacing the 20-round ABI",
+      "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+    },
+    "problem_archive": {
+      "path": "problems/2_\uc554\ud638\uad6c\ud604.zip",
+      "sha256": "d0c3158adda8ba258becfc0e347267c0f2f0112738ec732be6dcb5477342e88e"
+    }
+  },
+  "host_measurement": {
+    "cpu1": {
+      "affinity": [
+        1
+      ],
+      "compiler": "gcc (Debian 12.2.0-14+deb12u1) 12.2.0",
+      "current_median_ns": 36.2915,
+      "current_over_phase_paired_median": 0.7583693527132552,
+      "host_cpu": "AMD EPYC 7B12",
+      "paired_bootstrap_ci95": [
+        0.7541273583117587,
+        0.7643806240013455
+      ],
+      "path": "solutions/02_optimization/eighth_wave_timing_02_cpu1.json",
+      "phase_median_ns": 47.899,
+      "protocol": {
+        "iterations": 3000000,
+        "order": "balanced-cyclic-reversed",
+        "random_cases": 100000,
+        "samples_per_case": 32,
+        "warmups": 6
+      },
+      "sha256": "70619e7814fe8ba1e8cfa9da598ed0c626a63e1519e29cf7272e9296b8aebe5c"
+    },
+    "cpu3": {
+      "affinity": [
+        3
+      ],
+      "compiler": "gcc (Debian 12.2.0-14+deb12u1) 12.2.0",
+      "current_median_ns": 36.152,
+      "current_over_phase_paired_median": 0.7560670528967317,
+      "host_cpu": "AMD EPYC 7B12",
+      "paired_bootstrap_ci95": [
+        0.7510714434319478,
+        0.7635898927769927
+      ],
+      "path": "solutions/02_optimization/eighth_wave_timing_02_cpu3.json",
+      "phase_median_ns": 47.912,
+      "protocol": {
+        "iterations": 3000000,
+        "order": "balanced-cyclic-reversed",
+        "random_cases": 100000,
+        "samples_per_case": 32,
+        "warmups": 6
+      },
+      "sha256": "ca47c1858a7170e1d0cb7eff48d10cced728eaeb4f08a225f64cc803b4491661"
+    }
+  },
+  "host_timing_decision": "two controlled AMD-host campaigns contradicted the favorable znver2 proxy and rejected the phase candidate locally; they are diagnostic evidence, not a substitute for the 255H",
+  "official_vector_smoke": {
+    "avx2_current": {
+      "one_round_pairs": 1000,
+      "qualification": "the harness timing line was ignored; this execution is correctness evidence only",
+      "status": "PASS",
+      "twenty_round_cases": 1,
+      "validated_stdout_markers": [
+        "one-round testvector verification: OK (1000 pairs checked)",
+        "20-round testvector verification: OK"
+      ]
+    },
+    "phase_staggered": {
+      "one_round_pairs": 1000,
+      "qualification": "the harness timing line was ignored; this execution is correctness evidence only",
+      "status": "PASS",
+      "twenty_round_cases": 1,
+      "validated_stdout_markers": [
+        "one-round testvector verification: OK (1000 pairs checked)",
+        "20-round testvector verification: OK"
+      ]
+    },
+    "scalar": {
+      "one_round_pairs": 1000,
+      "qualification": "the harness timing line was ignored; this execution is correctness evidence only",
+      "status": "PASS",
+      "twenty_round_cases": 1,
+      "validated_stdout_markers": [
+        "one-round testvector verification: OK (1000 pairs checked)",
+        "20-round testvector verification: OK"
+      ]
+    }
+  },
+  "pinned_static_screen": {
+    "binutils": "GNU ld (GNU Binutils for Debian) 2.40",
+    "cases": {
+      "avx2_current": {
+        "assembly_sha256": "417e83db6e9f61528c38c79c71b7635eefa7f5111f9357dc066f5de73b5a0dd4",
+        "binary_audit": {
+          "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 0,
+            "bswap": 0,
+            "rotate": 0,
+            "xor": 0
+          },
+          "errors": [],
+          "legacy_addressed_loop_sha256": "f6a1691f4ad9d9d58b10385f99853e857b152e3645b3e193046650a1966b1912",
+          "loop_bytes": 579,
+          "loop_instructions": 122,
+          "loop_start": "0x401508",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 8,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "mode": "avx2-inline-lanewise",
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_simd_operation_counts": {
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "status": "PASS",
+          "text_bytes": 6253
+        },
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "total_cycles": 10003,
+            "uops_per_iteration": 122.0
+          },
+          "znver2": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "total_cycles": 18003,
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop_text_sha256": "31d08206e92609b0e9861ed470f03f2730376b041b09a5601217bf90978815ba",
+        "source": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+        "source_sha256": "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751",
+        "verification": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "returncode": 0,
+          "round_counts": [
+            1,
+            20
+          ],
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+          "verifier_translation_unit_cflags": [
+            "-O3",
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror"
+          ]
+        }
+      },
+      "phase_staggered": {
+        "assembly_sha256": "204faff239bcc774296e873677663e75e266053e0f8df831fbd4404c5d856704",
+        "binary_audit": {
+          "binary_sha256": "45b59243fa9b66d5bce0e7f7b8e33ea9825705e8e1b15fd89da5bb653c3e9559",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 4,
+            "bswap": 4,
+            "rotate": 4,
+            "xor": 4
+          },
+          "errors": [],
+          "legacy_addressed_loop_sha256": "52dd079941d7a2ff8074917dd2a6f293151d18f25e8bccef8c52ccd71277fa92",
+          "loop_bytes": 1253,
+          "loop_instructions": 257,
+          "loop_start": "0x401a4a",
+          "loop_start_mod_16": 10,
+          "loop_start_mod_32": 10,
+          "loop_start_mod_64": 10,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 4,
+            "bswap": 4,
+            "jne": 1,
+            "movabs": 1,
+            "rorx": 4,
+            "sub": 1,
+            "vmovq": 5,
+            "vpaddq": 38,
+            "vpextrq": 2,
+            "vpinsrq": 2,
+            "vpor": 38,
+            "vpshufb": 38,
+            "vpsllq": 38,
+            "vpsrlq": 38,
+            "vpunpcklqdq": 1,
+            "vpxor": 38,
+            "xor": 4
+          },
+          "mode": "report-only",
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "dd15d9499d05d6ee0bc95c4128fd93402a1a448adbdf1e60e0685c39c2e652e0",
+          "push_pop": 0,
+          "selected_simd_operation_counts": {
+            "vpaddq": 38,
+            "vpor": 38,
+            "vpshufb": 38,
+            "vpxor": 38
+          },
+          "status": "PASS",
+          "text_bytes": 14112
+        },
+        "binary_sha256": "45b59243fa9b66d5bce0e7f7b8e33ea9825705e8e1b15fd89da5bb653c3e9559",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-mbmi2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 44.2,
+            "cycles_per_iteration": 116.04,
+            "instructions_per_iteration": 257.0,
+            "iterations": 100,
+            "total_cycles": 11604,
+            "uops_per_iteration": 265.0
+          },
+          "znver2": {
+            "block_rthroughput": 85.0,
+            "cycles_per_iteration": 143.05,
+            "instructions_per_iteration": 257.0,
+            "iterations": 100,
+            "total_cycles": 14305,
+            "uops_per_iteration": 257.0
+          }
+        },
+        "loop_text_sha256": "22ab5ad494ac0ab6c5e7643e81e19bf0ccb84fd75b360ce90f0e6e35e238d7f6",
+        "source": "solutions/02_optimization/contest_simd_avx2_phase_staggered.c",
+        "source_sha256": "1824843868e3747634fd5eb8f39f08ce0b79588da8ca0f19fcaee810c2b12983",
+        "verification": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "returncode": 0,
+          "round_counts": [
+            1,
+            20
+          ],
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+          "verifier_translation_unit_cflags": [
+            "-O3",
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror"
+          ]
+        }
+      },
+      "scalar": {
+        "assembly_sha256": "6d6f32ff16be74005597c530dce180bf6b070ee4197697c57ad274755e0d0f87",
+        "binary_audit": {
+          "binary_sha256": "df7da5f1f98311bfcf4472f6eab2077586fd264966aa6952b306fedbb6572f2e",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "errors": [],
+          "legacy_addressed_loop_sha256": "cbbef56326fbc4437dff78afaf7eb3229d5cce8a9858a8628d04e194ca01f770",
+          "loop_bytes": 1216,
+          "loop_instructions": 322,
+          "loop_start": "0x401528",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 40,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 74,
+            "bswap": 80,
+            "jne": 1,
+            "lea": 6,
+            "rorx": 80,
+            "sub": 1,
+            "xor": 80
+          },
+          "mode": "full-inline-320",
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "6b803105c59776a62b75848692307bbe611286ee1d1806d23c4577f974dc2683",
+          "push_pop": 0,
+          "selected_simd_operation_counts": {},
+          "status": "PASS",
+          "text_bytes": 7246
+        },
+        "binary_sha256": "df7da5f1f98311bfcf4472f6eab2077586fd264966aa6952b306fedbb6572f2e",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mbmi2",
+          "-finline-limit=2000"
+        ],
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 86.0,
+            "cycles_per_iteration": 125.06,
+            "instructions_per_iteration": 322.0,
+            "iterations": 100,
+            "total_cycles": 12506,
+            "uops_per_iteration": 402.0
+          },
+          "znver2": {
+            "block_rthroughput": 140.5,
+            "cycles_per_iteration": 140.55,
+            "instructions_per_iteration": 322.0,
+            "iterations": 100,
+            "total_cycles": 14055,
+            "uops_per_iteration": 322.0
+          }
+        },
+        "loop_text_sha256": "23d63ff2ff7e52cebf6b27750a718f0d5d35883f9c1c41f0dcb2a8c76ba1a3cc",
+        "source": "submissions/02/contest.c",
+        "source_sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71",
+        "verification": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "returncode": 0,
+          "round_counts": [
+            1,
+            20
+          ],
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+          "verifier_translation_unit_cflags": [
+            "-O3",
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror"
+          ]
+        }
+      }
+    },
+    "compiler": "gcc (GCC) 13.3.0",
+    "container": {
+      "image": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "local_image_id": "sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "network": "none",
+      "pinned_manifest_digest_sha256": "1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "repository_mount": "read-only"
+    },
+    "llvm_mca": {
+      "executable": "llvm-mca-16",
+      "models": [
+        "alderlake",
+        "znver2"
+      ],
+      "qualification": "static scheduler models only; neither model is Lion Cove or Skymont",
+      "version": "Debian LLVM version 16.0.6"
+    }
+  },
+  "reproduction": {
+    "command": "python3 solutions/02_optimization/screen_phase_staggered_02.py --output solutions/02_optimization/phase_staggered_results_02.json",
+    "network": "disabled inside the pinned GCC container"
+  },
+  "schema_version": 1,
+  "scope": "phase-staggered word-reversal orbits using two XMM chains with immediate rotations; no Core Ultra 7 255H measurement",
+  "sources": {
+    "avx2_current": {
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "path": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+      "sha256": "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751"
+    },
+    "phase_staggered": {
+      "cflags": [
+        "-mavx2",
+        "-mbmi2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "path": "solutions/02_optimization/contest_simd_avx2_phase_staggered.c",
+      "sha256": "1824843868e3747634fd5eb8f39f08ce0b79588da8ca0f19fcaee810c2b12983"
+    },
+    "scalar": {
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "path": "submissions/02/contest.c",
+      "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+    }
+  }
+}

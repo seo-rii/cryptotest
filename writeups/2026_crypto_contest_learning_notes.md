@@ -11,7 +11,7 @@
 | 번호 | 주제 | 상태 | 최종 결과 | 상세 writeup |
 |---:|---|---|---|---|
 | 1 | 고전 암호와 분류 | 완료 | Caesar shift `6`, Vigenère key `KLVOJ`, 재현 가능한 분류 모델과 식별 불가능성 분석 | [01_암호분석](01_암호분석.md) |
-| 2 | 256비트 permutation 구현 | scalar incumbent 완료·7차 SIMD/codegen/측정 진단 완료·255H 실측 미정 | `rot={43,7,29,14}`, 2-round scalar full-unroll과 122-insn 4-lane AVX2 | [02_암호구현](02_암호구현.md) |
+| 2 | 256비트 permutation 구현 | scalar incumbent 완료·8차 SIMD/배치/측정 진단 완료·255H 실측 미정 | `rot={43,7,29,14}`, 2-round scalar full-unroll, 122-insn AVX2와 569B 두 stream | [02_암호구현](02_암호구현.md) |
 | 3 | TLS 1.2 AES-GCM 위조 | 완료 | nonce 재사용으로 `H`와 `E_K(J0)`를 복원하고 유효한 급여 변경 record 생성 | [03_네트워크보안](03_네트워크보안.md) |
 | 4 | LLM weight steganography | 완료 | `CRYPTO{G00D_J0B!_y0u_f0und_7h3_h1dd3n_s3cr37_1n_LLM}` 추출 | [04_디지털포렌식](04_디지털포렌식.md) |
 | 5 | textbook-BGV | 완료 | ternary secret 64계수, 날짜 `20260410→20260411`, 고정 `State` 복원 | [05_동형암호](05_동형암호.md) |
@@ -85,7 +85,7 @@
   rotate/XOR/BSWAP/ADD grammar의 연산 삭제 32개가 모두 UNSAT임도 기록했다.
 - 7차 탐색은 YMM의 긴 dependency chain을 두 XMM 그룹으로 나눈 네 구현을
   만들었지만 242--288 instructions, 30--50 hot memory와 현 YMM 대비 최소
-  1.36배 정적 cycle로 모두 기각했다. exact GCC 13.3/Clang 21의 112-build
+  1.36배 정적 cycle로 모두 기각했다. exact GCC 13.3/Clang 21의 113-build
   codegen matrix도 새 GCC source 승자를 만들지 못했다. OR-to-XOR rotate merge는
   두 compiler에서 100,000-case 검증을 통과했지만 instruction/byte/model cycle을
   줄이지 못했다.
@@ -94,6 +94,26 @@
   1/2/3의 exact binary가 같은데 AVX2 median 범위는 0.78%, scalar는 45.89%여서
   공유 VM의 scalar 처리율 변동으로 국소화했다. counter가 없어 SMT/frequency
   인과는 단정하지 않았으며 이 결과는 255H 선택에 쓰지 않는다.
+- 8차 register-allocation 탐색은 value만 `ymm0`에 고정하고 rotate scratch를
+  하나로 줄인 source를 찾았다. Exact GCC 13.3 loop는 122 instructions/hot
+  memory 0을 유지하면서 579B에서 569B가 됐고, 공식 vector와 임의 state/상수
+  100,000건을 통과했다. 그러나 CPU 1/3의 6-warm-up, 32-sample campaign은
+  각각 `0.999x (0.998--1.002)`, `1.000x (0.998--1.002)`으로 동률이었다.
+- phase-staggered XMM은 word-reversal orbit 안에 한 단계 어긋난 두 값을 넣어
+  immediate rotate를 공유한다. 정확하고 memory-free지만 257 instructions/
+  1,253B로 커졌고, 유리했던 Zen 2 정적 proxy와 달리 CPU 1/3에서
+  `0.758x/0.756x`였다. 즉 처리량은 약 24% 낮고 같은 작업 시간은 약 32%
+  길었다. 정적 scheduling model을 반드시 반복 실측으로 반증해야 한다는 사례로
+  남겼다.
+- 신규 GCC AVX flag 63개와 기준 2개는 normalized stream 두 종류로 수렴했지만
+  `(stream hash, loop-start mod 64)` 기준으로는 generic 5개와 Alder 3개의 배치
+  클래스가 남았다. 8개 대표 모두 임의 100,000건을 통과했고 nonbaseline 7개를
+  255H target-only 후보에 추가했다.
+- Intel 공식 instruction 표의 AVX2 chain은 조건부 latency path 100 cycles지만
+  Skymont package는 Xeon 6 E-core 범위이고 scalar exact `RORX64`/`LEA` 행과
+  Lion Cove 표도 없다. Arrow Lake PerfMon은 LP-E를 Crestmont로, 255H 전용 ECI는
+  두 LP-E를 추가 Skymont core로 불러 서로 충돌하므로 공식 자료만으로 winner를
+  선택하지 않았다.
 - `autotune_02_255h.py`는 pinned CPUID와 Linux topology로 P/E/LP-E를 보수적으로
   분류하고 `probe → screen → confirm → decide`를 실행한다. 두 session·core type별
   두 physical core·correctness/assembly gate가 갖춰지지 않으면 winner 대신
@@ -106,8 +126,10 @@
   배열의 malformed nested 원소도 fail-closed한다. 8-case 초기 통합 smoke로
   portable control의 누락된 inline flag를 찾아 고쳤고, 확장된 15-case
   screen은 15개 직접 검증과 15개 assembly audit를 모두 통과했다.
-  부분 언롤과 AVX2를 더한 최신 19-case screen도 19/19 직접 검증과 19/19
-  assembly audit를 통과했으며, 짧은 smoke timing은 성능 근거로 쓰지 않았다.
+  부분 언롤과 AVX2를 더한 19-case screen은 19/19 직접 검증과 audit를
+  통과했다. 서로 다른 두 569-byte 후보를 더한 21-case screen 뒤 배치 대표
+  7개까지 포함한 최신 **28-case** screen도 직접 검증 28/28과 assembly audit
+  28/28을 통과했으며, 짧은 smoke timing은 성능 근거로 쓰지 않았다.
 - 측정 도구와 raw 기록은 [02 optimization README](../solutions/02_optimization/README.md),
   [deep review](../solutions/02_optimization/deep_review_02.md),
   [inline raw samples](../solutions/02_optimization/inline_results_02.json),
@@ -117,6 +139,12 @@
   [GCC 13.3 layout/backend screen](../solutions/02_optimization/gcc133_layout_screen_02.json),
   [split-width SIMD screen](../solutions/02_optimization/split_simd_results_02.json),
   [AVX2 codegen screen](../solutions/02_optimization/avx2_codegen_screen_02.json),
+  [inline-assembly allocation screen](../solutions/02_optimization/avx2_inline_asm_alloc_results_02.json),
+  [phase-staggered screen](../solutions/02_optimization/phase_staggered_results_02.json),
+  [additional GCC AVX flags](../solutions/02_optimization/gcc133_avx_flags_results_02.json),
+  [255H instruction model](../solutions/02_optimization/instruction_model_255h_02.json),
+  [8차 CPU 1 timing](../solutions/02_optimization/eighth_wave_timing_02_cpu1.json),
+  [8차 CPU 3 timing](../solutions/02_optimization/eighth_wave_timing_02_cpu3.json),
   [timing stability 진단](../solutions/02_optimization/timing_stability_results_02.json),
   [schedule CPU 0 raw](../solutions/02_optimization/gcc133_schedule_results_02_cpu0.json),
   [schedule CPU 4 raw](../solutions/02_optimization/gcc133_schedule_results_02_cpu4.json),

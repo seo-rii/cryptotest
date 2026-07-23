@@ -437,15 +437,19 @@ the 255H manifest.
 
 [`screen_avx2_codegen_02.py`](screen_avx2_codegen_02.py) then screened exact GCC
 13.3 and Clang 21 target, scheduler, register-allocation, alignment, and source
-expression variants.  Of 112 attempted builds, 100 passed the exact complete
-loop audit; 13 Pareto/source controls also passed the 100,000-case direct gate.
+expression variants.  Of 113 attempted builds, 100 passed the exact complete
+loop audit; 14 Pareto/source controls also passed the 100,000-case direct gate.
 GCC's `-fira-region=one` only shortened the loop from 579 to 569 bytes while
 leaving 122 instructions and both static cycle estimates unchanged.  Clang
 made a 548-byte loop with the same instruction count and estimates, but the
 judge compiler is GCC 13.3.  Replacing rotate's `VPOR` with `VPXOR` is exact
 because the complementary shifts have disjoint set-bit positions; GCC and
 Clang both verified it, yet it merely changed 20 `VPOR` to `VPXOR` with no
-byte, instruction, memory, or model-cycle improvement.  No source rewrite was
+byte, instruction, memory, or model-cycle improvement.  A first attempt to pin
+all live YMM registers did reduce encoding size to 563 bytes, but GCC inserted
+one constant reload and one reverse-permute per iteration, producing 124
+instructions and one hot memory operand.  It passed the same direct correctness
+gate but failed the performance audit.  No source rewrite from this screen was
 promoted; all code-generation evidence is in
 [`avx2_codegen_screen_02.json`](avx2_codegen_screen_02.json).
 
@@ -469,6 +473,94 @@ cpufreq, and performance counters prevent a causal frequency/SMT conclusion.
 The full 32-sample, six-warm-up record is
 [`timing_stability_results_02.json`](timing_stability_results_02.json) and is
 explicitly not evidence about the 255H.
+
+## Eighth-wave register allocation, phase staggering, and target model
+
+The fixed-register failure suggested that the useful idea was compact low
+register encoding, not wholesale pinning.  A bounded ten-variant search in
+[`screen_avx2_inline_asm_alloc_02.py`](screen_avx2_inline_asm_alloc_02.py)
+tested allocator-chosen operands, partial pinning, one/two scratch registers,
+and encoding-aware low/high layouts under exact GCC 13.3.  Pinning only the
+changing state to `ymm0`, using one destructive shift plus one scratch, and
+leaving all constants to GCC produced a strict static winner:
+
+| exact timed loop | instructions | bytes | hot memory | Alder/Zen proxy |
+|---|---:|---:|---:|---:|
+| current lane-wise AVX2 | 122 | 579 | 0 | 100.03 / 180.03 |
+| single-scratch inline assembly | 122 | **569** | 0 | 100.03 / 180.03 |
+
+The generated stream differs from the 569-byte `-fira-region=one` stream even
+though their aggregate metrics tie.  The retained
+[`contest_simd_avx2_inline_asm.c`](contest_simd_avx2_inline_asm.c) passes the
+supplied default build, all official vectors, and 100,000 random states and
+random constants at one and twenty rounds.  Eight other assembly allocations
+were rejected at 124 instructions with one or two hot loads.  Full data and
+source hashes are in
+[`avx2_inline_asm_alloc_results_02.json`](avx2_inline_asm_alloc_results_02.json).
+
+Two AMD/GCC 12 campaigns then compared the current YMM loop, the 569-byte
+source, and a new phase-staggered construction.  Each used six discarded
+warm-ups, 32 balanced samples, 3,000,000 calls per sample, direct 100,000-case
+verification, and exact measured-binary audits:
+
+| affinity | inline-asm speedup, current/asm (95% CI) | phase speedup, current/phase (95% CI) |
+|---|---:|---:|
+| CPU 1 | 0.999x (0.998--1.002) | 0.758x (0.754--0.764) |
+| CPU 3 | 1.000x (0.998--1.002) | 0.756x (0.751--0.764) |
+
+Thus the smaller inline-assembly stream is a statistical tie on this host, not
+a local promotion.  The phase construction packs `[x0,T3(x3)]` and
+`[x1,T2(x2)]`, applies 19 shared immediate-rotate stages, and finishes one lane
+per orbit.  It is algebraically exact and memory-free, but duplicates the
+stream to 257 instructions/1,253 bytes.  LLVM-MCA predicted 116.04 cycles on
+the Alder proxy and a favorable 143.05 versus 180.03 on the Zen 2 proxy; the
+two real AMD campaigns decisively contradicted the latter.  The source and
+negative record remain in
+[`contest_simd_avx2_phase_staggered.c`](contest_simd_avx2_phase_staggered.c) and
+[`phase_staggered_results_02.json`](phase_staggered_results_02.json), but the
+candidate is not registered for 255H promotion.  Raw timing is in
+[`eighth_wave_timing_02_cpu1.json`](eighth_wave_timing_02_cpu1.json) and
+[`eighth_wave_timing_02_cpu3.json`](eighth_wave_timing_02_cpu3.json).
+The first staging attempt also exposed that a copied candidate with a quoted
+relative include lost its original source-directory context.  The shared
+benchmark driver now adds that directory with `-iquote` to both verifier-object
+and performance builds, records the context flags in schema 4, and the two raw
+campaigns above were rerun through the corrected path.
+
+An independent 65-case exact-GCC13 AVX backend screen covered preferred vector
+width, split loads/stores, VEX/vzeroupper controls, move/store width caps, cost
+models, and partial/AVX tuning controls.  All 65 loops passed audit and reduced
+to only the two already-known generic/Alder normalized streams, both 122
+instructions, 579 bytes, and 100.03/180.03 proxy cycles.  Loop placement was
+not equivalent, however: `(stream hash, start mod 64)` yields eight classes
+(generic offsets 0/8/24/40/48 and Alder offsets 8/16/48).  One representative
+of every class passed the 100,000-case gate.  LLVM-MCA cannot see this frontend
+layout effect; an earlier explicit-alignment AMD sweep found no significant
+winner, while offsets 24/40/48 and every 255H core type remain unmeasured.
+Seven nonbaseline layout representatives are therefore target-only manifest
+candidates rather than local promotions.  See
+[`gcc133_avx_flags_results_02.json`](gcc133_avx_flags_results_02.json).
+
+Finally,
+[`analyze_255h_instruction_model_02.py`](analyze_255h_instruction_model_02.py)
+reproduces an instruction-level sensitivity model from Intel's official
+Skymont and Crestmont packages.  Their selected AVX2 rows give the 20-round YMM
+dependency chain a 100-cycle latency path.  The Skymont download is named Xeon
+6 E-core, so transferring it to the client 255H remains conditional.  The
+scalar 80-cycle scenario is also conditional because the tables omit the exact
+`RORX r64` and six `LEA` rows.  In addition, two official Intel pages conflict:
+Arrow Lake PerfMon labels LP-E as Crestmont, while Intel's 255H-specific ECI
+page calls its two LP-E cores additional Skymont cores.  The Crestmont result is
+therefore only a PerfMon-mapping sensitivity case.  No Lion Cove
+per-instruction table appeared in the Intel catalog pinned on 2026-07-23.
+Isolated throughput rows also omit mixed-port, frontend, frequency, and
+whole-loop effects.  The hashes, exact selected rows, source conflict, topology
+inference, and structured gaps are recorded in
+[`instruction_model_255h_02.json`](instruction_model_255h_02.json); the model
+therefore does not choose a winner.  The two distinct 569-byte candidates and
+seven nonbaseline AVX2 stream/alignment representatives are in the target-only
+manifest.  Its fresh 28-case integration smoke passed 28/28 direct checks and
+28/28 measured-binary audits.
 
 ## Core-aware 255H decision tool
 
@@ -546,10 +638,14 @@ are only tool regression tests, not performance evidence.  Two deliberately
 undersized confirmation sessions on AMD/GCC 12 also left `inline_2000` selected
 and enumerated every missing 255H/GCC13/sample/warm-up/random-case gate.
 After the partial-unroll controls and lane-wise AVX2 candidate were added, a
-fresh balanced **19-case** smoke again passed 19/19 direct verifications and
-19/19 measured-binary audits.  The AVX2 contract observed exactly 122
-instructions, 579 bytes, and zero hot memory operands.  This 1,000-call run is
-likewise integration evidence only.
+balanced 19-case smoke passed 19/19 direct verifications and measured-binary
+audits.  Adding the distinct `-fira-region=one` and single-scratch 569-byte
+streams produced a 21-case smoke that passed 21/21 checks and audits.  The
+seven nonbaseline stream/alignment representatives then expanded the current
+manifest to **28 cases**; a fresh balanced smoke passed 28/28 direct checks and
+28/28 audits, with source-local `-iquote` context recorded for all 28.  This
+provisional AMD/GCC12 run used 1,000 calls only and is integration evidence,
+not performance evidence.
 
 The same fast flags were also applied to full unroll, pair loop, and
 `unroll5_bmi2`; medians were 37.279, 38.618, and 38.727 ns, respectively. Full
@@ -579,6 +675,32 @@ python3 solutions/benchmark_02_permutation.py \
   --random-cases 100000 --json /tmp/challenge02-inline.json
 ```
 
+The eighth-wave three-way campaign uses the same driver with six discarded
+warm-ups and 32 balanced samples. Change `--cpu 1` to `--cpu 3` for the second
+stored affinity:
+
+```bash
+python3 solutions/benchmark_02_permutation.py \
+  --case current=solutions/02_optimization/contest_simd_avx2_lanewise.c \
+  --case inline_asm=solutions/02_optimization/contest_simd_avx2_inline_asm.c \
+  --case phase=solutions/02_optimization/contest_simd_avx2_phase_staggered.c \
+  --baseline current \
+  --case-cflag current=-mavx2 \
+  --case-cflag current=-DCH2_SIMD_INLINE \
+  --case-cflag current=-finline-limit=2000 \
+  --case-cflag inline_asm=-mavx2 \
+  --case-cflag inline_asm=-DCH2_SIMD_INLINE \
+  --case-cflag inline_asm=-finline-limit=2000 \
+  --case-cflag phase=-mavx2 --case-cflag phase=-mbmi2 \
+  --case-cflag phase=-DCH2_SIMD_INLINE \
+  --case-cflag phase=-finline-limit=2000 \
+  --audit-mode current=avx2-inline-lanewise \
+  --audit-mode inline_asm=avx2-inline-lanewise \
+  --audit-mode phase=report-only \
+  --cpu 1 --iterations 3000000 --warmups 6 --samples 32 \
+  --random-cases 100000 --json /tmp/challenge02-eighth-cpu1.json
+```
+
 ## Recommendation and constraint compliance
 
 `recommended_submission_fragment.c` is the strongest scalar candidate. It
@@ -594,10 +716,14 @@ The exact GCC 13.3 call-removal and 700/2000 equality are already established;
 what remains unknown is the performance ordering on Core Ultra 7 255H. Use the
 core-aware tool to A/B `-mtune=alderlake`, its IRA-priority combination,
 source order `2,1,0,3`, the selective/no-post-reload scheduler streams, and the
-diagnostic native tune. Keep a source/flag only if it passes two independent sessions
+two distinct 569-byte AVX2 streams and seven nonbaseline stream/alignment
+representatives, plus the diagnostic native tune. Keep a
+source/flag only if it passes two independent sessions
 and every required P/E/LP-E gate. Until then, the simpler
 `-mbmi2 -finline-limit=2000` build remains the score recommendation. The direct
 one-state and conjugate SIMD implementations should not be used because their
 longer dependent paths were consistently slower.  The new four-lane two-round
 AVX2 implementation is different and belongs in the 255H head-to-head, but the
-contradictory CPU-1/2/3 ordering prevents promotion from this VM alone.
+contradictory CPU-1/2/3 ordering prevents promotion from this VM alone.  The
+single-scratch source also remains target-only because both new AMD campaigns
+were statistical ties.

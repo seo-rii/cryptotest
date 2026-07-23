@@ -2,8 +2,11 @@
 
 ## 결론
 
-현재의 `BMI2 + 2-round + scalar full-unroll` 연산 본문은 여전히 가장 강한
-구현이다. 이번 재검토에서 본문을 다른 알고리즘으로 줄이지는 못했지만, 같은
+현재의 `BMI2 + 2-round + scalar full-unroll` 연산 본문은 여전히 가장 강하게
+검증된 **scalar incumbent**이자 기본 권장안이다. 4-lane AVX2는 일부 AMD
+affinity에서 더 빨랐지만 순위가 뒤집혔고, 569-byte 두 stream도 target에서 아직
+측정하지 않았으므로 전체 후보 중 절대 승자라고 부르지는 않는다. 이번 재검토에서
+scalar 본문을 다른 알고리즘으로 줄이지는 못했지만, 같은
 source를 score용 flag로 빌드해 그 본문을 `main`의 timing loop까지
 인라인하는 새 경로를 찾았다. 호출마다 반복되던 함수 진입/복귀, 상태와 상수
 load/store가 사라져 AMD VM의 두 logical CPU에서 기본 build 대비 paired
@@ -30,8 +33,10 @@ code-generation 경로를 연다.
    `-mbmi2 -finline-limit=2000`으로 잡는다.
 3. digest로 고정한 공식 GCC 13.3.0에서 limit `700/2000`의 complete binary
    일치와 timing loop의 call 제거를 확인했다. 255H에서 남은 일은 이 사실을
-   다시 추측하는 것이 아니라 generic, `-mtune=alderlake`, 그리고 Alder tune에
-   IRA priority를 더한 세 schedule의 실제 성능 순위를 판정하는 것이다.
+   다시 추측하는 것이 아니라 scalar source/scheduler 변형, 122-instruction
+   lane-wise AVX2와 서로 다른 두 569-byte stream, 그리고 8개
+   `(normalized stream, loop-start mod 64)` 배치 클래스의 실제 순위를 판정하는
+   것이다.
 4. one-state SIMD, partial unroll, table, 수동 재스케줄링은 target에서 두
    독립 세션 모두 유의한 차이를 보이지 않는 한 채택하지 않는다.
 
@@ -692,8 +697,9 @@ manifest에도 넣지 않았다. 재현 도구와 결과는
 
 다음으로 [`screen_avx2_codegen_02.py`](screen_avx2_codegen_02.py)는 exact GCC
 13.3과 Clang 21에서 target/tune, scheduler, IRA, loop alignment와 다섯 source
-표현을 112개 build로 검사했다. 100개 complete timed loop가 exact audit를
-통과했고 Pareto 후보와 모든 source rewrite 13개는 다시 100,000-case 직접
+표현 및 고정-register 대조군을 113개 build로 검사했다. 100개 complete timed
+loop가 exact audit를 통과했고 Pareto 후보와 모든 추출 가능한 source rewrite
+14개는 다시 100,000-case 직접
 검증을 통과했다. GCC `-fira-region=one`은 579-byte loop를 569 bytes로만
 줄였고 122 instructions, memory 0, Alder `100.03`, Zen 2 `180.03` cycle
 근사는 그대로였다. Clang은 548-byte loop를 만들었지만 같은 instruction과
@@ -703,6 +709,10 @@ rotate의 left/right shift 결과는 각 lane에서 서로 겹치지 않으므�
 XOR로 합쳐도 정확하다. 실제 변형도 GCC/Clang 모두 1/20-round 100,000-case를
 통과했지만 `20 VPOR + 20 VPXOR`가 `40 VPXOR`로 바뀌었을 뿐 instruction 수,
 loop bytes, memory와 두 모델의 cycle이 전혀 줄지 않았다. inline assembly로
+모든 YMM register를 낮은 번호에 고정한 변형은 VEX encoding을 줄여 563 bytes가
+됐지만, GCC가 XOR 상수 하나를 매 iteration reload하고 reverse permute도 다시
+계산했다. 그 결과 124 instructions와 hot memory 1개가 되어 정확성 검증은
+통과했지만 성능 audit에서 탈락했다. 별도의 inline assembly로
 즉시값 `RORX`를 source에 강제한 compact pair loop도 정답성은 통과했지만
 기본 `gcc -O3` complete binary에는 여전히 public wrapper call 하나가 남았다
 (25 bytes, 8 instructions). 결국 `-finline-limit=2000`이 필요했으므로 기존
@@ -728,6 +738,85 @@ cpufreq와 performance counter를 사용할 수 없어 SMT 또는 가상화된 f
 인과관계는 단정하지 않는다. 이 진단은
 [`timing_stability_results_02.json`](timing_stability_results_02.json)에 보존하며
 255H 성능 근거로 사용하지 않는다.
+
+### 8차: 부분 register 고정, phase-stagger와 255H 공식 표
+
+고정-register 실패를 더 좁혀 보면 문제는 inline assembly 자체가 아니라 동시에
+살아 있는 YMM 값의 수였다. [`screen_avx2_inline_asm_alloc_02.py`](screen_avx2_inline_asm_alloc_02.py)는
+전수 register-map brute force 대신 allocator 자유 배치, 부분 pin, scratch 1/2개,
+낮은 상수/높은 control 배치 등 10개 가설만 exact GCC 13.3으로 검사했다. 모든
+변형은 공식 vector와 임의 state·ADD/XOR 상수 100,000건의 1/20-round 직접 검증을
+거쳤다.
+
+상태만 `ymm0`에 고정하고 오른쪽 shift 결과를 scratch 하나에 둔 다음 왼쪽 shift가
+상태 register를 파괴하도록 만들면 GCC가 나머지 상수와 control을 스스로 배치한다.
+이 [`contest_simd_avx2_inline_asm.c`](contest_simd_avx2_inline_asm.c)는 기존과 같은
+122 instructions, hot memory 0, Alder `100.03`, Zen 2 `180.03`을 유지하면서
+579-byte loop를 **569 bytes**로 줄였다. `-fira-region=one`도 569 bytes지만
+normalized loop hash는 각각 `0ada8e...57af1`, `7fd0b7...728af`로 서로 다른
+register stream이다. 반대로 allocator 완전 자유나 상수까지 고정한 8개 변형은
+124 instructions와 hot load 1--2개를 남겼다. 전체 실패 이유와 source hash는
+[`avx2_inline_asm_alloc_results_02.json`](avx2_inline_asm_alloc_results_02.json)에
+있다.
+
+두 번째 알고리즘 가설은 reversal orbit 안에서 서로 다른 phase의 값을 같은 XMM에
+넣는 방법이다. `T_j(x)=BSWAP(ROL(x,r_j) XOR k_j)+a_{3-j}`라 두고
+`[x0,T3(x3)]`와 `[x1,T2(x2)]`를 만들면 각 orbit에서 19개의 immediate-rotate
+stage를 공유한 뒤 한 lane에만 epilogue를 적용할 수 있다. 이 방식은 임의 상수에도
+정확하고 hot memory가 없지만 128-bit stream을 둘 복제해 257 instructions,
+1,253 bytes가 됐다. LLVM-MCA는 현 YMM 대비 Alder `1.160x`, Zen 2 `0.795x`를
+예측해 서로 충돌했다.
+
+정적 Zen 2 예측을 실제로 확인하려고 CPU 1과 3에서 각각 warm-up 6회 뒤
+3,000,000-call 32표본을 balanced 순서로 측정했다. 모든 measured binary audit와
+100,000-case 검증을 다시 통과했다.
+
+| affinity | 569B asm speedup (current/asm), 95% CI | phase speedup (current/phase), 95% CI |
+|---|---:|---:|
+| CPU 1 | `0.999x (0.998--1.002)` | `0.758x (0.754--0.764)` |
+| CPU 3 | `1.000x (0.998--1.002)` | `0.756x (0.751--0.764)` |
+
+따라서 569-byte source는 이 AMD host에서 통계적 동률이고, phase-stagger는 Zen 2
+proxy의 유리한 예측과 반대로 처리량이 약 24% 낮고 같은 작업의 실행 시간은 약
+32% 길다. 전자는 실제 255H용 후보로만 남기고
+후자는 source와 negative record만 보존한다. 원시는
+[`eighth_wave_timing_02_cpu1.json`](eighth_wave_timing_02_cpu1.json),
+[`eighth_wave_timing_02_cpu3.json`](eighth_wave_timing_02_cpu3.json),
+[`phase_staggered_results_02.json`](phase_staggered_results_02.json)에 있다.
+첫 실행에서 temporary source로 복사된 phase 파일의 상대 include 기준이 사라지는
+도구 문제도 발견했다. 공용 benchmark driver는 이제 원래 source directory를
+`-iquote`로 candidate object와 performance build에 전달하고 schema 4에 그 flag를
+기록한다. 위 두 raw campaign은 이 수정 뒤 다시 측정한 결과다.
+
+추가 flag 쪽은 [`screen_gcc133_avx_flags_02.py`](screen_gcc133_avx_flags_02.py)가
+preferred vector width, unaligned load/store split, VEX/vzeroupper, move/store
+width, cost model과 부분/AVX tune을 포함한 63개 신규 조합과 기준 2개를 검사했다.
+65/65 audit가 통과했고 normalized instruction stream은 기존 generic/Alder 두
+종류로만 수렴했다. 그러나 `(stream hash, loop-start mod 64)`로 보면 generic
+offset `0/8/24/40/48`, Alder offset `8/16/48`의 **8개 배치 클래스**가 남는다.
+각 클래스 대표 8개가 직접 100,000-case 검증을 통과했고 instruction count와
+proxy cycle은 같지만 frontend 정렬 효과는 LLVM-MCA가 모델링하지 않는다. 기존
+명시적 정렬 AMD sweep에는 유의한 승자가 없었으므로 nonbaseline 대표 7개는
+기각하지 않고 255H target-only manifest 후보로 남겼다.
+[`gcc133_avx_flags_results_02.json`](gcc133_avx_flags_results_02.json)은 이 경계를
+포함한 재현 가능한 결과다.
+
+마지막으로 [`analyze_255h_instruction_model_02.py`](analyze_255h_instruction_model_02.py)는
+Intel ARK topology, Arrow Lake PerfMon/255H ECI의 core 설명, Intel 공식
+Skymont·Crestmont latency/throughput package를 hash로 고정해 사용했다. Skymont
+download는 Xeon 6 E-core용이라는 이름이므로 client 255H E-core로의 전이는
+조건부다. 더구나 Arrow Lake PerfMon은 LP-E를 Crestmont로 부르지만 255H 전용
+ECI 문서는 두 LP-E를 "additional Skymont cores"라고 설명해 공식 자료끼리
+충돌한다. 따라서 Crestmont 수치는 PerfMon mapping이 맞을 때의 민감도 사례다.
+선택된 AVX2 여섯 명령의 latency는 두 표에서 한 단계당
+`parallel shifts 1 + OR/XOR/SHUF/ADD 4`, 즉 20 rounds critical path 100
+cycles다. scalar 80-cycle 수치는 정확한 `RORX r64`와 여섯 `LEA` 행이 표에 없어
+r32 RORX/ADD를 대신 넣은 민감도 분석일 뿐이다. 2026-07-23에 고정한 Intel
+catalog에서는 Lion Cove P-core 공식 per-instruction 표도 확인하지 못했다.
+isolated throughput 합은 port 공유·frontend·주파수·whole-loop를 모델링하지
+않으므로 runtime bound가 아니다.
+[`instruction_model_255h_02.json`](instruction_model_255h_02.json)은 이 gap과
+source conflict를 숨기지 않고 winner를 선택하지 않는다.
 
 ### 255H용 보수적 판정 절차
 
@@ -764,9 +853,12 @@ traceback 없이 fail-closed 오류로 돌려준다. 초기 8개 manifest case�
 15개 직접 검증과 15개 exact-binary audit가 모두 통과했다. 의도적으로 작은
 두 AMD/GCC12 confirm을 `decide`에 연결했을 때에도 255H, GCC13.3, sample,
 warm-up, iteration, random-case 최소치를 각각 열거하고 incumbent를 유지했다.
-부분 언롤 세 개와 lane-wise AVX2까지 넣은 최신 19-case smoke도 직접 검증
-19/19, 실측 binary audit 19/19를 통과했다. AVX2 audit은 122 instructions,
-579 bytes, hot memory 0을 정확히 확인했다. 두 1,000-call smoke의 timing 값은
+부분 언롤 세 개와 lane-wise AVX2까지 넣은 19-case smoke도 직접 검증과 실측
+binary audit 19/19를 통과했다. 여기에 서로 다른 569-byte stream인
+`-fira-region=one`과 single-scratch inline assembly를 추가한 21-case smoke도
+21/21을 통과했다. 마지막으로 nonbaseline stream/alignment 대표 7개를 추가한
+최신 **28-case** balanced smoke가 직접 검증 28/28, audit 28/28을 통과했고
+28개 모두 원래 source의 `-iquote` context를 기록했다. 이 1,000-call timing 값은
 성능 근거가 아니라 통합 회귀 검사다.
 P-core 모든 campaign에서 paired median `>= 1.010`, 보정된 lower bound
 `> 1.005`이고 E/LP-E 안전성도 지킨 후보만 통과시킨다. 여러 후보가 동시에 통과하면
@@ -838,7 +930,9 @@ complete binary까지 같았으므로 둘을 별도 성능 후보로 반복 측�
 문제의 source 수정 범위는 `contest.c` 세 위치와 external helper로 제한된다.
 따라서 제출 source는 추가 flag 없이도 compile되는 현재 경로를 유지한다.
 저장소의 `submissions/02/run_contest.sh`는 문제에서 별도로 허용한 추가 최적화
-flag를 빠뜨리지 않기 위한 재현 wrapper이며 제공 ZIP을 바꾸지 않는다. source에
+flag를 빠뜨리지 않기 위한 재현 wrapper다. clean checkout에서는 제공 ZIP의 두
+벡터만 임시 디렉터리에 풀어 검증하고 생성 binary와 벡터를 정리하며, ZIP 자체는
+바꾸지 않는다. source에
 특정 세대의 `arch=`를 하드코딩하는 것보다, score 실행 시 build command에서
 검증된 flag만 적용하는 편이 안전하다.
 
@@ -854,7 +948,10 @@ flag를 빠뜨리지 않기 위한 재현 wrapper이며 제공 ZIP을 바꾸지 
 | adaptive/order `2,1,0,3` | Alder+IRA + selective scheduling 2 | 120.06-cycle 정적 후보 |
 | adaptive/order `2,1,0,3` | Alder+IRA + post-reload scheduling off | 120.07-cycle 정적 후보 |
 | four-lane two-round AVX2 | `-mavx2 -DCH2_SIMD_INLINE -finline-limit=2000` | 122-instruction target 최우선 후보 |
-| adaptive full-unroll | 위 flag + `-mtune=native` | target compiler 진단용 |
+| four-lane AVX2 + IRA region one | 위 flag + `-fira-region=one` | 569-byte distinct stream |
+| single-scratch AVX2 assembly | 별도 source + 기본 AVX2 score flag | 569-byte distinct stream, AMD 동률 |
+| lane-wise AVX2 layout representatives | generic 4개 + Alder 3개 nonbaseline flag 조합 | 8개 배치 클래스 중 기준 제외 7개, target-only |
+| adaptive full-unroll | `-mbmi2 -finline-limit=2000 -mtune=native` | target compiler 진단용 |
 
 `autotune_02_candidates.json`은 이 후보와 portable/partial-unroll 대조군을
 manifest hash와 함께 고정한다. 먼저 `probe`와 짧은 `screen`으로 환경과 후보를
@@ -887,7 +984,10 @@ tune/IRA/scheduler flag를 더하지 않는다.
 - [Abel and Reineke, *nanoBench: A Low-Overhead Tool for Running Microbenchmarks on x86 Systems*, 2019](https://arxiv.org/abs/1911.03282) — warm-up, serialization, counter overhead와 반복 가능한 low-level 측정 설계의 참고 자료다. 이 VM에서는 필요한 performance counter가 없어 동일 수준의 port/frequency 판정을 주장하지 않았다.
 - [Intel, Intrinsics Guide](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html) — AVX2 variable shift, byte shuffle와 packed addition 후보의 ISA 형태를 확인했다.
 - [Intel, Intel® 64 and IA-32 Architectures Optimization Reference Manual](https://www.intel.com/content/www/us/en/content-details/671488/intel-64-and-ia-32-architectures-optimization-reference-manual-volume-1.html) — loop unrolling, instruction frontend, code layout은 microarchitecture별 실측으로 결정해야 한다는 분석 기준으로 사용했다.
-- [Intel, *Processors and Processor Cores Based on Skymont Microarchitecture: Instruction Throughput and Latency*](https://www.intel.com/content/www/us/en/content-details/837381/intel-processors-and-processor-cores-based-on-skymont-microarchitecture-instruction-throughput-and-latency.html) — 255H E-core 계열의 실제 instruction 특성을 최종 target 측정에서 확인해야 하는 이유와 정적 Alder proxy의 한계를 뒷받침한다.
+- [Intel, *Processors and Processor Cores Based on Skymont Microarchitecture: Instruction Throughput and Latency*](https://www.intel.com/content/www/us/en/content-details/837381/intel-processors-and-processor-cores-based-on-skymont-microarchitecture-instruction-throughput-and-latency.html) — package 이름은 Xeon 6 E-core 범위이므로 255H client E-core에 대한 수치 전이는 조건부이며, 실제 target 측정이 필요한 이유를 뒷받침한다.
+- [Intel, *Processors and Processor Cores Based on Crestmont and Redwood Cove Microarchitecture: Instruction Throughput and Latency*](https://www.intel.com/content/www/us/en/content-details/825952/intel-processors-and-processor-cores-based-on-crestmont-and-redwood-cove-microarchitecture-instruction-throughput-and-latency.html) — PerfMon의 LP-E=Crestmont 설명이 맞을 때 적용할 conditional selected-row 모델과 package 한계를 재현했다.
+- [Intel, Arrow Lake Performance Monitoring Events](https://perfmon-events.intel.com/platforms/arrowlake/core-events/p-core/) — Arrow Lake client를 Lion Cove P, Skymont E, Crestmont LP-E로 설명하는 공식 자료이며 아래 255H ECI 설명과 충돌하는 한쪽 근거다.
+- [Intel, *Heterogeneous Computing on Intel Core Ultra 7 255H*](https://eci.intel.com/embodied-sdk-docs/content/developer_tools_tutorials/heterogeneous_computing.html) — 255H의 두 LP-E를 "additional Skymont cores"라고 설명해 PerfMon의 Crestmont 표기와 상충함을 기록했다.
 - [Intel, Core™ Ultra 7 Processor 255H specifications](https://www.intel.com/content/www/us/en/products/sku/241751/intel-core-ultra-7-processor-255h-24m-cache-up-to-5-10-ghz/specifications.html) — 최종 CPU가 AVX2를 지원함을 확인했다.
 - [Intel, *Game Dev Guide for 12th Gen Intel® Core™ Processor*](https://www.intel.com/content/www/us/en/developer/articles/guide/12th-gen-intel-core-processor-gamedev-guide.html) — hybrid flag와 logical CPU별 CPUID leaf `0x1a` core type, probe 중 affinity 고정이 필요한 이유를 확인했다.
 - [Linux kernel, CPU topology](https://docs.kernel.org/admin-guide/cputopology.html)와 [CPU sysfs ABI](https://github.com/torvalds/linux/blob/master/Documentation/ABI/testing/sysfs-devices-system-cpu) — physical package/core/thread sibling과 capacity를 교차 확인하고 서로 다른 physical representative를 선택할 때 사용했다.

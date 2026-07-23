@@ -1,6 +1,14 @@
 {
   "decision": {
     "all_shortlist_verifications_pass": true,
+    "fixed_register_inline_asm": {
+      "loop_bytes": 563,
+      "loop_instructions": 124,
+      "memory_operands_excluding_lea": 1,
+      "reason_not_promoted": "pinning the vector state and constants shortened VEX encodings, but GCC reloaded one XOR constant and rebuilt its reverse form inside every timed iteration",
+      "status": "AUDIT_FAIL",
+      "verification": "PASS"
+    },
     "new_persisted_source_candidate": false,
     "reason": "No generated source-expression variant strictly dominated the current source under the exact GCC baseline; a flag-only winner, if present, must still be timed independently on each 255H core type before submission promotion.",
     "verified_strict_winners_vs_gcc_baseline": [
@@ -243,8 +251,10 @@
       "toolchain": "gcc"
     },
     {
-      "attempted": 5,
-      "compile_or_audit_failures": [],
+      "attempted": 6,
+      "compile_or_audit_failures": [
+        "gcc_source_fixed_register_inline_asm"
+      ],
       "not_strictly_better": [
         "gcc_source_always_inline_rotate_helper",
         "gcc_source_explicit_rotate_temporaries",
@@ -6173,6 +6183,66 @@
           "status": "PASS",
           "structural_errors": []
         },
+        "gcc_source_fixed_register_inline_asm": {
+          "binary_sha256": "3e0d09018d920a10dd7b596cd888e11caa17d447e23572cc34fe61c970cfc03b",
+          "effective_flags": [
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-mavx2",
+            "-DCH2_SIMD_INLINE",
+            "-finline-limit=2000"
+          ],
+          "extra_flags": [],
+          "group": "temporary_source_expression",
+          "llvm_mca": {
+            "alderlake_p_core_proxy": {
+              "block_rthroughput": 20.7,
+              "cycles_per_iteration": 100.09,
+              "instructions_per_iteration": 124.0,
+              "iterations": 100,
+              "model": "alderlake",
+              "uops_per_iteration": 124.0
+            },
+            "znver2_cross_architecture_proxy": {
+              "block_rthroughput": 80.0,
+              "cycles_per_iteration": 180.05,
+              "instructions_per_iteration": 124.0,
+              "iterations": 100,
+              "model": "znver2",
+              "uops_per_iteration": 124.0
+            }
+          },
+          "loop": {
+            "bytes": 563,
+            "calls": 0,
+            "instructions": 124,
+            "memory_operands_excluding_lea": 1,
+            "normalized_sha256": "5259e834952cc48ec02dc0126c2088120818e950858b7e15a7fb97c29157cae4",
+            "push_pop": 0,
+            "selected_mnemonics": {
+              "jne": 1,
+              "sub": 1,
+              "vmovdqa": 1,
+              "vpaddq": 20,
+              "vpor": 20,
+              "vpshufb": 20,
+              "vpsllvq": 20,
+              "vpsrlvq": 20,
+              "vpxor": 20
+            },
+            "start_mod_16": 0,
+            "start_mod_32": 16,
+            "start_mod_64": 48
+          },
+          "loop_artifact_sha256": "bb162e7aaedb1619b5ee2c76b49344c2ea059f5b1a2d8629220e7b71e4ff2d67",
+          "source_variant": "fixed_register_inline_asm",
+          "status": "AUDIT_FAIL",
+          "structural_errors": [
+            "memory_operands_excluding_lea: expected 0, got 1"
+          ]
+        },
         "gcc_source_swapped_commutative_operands": {
           "binary_sha256": "113508a2069f6711c10c91ff63ca989b5845195ba3bdc936299048b2e352866b",
           "effective_flags": [
@@ -6981,11 +7051,11 @@
         }
       },
       "counts": {
-        "AUDIT_FAIL": 1,
+        "AUDIT_FAIL": 2,
         "COMPILE_FAIL": 8,
         "PASS": 54
       },
-      "unique_static_loop_hashes": 16
+      "unique_static_loop_hashes": 17
     }
   },
   "shortlist": [
@@ -6999,6 +7069,7 @@
     "gcc_ira_one",
     "gcc_source_always_inline_rotate_helper",
     "gcc_source_explicit_rotate_temporaries",
+    "gcc_source_fixed_register_inline_asm",
     "gcc_source_swapped_commutative_operands",
     "gcc_source_swapped_rotate_or",
     "gcc_source_xor_rotate_merge"
@@ -7015,6 +7086,10 @@
     "explicit_rotate_temporaries": {
       "sha256": "d7c7294896a1dc1ab363027bc2fd57c069228a0779406529686cb4c165236636",
       "temporary_path": "<temporary>/variants/explicit_rotate_temporaries.c"
+    },
+    "fixed_register_inline_asm": {
+      "sha256": "6ba4faf3eb1d6ded451153e49d8522ec0ffe36749b70e456641991b67277c3e2",
+      "temporary_path": "<temporary>/variants/fixed_register_inline_asm.c"
     },
     "swapped_commutative_operands": {
       "sha256": "2e05c7713eb11d477c7488f463969520c96ecf66aeb506a1a2c540237809c5e0",
@@ -7245,6 +7320,23 @@
       "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
     },
     "gcc_source_explicit_rotate_temporaries": {
+      "build_returncodes": [
+        0,
+        0,
+        0
+      ],
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+    },
+    "gcc_source_fixed_register_inline_asm": {
       "build_returncodes": [
         0,
         0,

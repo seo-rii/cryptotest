@@ -267,6 +267,7 @@ def build_gcc_cases() -> dict[str, dict[str, Any]]:
         "xor_rotate_merge",
         "swapped_commutative_operands",
         "always_inline_rotate_helper",
+        "fixed_register_inline_asm",
     ):
         add_case(
             cases,
@@ -418,6 +419,106 @@ def generate_source_variants(destination: Path) -> dict[str, dict[str, str]]:
     variants["always_inline_rotate_helper"] = source.replace(
         helper_signature,
         "static inline __attribute__((always_inline)) __m256i rotl64_lanes_avx2",
+    )
+
+    fixed_start_marker = "static inline __m256i keep_in_vector_register"
+    fixed_end_marker = "#undef PERMUTE20_ATTRIBUTE"
+    fixed_start = source.index(fixed_start_marker)
+    fixed_end = source.index(fixed_end_marker, fixed_start) + len(fixed_end_marker)
+    fixed_register_implementation = r'''#define FIXEDREG_TRANSFORM(LEFT, RIGHT, XOR_VALUE, ADD_VALUE)                \
+    "vpsllvq %[" LEFT "], %[value], %[shift_left]\n\t"                     \
+    "vpsrlvq %[" RIGHT "], %[value], %[shift_right]\n\t"                   \
+    "vpor %[shift_right], %[shift_left], %[value]\n\t"                     \
+    "vpxor %[" XOR_VALUE "], %[value], %[value]\n\t"                      \
+    "vpshufb %[byte_swap], %[value], %[value]\n\t"                       \
+    "vpaddq %[" ADD_VALUE "], %[value], %[value]\n\t"
+
+PERMUTE20_ATTRIBUTE static void permute_20rounds_unrolled(
+    state256_t *restrict state,
+    const uint64_t constants1[restrict 4],
+    const uint64_t constants2[restrict 4]) {
+    register __m256i value __asm__("ymm0") =
+        _mm256_loadu_si256((const __m256i *)(const void *)state);
+    register __m256i xor_forward __asm__("ymm1") =
+        _mm256_loadu_si256((const __m256i *)(const void *)constants2);
+    register __m256i add_reverse __asm__("ymm2") =
+        _mm256_permute4x64_epi64(
+            _mm256_loadu_si256((const __m256i *)(const void *)constants1),
+            _MM_SHUFFLE(0, 1, 2, 3));
+    register __m256i xor_reverse __asm__("ymm3") =
+        _mm256_permute4x64_epi64(xor_forward, _MM_SHUFFLE(0, 1, 2, 3));
+    register __m256i add_forward __asm__("ymm4") =
+        _mm256_loadu_si256((const __m256i *)(const void *)constants1);
+    register __m256i shift_left __asm__("ymm5");
+    register __m256i shift_right __asm__("ymm6");
+    register __m256i left_forward __asm__("ymm8") =
+        _mm256_setr_epi64x(43, 7, 29, 14);
+    register __m256i right_forward __asm__("ymm9") =
+        _mm256_setr_epi64x(21, 57, 35, 50);
+    register __m256i left_reverse __asm__("ymm10") =
+        _mm256_setr_epi64x(14, 29, 7, 43);
+    register __m256i right_reverse __asm__("ymm11") =
+        _mm256_setr_epi64x(50, 35, 57, 21);
+    register __m256i byte_swap __asm__("ymm12") = _mm256_setr_epi8(
+        7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8,
+        7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8);
+
+    __asm__(
+        FIXEDREG_TRANSFORM("left_forward", "right_forward", "xor_forward",
+                           "add_reverse")
+        FIXEDREG_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
+                           "add_forward")
+        FIXEDREG_TRANSFORM("left_forward", "right_forward", "xor_forward",
+                           "add_reverse")
+        FIXEDREG_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
+                           "add_forward")
+        FIXEDREG_TRANSFORM("left_forward", "right_forward", "xor_forward",
+                           "add_reverse")
+        FIXEDREG_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
+                           "add_forward")
+        FIXEDREG_TRANSFORM("left_forward", "right_forward", "xor_forward",
+                           "add_reverse")
+        FIXEDREG_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
+                           "add_forward")
+        FIXEDREG_TRANSFORM("left_forward", "right_forward", "xor_forward",
+                           "add_reverse")
+        FIXEDREG_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
+                           "add_forward")
+        FIXEDREG_TRANSFORM("left_forward", "right_forward", "xor_forward",
+                           "add_reverse")
+        FIXEDREG_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
+                           "add_forward")
+        FIXEDREG_TRANSFORM("left_forward", "right_forward", "xor_forward",
+                           "add_reverse")
+        FIXEDREG_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
+                           "add_forward")
+        FIXEDREG_TRANSFORM("left_forward", "right_forward", "xor_forward",
+                           "add_reverse")
+        FIXEDREG_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
+                           "add_forward")
+        FIXEDREG_TRANSFORM("left_forward", "right_forward", "xor_forward",
+                           "add_reverse")
+        FIXEDREG_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
+                           "add_forward")
+        FIXEDREG_TRANSFORM("left_forward", "right_forward", "xor_forward",
+                           "add_reverse")
+        FIXEDREG_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
+                           "add_forward")
+        : [value] "+x"(value), [shift_left] "=&x"(shift_left),
+          [shift_right] "=&x"(shift_right)
+        : [xor_forward] "x"(xor_forward), [add_reverse] "x"(add_reverse),
+          [xor_reverse] "x"(xor_reverse), [add_forward] "x"(add_forward),
+          [left_forward] "x"(left_forward), [right_forward] "x"(right_forward),
+          [left_reverse] "x"(left_reverse), [right_reverse] "x"(right_reverse),
+          [byte_swap] "x"(byte_swap));
+
+    _mm256_storeu_si256((__m256i *)(void *)state, value);
+}
+
+#undef FIXEDREG_TRANSFORM
+#undef PERMUTE20_ATTRIBUTE'''
+    variants["fixed_register_inline_asm"] = (
+        source[:fixed_start] + fixed_register_implementation + source[fixed_end:]
     )
 
     destination.mkdir()
@@ -793,12 +894,16 @@ def select_shortlist(screens: dict[str, dict[str, Any]]) -> list[tuple[str, str]
     }
 
     # Generated source rewrites make semantic claims that static metrics cannot
-    # validate.  Verify each audit-passing rewrite even when it ties or loses
-    # the Pareto screen; this keeps a negative source experiment reproducible.
+    # validate.  Verify every rewrite whose complete loop was extracted, even
+    # when a structural audit rejects it for a hot load or another performance
+    # defect; this keeps negative source experiments reproducible as well.
     selected.update(
         (toolchain, name)
-        for toolchain, name, report in candidates
+        for toolchain, screen in screens.items()
+        for name, report in screen["cases"].items()
         if report["group"] == "temporary_source_expression"
+        and report["status"] in {"PASS", "AUDIT_FAIL"}
+        and "loop" in report
     )
 
     # Preserve each toolchain's own Pareto winner even when the other compiler
@@ -1139,6 +1244,9 @@ def main() -> int:
             *summarize_failures("gcc", screens["gcc"], "gcc_baseline"),
             *summarize_failures("clang", screens["clang"], "clang_baseline"),
         ]
+        fixed_register = screens["gcc"]["cases"][
+            "gcc_source_fixed_register_inline_asm"
+        ]
         report = {
             "schema_version": 1,
             "scope": {
@@ -1216,6 +1324,22 @@ def main() -> int:
                 "all_shortlist_verifications_pass": all_pass,
                 "verified_strict_winners_vs_gcc_baseline": verified_strict_winners,
                 "verified_winner_details": verified_winner_details,
+                "fixed_register_inline_asm": {
+                    "status": fixed_register["status"],
+                    "verification": verification[
+                        "gcc_source_fixed_register_inline_asm"
+                    ]["status"],
+                    "loop_instructions": fixed_register["loop"]["instructions"],
+                    "loop_bytes": fixed_register["loop"]["bytes"],
+                    "memory_operands_excluding_lea": fixed_register["loop"][
+                        "memory_operands_excluding_lea"
+                    ],
+                    "reason_not_promoted": (
+                        "pinning the vector state and constants shortened VEX encodings, "
+                        "but GCC reloaded one XOR constant and rebuilt its reverse form "
+                        "inside every timed iteration"
+                    ),
+                },
                 "new_persisted_source_candidate": False,
                 "reason": (
                     "No generated source-expression variant strictly dominated the current source under the exact GCC baseline; "

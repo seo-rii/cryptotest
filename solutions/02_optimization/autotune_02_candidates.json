@@ -282,6 +282,160 @@
       }
     },
     {
+      "name": "avx2_generic_mod0_no_tree_vectorize",
+      "source": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fno-tree-vectorize"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-generic-stream-gcc13-mod64-0-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_generic_mod24_no_loop_vectorize",
+      "source": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fno-tree-loop-vectorize"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-generic-stream-gcc13-mod64-24-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_generic_mod40_prefer128",
+      "source": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mprefer-vector-width=128"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-generic-stream-gcc13-mod64-40-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_generic_mod48_no_slp_vectorize",
+      "source": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fno-tree-slp-vectorize"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-generic-stream-gcc13-mod64-48-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_alder_mod16",
+      "source": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-alder-stream-gcc13-mod64-16-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_alder_mod8_no_vzeroupper",
+      "source": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-mno-vzeroupper"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-alder-stream-gcc13-mod64-8-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_alder_mod48_prefer128",
+      "source": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-mprefer-vector-width=128"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-alder-stream-gcc13-mod64-48-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_ira_region_one",
+      "source": "solutions/02_optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fira-region=one"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-compact-register-allocation-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_inline_asm",
+      "source": "solutions/02_optimization/contest_simd_avx2_inline_asm.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-single-scratch-inline-assembly-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
       "name": "inline_native",
       "source": "submissions/02/contest.c",
       "cflags": [
