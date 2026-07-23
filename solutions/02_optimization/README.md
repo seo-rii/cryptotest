@@ -6,7 +6,12 @@ timing-stability experiments.  Every promoted or retained target candidate is
 paired with an independent correctness oracle and an exact measured-binary
 audit.  Current schema 5 also computes the expected state after the complete
 repeated timing workload in an independent reference implementation and checks
-that exact state after every preflight, warm-up, and measured process.  The
+that exact state after every preflight, warm-up, and measured process.  It
+additionally derives timing from the printed total duration, cross-checks the
+printed average, measures child-process CPU coverage, and runs a fresh
+nonce-derived alternate-iteration semantic challenge.  These are
+defence-in-depth regression checks for the concrete bypasses described below,
+not cryptographic attestation of arbitrary C.  The
 benchmark drivers are designed to avoid common sources of
 misleading results:
 
@@ -20,7 +25,12 @@ misleading results:
 - every timed result is preceded by all 1,000 supplied one-round vectors, the
   supplied 20-round vector, and randomized differential tests.
 - the declared iteration count, unique timing/final-state record, empty stderr,
-  and independent repeated-call final state must match for every process.
+  and independent repeated-call final state must match for every process;
+- the printed total and average must be mutually consistent, and the score
+  sample is derived from total elapsed time rather than trusting the average;
+- sufficiently long runs must show plausible timed-region/child-CPU coverage,
+  and every campaign must pass a separately compiled, nonce-derived alternate
+  iteration count.
 
 ## Run
 
@@ -570,8 +580,8 @@ inference, and structured gaps are recorded in
 therefore does not choose a winner.  At the end of the eighth wave, the two
 distinct 569-byte candidates and seven nonbaseline AVX2 stream/alignment
 representatives were in the target-only manifest.  That 28-case integration
-smoke passed 28/28 direct checks and measured-binary audits; the current
-30-case state is described below.
+smoke passed 28/28 direct checks and measured-binary audits; the ninth-wave
+30-case state and current 33-case extension are described below.
 
 ## Ninth-wave timed-work validation and encoding/frontend search
 
@@ -659,13 +669,103 @@ number is `old569 / candidate`, so values above one favor the candidate:
 | CPU 3 | block 2 | 0.999278x | 0.997635--1.002321x |
 
 Every interval includes one.  The result is a static/code-size improvement and
-a host timing tie, not a 255H promotion.  The complete schema-5 records are
+a host timing tie, not a 255H promotion.  The complete records are
 [`ninth_wave_timing_02_cpu1.json`](ninth_wave_timing_02_cpu1.json) and
-[`ninth_wave_timing_02_cpu3.json`](ninth_wave_timing_02_cpu3.json).  Schema
-2--4 JSON remains useful historical codegen/timing evidence, but it lacks this
-repeated-call integrity proof and cannot satisfy the current decision gate.
+[`ninth_wave_timing_02_cpu3.json`](ninth_wave_timing_02_cpu3.json).  They are
+historical schema-5 evidence produced before the current measurement-protocol
+fingerprint added total/average, child-CPU, and alternate-iteration gates, so
+they cannot be mixed into a new confirmation.  Schema 2--4 JSON is older
+historical codegen/timing evidence and also lacks the repeated-call gate.
 The scalar submission remains the incumbent; the commutative 549-byte source,
 548-byte `DEC` control, and block-2 loop are all 255H-only candidates.
+
+## Tenth-wave counted frontends, code-generation controls, and measurement gates
+
+The previous intrinsic block-2 candidate still paid avoidable frontend
+instructions.  [`screen_tenth_avx2_counted_frontends_02.py`](screen_tenth_avx2_counted_frontends_02.py)
+enumerates conventional `DEC/JNE` quotient/remainder decompositions for block
+sizes 1--10 and two bounded x86 `LOOP` controls.  Every full case passed exact
+GCC 13.3 measured-loop audit, the supplied vectors, and 100,000 arbitrary-state
+and arbitrary-constant cases at one and twenty rounds.  Three conventional
+Pareto points are retained:
+
+| candidate | static loop | modeled non-padding instructions / call |
+|---|---:|---:|
+| counted block 2 (`2 * 5`) | **122 B / 29 instructions** | 133 |
+| block 3 plus tail 1 (`3+3+3+1`) | **238 B / 53 instructions** | 129 |
+| counted block 5 (`5+5`) | **292 B / 65 instructions** | 127 |
+
+All three have zero hot memory operands and the same `100.03/180.03`
+Alder-Lake/Zen-2 dependency-path proxies as the 549-byte full stream.  Counted
+block 2 strictly improves the old 136 B/30-static shape; block 3 is smaller and
+dynamically lighter than the old 321 B/69-static block 5; counted block 5 keeps
+the two-instruction dynamic advantage over block 3.  Blocks 6--10 add control
+to a fully materialized body, and block 4 is dominated by the smaller block 5.
+The shorter x86 `LOOP` encodings remain negative static controls because the
+Intel proxy expands their µops; no target claim is made from that proxy.  Exact
+streams, CFG expansion, hashes, and the negative cases are in
+[`tenth_avx2_counted_frontends_results_02.json`](tenth_avx2_counted_frontends_results_02.json).
+
+Two further screens tested code shape without host timing.  High-numbered state
+registers with a low scratch can still use the short VEX form and tie the
+549-byte/122-instruction baseline; putting the high register in the wrong
+ModRM position or letting the scratch become high instead grows the loop.
+The exact `VPADDQ` rotate merge is another encoding/model tie.  Moving the XOR
+constant onto the right-shift branch changes only the Zen-2 cross-architecture
+proxy (`180.03 -> 160.03` cycles); both Intel proxies remain `100.03`, so it is
+only a target diagnostic.  Fourteen source-controlled start offsets preserve
+the same normalized stream and cannot be ranked by address-free LLVM-MCA.
+See [`screen_tenth_codegen_02.py`](screen_tenth_codegen_02.py) and
+[`tenth_codegen_results_02.json`](tenth_codegen_results_02.json).  VEX fields
+follow the [Intel Software Developer's Manual](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html);
+compiler placement controls follow the
+[GCC 13.3 optimization options](https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/Optimize-Options.html).
+
+The scalar rotate control reaches 322 instructions/1,052 bytes by forcing
+same-register `ROL`, 159 bytes below the 1,211-byte `RORX` incumbent.  The
+Intel proxies nevertheless worsen from `121.06 cycles/402 µops` to
+`138.13/482`; same-register `SHLD` was rejected before full expansion because
+its serial microprobe is `3.03` modeled cycles per instruction versus `1.03`
+for `RORX`.  These are static filters, not 255H results.  The full
+official/random/audit record is
+[`tenth_codegen_scalar_rotate_results_02.json`](tenth_codegen_scalar_rotate_results_02.json).
+The latency/uop numbers use
+[LLVM's llvm-mca model](https://llvm.org/docs/CommandGuide/llvm-mca.html), whose
+documented static scope is why no target performance claim is made.
+
+Fresh AMD/GCC 12 campaigns compared the three counted candidates directly with
+full549 on CPU 1 and CPU 3.  Each used 3,000,000 calls, six warm-ups, 32 balanced
+samples, and 100,000 random cases:
+
+| candidate (`full549 / candidate`) | CPU 1 paired median, 95% CI | CPU 3 paired median, 95% CI |
+|---|---:|---:|
+| scalar incumbent | 1.061x (1.041--1.120) | 1.032x (1.021--1.057) |
+| old intrinsic block 2 | 1.005x (0.996--1.013) | 1.000x (0.999--1.001) |
+| counted block 2 | 1.003x (0.994--1.009) | 0.999x (0.997--1.003) |
+| block 3 + tail 1 | 1.005x (1.001--1.014) | 1.001x (0.997--1.004) |
+| counted block 5 | 0.999x (0.990--1.009) | 1.000x (0.998--1.003) |
+
+CPU 1 was visibly nonstationary: medians moved with the host load during the
+campaign.  Its isolated ~0.5% block-3 signal was not reproduced on CPU 3 and
+does not reach the autotuner's 1% promotion threshold.  The static Pareto
+points therefore enter the target-only set but do not replace either full549
+or the scalar incumbent.  The hardened schema-5 evidence is
+[`tenth_wave_timing_02_cpu1.json`](tenth_wave_timing_02_cpu1.json) and
+[`tenth_wave_timing_02_cpu3.json`](tenth_wave_timing_02_cpu3.json); the actual
+Core Ultra 7 255H is still unmeasured.
+
+The same pass strengthened what a timing record means.  Three executable
+adversarial regressions now cover (1) finishing omitted work after the end
+clock, (2) shortening the loop and writing the known final state, and (3)
+printing a halved average.  The runner respectively requires median
+timed-region/child-CPU coverage in `[0.65, 1.05]` for runs of at least one
+million iterations, compiles a fresh nonce/campaign/source-hash-derived
+alternate iteration challenge against the independent oracle, and verifies
+total/average/iteration consistency while deriving nanoseconds from total
+elapsed time.  The autotuner also checks raw sample counts, challenge
+derivation and source binding.  This closes those demonstrated bypasses and
+fails closed when POSIX child CPU accounting is unavailable; it is deliberately
+not described as proving every potentially malicious C program.
 
 ## Core-aware 255H decision tool
 
@@ -716,7 +816,7 @@ a fresh 128-bit campaign id in both index and benchmark JSON. Canonical evidence
 and paired-sample hashes catch a copied result even if its JSON whitespace,
 filename, or nonce is changed.
 
-Each index and schema-5 benchmark now carries one canonical measurement-protocol
+Each index and current schema-5 benchmark now carries one canonical measurement-protocol
 fingerprint: the autotuner and benchmark drivers, timed-loop audit, independent
 oracle and candidate verifier, official problem archive, Python executable, and
 the actual `objdump`/`size` binaries are all SHA-256 pinned. `confirm` refuses a stale `screen`, and `decide` refuses
@@ -750,10 +850,12 @@ seven nonbaseline stream/alignment representatives then expanded the current
 manifest to 28 cases; a balanced smoke passed 28/28 direct checks and audits,
 with source-local `-iquote` context recorded for all 28.  The commutative
 operand-order refinement replaces the old assembly entry, while its `DEC`
-control and the block-2 frontend candidate add two target-only entries.  The
-current manifest therefore contains **30 cases**.  Short smoke timings are
-integration evidence, not performance evidence; schema 5 confirmation also
-requires the independent repeated-call final-state record.
+control and the old block-2 frontend candidate add two target-only entries.
+The three tenth-wave counted Pareto points expand the current manifest to
+**33 cases**.  Short smoke timings are integration evidence, not performance
+evidence; current schema-5 confirmation also requires the repeated-call state,
+alternate-iteration challenge, total-derived timing, and child-CPU coverage
+records.
 
 The same fast flags were also applied to full unroll, pair loop, and
 `unroll5_bmi2`; medians were 37.279, 38.618, and 38.727 ns, respectively. Full
@@ -783,9 +885,10 @@ python3 solutions/benchmark_02_permutation.py \
   --random-cases 100000 --json /tmp/challenge02-inline.json
 ```
 
-The current ninth-wave schema-5 campaign uses the same driver with six
+The historical ninth-wave schema-5 campaign used the same driver with six
 discarded warm-ups and 32 balanced samples. Change `--cpu 1` to `--cpu 3` for
-the second stored affinity:
+the second stored affinity.  Reproducing current decision evidence also
+requires rerunning with the hardened protocol described above:
 
 ```bash
 python3 solutions/benchmark_02_permutation.py \
@@ -826,7 +929,8 @@ what remains unknown is the performance ordering on Core Ultra 7 255H. Use the
 core-aware tool to A/B `-mtune=alderlake`, its IRA-priority combination,
 source order `2,1,0,3`, the selective/no-post-reload scheduler streams, and the
 `-fira-region=one` 569-byte AVX2 stream, commutative 549-byte source, target-only
-548-byte `DEC` control, block-2 frontend loop, and relevant nonbaseline
+548-byte `DEC` control, the old block-2 frontend loop, the three counted
+block-2/3/5 Pareto points, and relevant nonbaseline
 stream/alignment representatives, plus the diagnostic native tune. Keep a
 source/flag only if it passes two independent sessions
 and every required P/E/LP-E gate. Until then, the simpler
@@ -836,5 +940,8 @@ one-state and conjugate SIMD implementations should not be used because their
 longer dependent paths were consistently slower.  The new four-lane two-round
 AVX2 implementation is different and belongs in the 255H head-to-head, but the
 contradictory CPU-1/2/3 ordering prevents promotion from this VM alone.  The
-549-byte, 548-byte, and block-2 candidates also remain target-only because the
-schema-5 AMD campaigns were statistical ties.
+549-byte, 548-byte, and all compact-block candidates also remain target-only.
+The tenth-wave CPU 1 block-3 signal was nonstationary, below the promotion
+threshold, and absent on CPU 3; the remaining intervals included one.  The
+ninth-wave files are protocol-predecessor historical records; only freshly
+generated current-fingerprint evidence is eligible for a new 255H decision.

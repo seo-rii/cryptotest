@@ -1,0 +1,991 @@
+{
+  "cases": {
+    "bmi2_rorx": {
+      "build": {
+        "binary_sha256": "695b37bfd206c080728b9b768cd10f38c44d80f75bba64d8f783fb41151ba8c6",
+        "exact_gcc13": "PASS",
+        "status": "PASS",
+        "supplied_default": "PASS"
+      },
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "description": "source-order scalar incumbent with 80 RORX",
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "add": {
+            "3": 79
+          },
+          "bswap": {
+            "3": 80
+          },
+          "jne": {
+            "6": 1
+          },
+          "lea": {
+            "4": 1
+          },
+          "rorx": {
+            "6": 80
+          },
+          "sub": {
+            "4": 1
+          },
+          "xor": {
+            "3": 80
+          }
+        },
+        "instruction_bytes_total": 1211
+      },
+      "group": "incumbent",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 81.0,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 402.0
+        },
+        "meteorlake_proxy": {
+          "block_rthroughput": 81.0,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "meteorlake",
+          "uops_per_iteration": 402.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 140.5,
+          "cycles_per_iteration": 140.55,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 322.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "695b37bfd206c080728b9b768cd10f38c44d80f75bba64d8f783fb41151ba8c6",
+        "bytes": 1211,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 322,
+        "legacy_addressed_sha256": "fe66490b3dd2045b03e92a9e642652aa9c802c8e501b29b0e5e59294b9e6c035",
+        "mnemonics": {
+          "add": 79,
+          "bswap": 80,
+          "jne": 1,
+          "lea": 1,
+          "rorx": 80,
+          "sub": 1,
+          "xor": 80
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "cf5f70c56dfc3e9b78895db0de856910c057b94078fafbfec7eab34edbac8659",
+        "push_pop": 0,
+        "start": "0x401528",
+        "start_mod_16": 8,
+        "start_mod_32": 8,
+        "start_mod_64": 40,
+        "text_bytes": 7246
+      },
+      "loop_artifact_sha256": "fb25f6c0a9582d9fbeaaa5c0bc31faef7bffd423a0611e63cc5bebba8b78991f",
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "source": {
+        "base_path": "solutions/02_optimization/contest_source_order_2103.c",
+        "generated_source_sha256": "87099c89743d374bc717e95fe593bac7d7b850426950a256f751a5347d90d392",
+        "recipe": "unchanged control source",
+        "source_kind": "base",
+        "temporary_path": "<temporary>/variants/bmi2_rorx.c"
+      },
+      "supplied_default_official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      }
+    },
+    "forced_same_register_rol": {
+      "build": {
+        "binary_sha256": "8d0b1d7bdef5f97b1cf5b6be7d8e0568ed991844cd7dfa8811356abda56ba48e",
+        "exact_gcc13": "PASS",
+        "status": "PASS",
+        "supplied_default": "PASS"
+      },
+      "cflags": [
+        "-finline-limit=2000"
+      ],
+      "description": "four immediate ROL helpers with read/write operands, preserving the incumbent source order",
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-finline-limit=2000"
+      ],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "add": {
+            "3": 78
+          },
+          "bswap": {
+            "3": 80
+          },
+          "jne": {
+            "6": 1
+          },
+          "lea": {
+            "4": 2
+          },
+          "rol": {
+            "4": 80
+          },
+          "sub": {
+            "4": 1
+          },
+          "xor": {
+            "3": 80
+          }
+        },
+        "instruction_bytes_total": 1052
+      },
+      "group": "new_candidate",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 120.5,
+          "cycles_per_iteration": 138.13,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 482.0
+        },
+        "meteorlake_proxy": {
+          "block_rthroughput": 120.5,
+          "cycles_per_iteration": 138.13,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "meteorlake",
+          "uops_per_iteration": 482.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 140.5,
+          "cycles_per_iteration": 140.55,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 322.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "8d0b1d7bdef5f97b1cf5b6be7d8e0568ed991844cd7dfa8811356abda56ba48e",
+        "bytes": 1052,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 322,
+        "legacy_addressed_sha256": "c0cebb1de949ee670f676c458482e50338d6c24d1015548d71bbfc871ad258af",
+        "mnemonics": {
+          "add": 78,
+          "bswap": 80,
+          "jne": 1,
+          "lea": 2,
+          "rol": 80,
+          "sub": 1,
+          "xor": 80
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "1b20bdb3f673ae8f4b8e43c0033a11a5e658856f73270536d1e52eb2d319fb84",
+        "push_pop": 0,
+        "start": "0x401528",
+        "start_mod_16": 8,
+        "start_mod_32": 8,
+        "start_mod_64": 40,
+        "text_bytes": 6940
+      },
+      "loop_artifact_sha256": "d4f0715559d8d786065c4ca007670a3cf4a33b6d946b5e82c529c05d3818dc9b",
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "source": {
+        "base_path": "solutions/02_optimization/contest_source_order_2103.c",
+        "generated_source_sha256": "37c93c133efcd911b97958ff4719810e89ab1717526a2ee2fb20e31d146af6e5",
+        "recipe": "replace transform_word/APPLY_TWO_ROUNDS with four forced same-register immediate ROL helpers and force portable inline",
+        "source_kind": "forced_rol_portable_inline",
+        "temporary_path": "<temporary>/variants/forced_same_register_rol.c"
+      },
+      "supplied_default_official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      }
+    },
+    "portable_compiler_rol": {
+      "build": {
+        "binary_sha256": "ee5b53fc4bc0b77b94102400163cec355a506a0d6b1027e0e4a35444df6b6dc8",
+        "exact_gcc13": "PASS",
+        "status": "PASS",
+        "supplied_default": "PASS"
+      },
+      "cflags": [
+        "-finline-limit=2000"
+      ],
+      "description": "GCC-selected destructive ROL/ROR control with its known move",
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-finline-limit=2000"
+      ],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "add": {
+            "3": 73
+          },
+          "bswap": {
+            "3": 80
+          },
+          "jne": {
+            "6": 1
+          },
+          "lea": {
+            "4": 7
+          },
+          "mov": {
+            "3": 1
+          },
+          "rol": {
+            "4": 60
+          },
+          "ror": {
+            "4": 20
+          },
+          "sub": {
+            "4": 1
+          },
+          "xor": {
+            "3": 80
+          }
+        },
+        "instruction_bytes_total": 1060
+      },
+      "group": "historical_control",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 120.5,
+          "cycles_per_iteration": 139.07,
+          "instructions_per_iteration": 323.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 482.0
+        },
+        "meteorlake_proxy": {
+          "block_rthroughput": 120.5,
+          "cycles_per_iteration": 139.07,
+          "instructions_per_iteration": 323.0,
+          "iterations": 100,
+          "model": "meteorlake",
+          "uops_per_iteration": 482.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 140.8,
+          "cycles_per_iteration": 140.79,
+          "instructions_per_iteration": 323.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 323.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "ee5b53fc4bc0b77b94102400163cec355a506a0d6b1027e0e4a35444df6b6dc8",
+        "bytes": 1060,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 323,
+        "legacy_addressed_sha256": "9c858c6c572a414750b6fbab90f7163582fe595c993201ebe04b83ab35f5a60b",
+        "mnemonics": {
+          "add": 73,
+          "bswap": 80,
+          "jne": 1,
+          "lea": 7,
+          "mov": 1,
+          "rol": 60,
+          "ror": 20,
+          "sub": 1,
+          "xor": 80
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "35cac54c7ea52eaa1d1c20229439a5baef08197ea451d8870da4d015d5dabfdd",
+        "push_pop": 0,
+        "start": "0x401528",
+        "start_mod_16": 8,
+        "start_mod_32": 8,
+        "start_mod_64": 40,
+        "text_bytes": 6938
+      },
+      "loop_artifact_sha256": "68be44a8aa974e00045b424219bfa07204c897ad96063a7f5e2b572364c47f1d",
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "source": {
+        "base_path": "solutions/02_optimization/contest_inline_unrolled.c",
+        "generated_source_sha256": "ff1e080f2cdee30e87b9cd8d8c3f97df8088095babf127cc8d6d48145c995f21",
+        "recipe": "unchanged control source",
+        "source_kind": "portable",
+        "temporary_path": "<temporary>/variants/portable_compiler_rol.c"
+      },
+      "supplied_default_official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      }
+    },
+    "source_order_compiler_rol": {
+      "build": {
+        "binary_sha256": "1e8f3ae32361764e643be782ada5fbaa3443e78ca5d9e5e83fd45c7bb20097fe",
+        "exact_gcc13": "PASS",
+        "status": "PASS",
+        "supplied_default": "PASS"
+      },
+      "cflags": [
+        "-finline-limit=2000"
+      ],
+      "description": "compiler-selected ROL/ROR using the incumbent source order and portable forced-inline attribute",
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-finline-limit=2000"
+      ],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "add": {
+            "3": 79
+          },
+          "bswap": {
+            "3": 80
+          },
+          "jne": {
+            "6": 1
+          },
+          "lea": {
+            "4": 1
+          },
+          "mov": {
+            "3": 1
+          },
+          "rol": {
+            "4": 60
+          },
+          "ror": {
+            "4": 20
+          },
+          "sub": {
+            "4": 1
+          },
+          "xor": {
+            "3": 80
+          }
+        },
+        "instruction_bytes_total": 1054
+      },
+      "group": "matched_control",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 120.5,
+          "cycles_per_iteration": 141.09,
+          "instructions_per_iteration": 323.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 482.0
+        },
+        "meteorlake_proxy": {
+          "block_rthroughput": 120.5,
+          "cycles_per_iteration": 141.09,
+          "instructions_per_iteration": 323.0,
+          "iterations": 100,
+          "model": "meteorlake",
+          "uops_per_iteration": 482.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 140.8,
+          "cycles_per_iteration": 140.78,
+          "instructions_per_iteration": 323.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 323.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "1e8f3ae32361764e643be782ada5fbaa3443e78ca5d9e5e83fd45c7bb20097fe",
+        "bytes": 1054,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 323,
+        "legacy_addressed_sha256": "4e0db96df70d5f75f7c32c65ba45f630ae3c75f2f5ad5fa75e1b9da6294071ac",
+        "mnemonics": {
+          "add": 79,
+          "bswap": 80,
+          "jne": 1,
+          "lea": 1,
+          "mov": 1,
+          "rol": 60,
+          "ror": 20,
+          "sub": 1,
+          "xor": 80
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "693458dea192fcad3228045209165ca348dededa28ff0a14e69474c58b5932f6",
+        "push_pop": 0,
+        "start": "0x401528",
+        "start_mod_16": 8,
+        "start_mod_32": 8,
+        "start_mod_64": 40,
+        "text_bytes": 6938
+      },
+      "loop_artifact_sha256": "1c574c08a9f3ea69b12f713c269edc87dce65bf5146d9b947fd9fe0b8b751e4a",
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "source": {
+        "base_path": "solutions/02_optimization/contest_source_order_2103.c",
+        "generated_source_sha256": "d7ddb51badc47e5e7d10b55902dcc64480aa8a5eb24d25876122b43518c3cced",
+        "recipe": "force portable inline while retaining C rotate",
+        "source_kind": "base_portable_inline",
+        "temporary_path": "<temporary>/variants/source_order_compiler_rol.c"
+      },
+      "supplied_default_official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      }
+    }
+  },
+  "compiler": {
+    "binutils_reported": "GNU objdump (GNU Binutils for Debian) 2.40",
+    "common_flags": [
+      "-O3",
+      "-Wall",
+      "-Wextra",
+      "-Werror"
+    ],
+    "reported": "gcc (GCC) 13.3.0",
+    "supplied_default_flags": [
+      "-O3",
+      "-Wall",
+      "-Wextra"
+    ],
+    "verifier_flags": [
+      "-O3",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror"
+    ]
+  },
+  "conclusions": {
+    "same_register_rol": {
+      "comparison_to_rorx": "It is 159 bytes smaller than the RORX incumbent, but the Alder/Meteor proxy rises from 121.06 to 138.13 cycles and from 402 to 482 uops.",
+      "promotion": "not promoted; retain at most as a target-only timing diagnostic",
+      "result": "The forced read/write form emits 322 instructions/1052 bytes with 0 MOV, versus the source-order-matched compiler control's 323 instructions/1054 bytes and 1 MOV. The older portable control is retained separately.",
+      "status": "static-code-size-win-only"
+    },
+    "same_register_shld": {
+      "full_candidate_built": false,
+      "reason": "Although SHLD with identical source/destination is an exact rotate, the dependency-chain microprobe has 3.03 modeled cycles per instruction on Alder Lake versus 1.03 for RORX. Eighty serial-chain uses therefore have no credible latency path to a win.",
+      "status": "rejected-before-full-expansion"
+    }
+  },
+  "experiment": "challenge02_tenth_scalar_same_register_rotate",
+  "inputs": {
+    "container": {
+      "generated_sources_mount": "read-only",
+      "image": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "local_image_id": "sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "manifest_digest_sha256": "1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "network": "none",
+      "repository_mount": "read-only"
+    },
+    "driver": {
+      "path": "solutions/02_optimization/screen_tenth_codegen_scalar_rotate_02.py",
+      "sha256": "d7ca6a80ba4555824940105078f420173dbdcf7c23af1b8a018f01146f85dd3a"
+    },
+    "files": {
+      "problems/2_\uc554\ud638\uad6c\ud604.zip": {
+        "actual_sha256": "d0c3158adda8ba258becfc0e347267c0f2f0112738ec732be6dcb5477342e88e",
+        "expected_sha256": "d0c3158adda8ba258becfc0e347267c0f2f0112738ec732be6dcb5477342e88e"
+      },
+      "solutions/02_optimization/contest_inline_unrolled.c": {
+        "actual_sha256": "ff1e080f2cdee30e87b9cd8d8c3f97df8088095babf127cc8d6d48145c995f21",
+        "expected_sha256": "ff1e080f2cdee30e87b9cd8d8c3f97df8088095babf127cc8d6d48145c995f21"
+      },
+      "solutions/02_optimization/contest_source_order_2103.c": {
+        "actual_sha256": "87099c89743d374bc717e95fe593bac7d7b850426950a256f751a5347d90d392",
+        "expected_sha256": "87099c89743d374bc717e95fe593bac7d7b850426950a256f751a5347d90d392"
+      },
+      "solutions/02_optimization/verify_contest_candidate_02.c": {
+        "actual_sha256": "8245f1baf23fe82e1a1b22dc7c25e5e1fd5b102ca833f26d4c88342088c80b35",
+        "expected_sha256": "8245f1baf23fe82e1a1b22dc7c25e5e1fd5b102ca833f26d4c88342088c80b35"
+      },
+      "solutions/challenge02_loop_audit.py": {
+        "actual_sha256": "8b4e1e90af9d4224500ead177bc02ddc5912805757ce2137ab89a990af0128b1",
+        "expected_sha256": "8b4e1e90af9d4224500ead177bc02ddc5912805757ce2137ab89a990af0128b1"
+      }
+    },
+    "host_tools": {
+      "llvm_mca": {
+        "path": "/usr/bin/llvm-mca-16",
+        "sha256": "e7f38b12a3c228c8b0bcea0bf63cc56939286adf9ae5397a43d408322e3c6fbf",
+        "version": "Debian LLVM version 16.0.6"
+      },
+      "objdump": {
+        "path": "/usr/bin/x86_64-linux-gnu-objdump",
+        "sha256": "19717049e8ecd98cfbb17fd9eb25e9fd896ecec2fc4af6b931f3dd0bc4e903de",
+        "version": "GNU objdump (GNU Binutils for Debian) 2.40"
+      },
+      "size": {
+        "path": "/usr/bin/x86_64-linux-gnu-size",
+        "sha256": "d2dc6eb962bfc841403cc8b72191bfd829b50d8796b611689e92cfb051cf10ee",
+        "version": "GNU size (GNU Binutils for Debian) 2.40"
+      }
+    }
+  },
+  "microprobes": {
+    "rol_same_register": {
+      "encoding": {
+        "address": "0x0",
+        "bytes": 4,
+        "bytes_hex": "48 c1 c0 2b",
+        "mnemonic": "rol",
+        "operands": "$0x2b,%rax"
+      },
+      "instruction": "rolq $43, %rax",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 1.0,
+          "cycles_per_iteration": 1.03,
+          "instructions_per_iteration": 1.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 2.0
+        },
+        "meteorlake_proxy": {
+          "block_rthroughput": 1.0,
+          "cycles_per_iteration": 1.03,
+          "instructions_per_iteration": 1.0,
+          "iterations": 100,
+          "model": "meteorlake",
+          "uops_per_iteration": 2.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 0.3,
+          "cycles_per_iteration": 1.03,
+          "instructions_per_iteration": 1.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 1.0
+        }
+      },
+      "mca_source_sha256": "47c2bacd8b45aea155df9d7edd95321d9b4b5867b2e4b637e8429003b9a8d85a",
+      "object_sha256": "da32a8865fa4da418c6eba44ec883891269c69232041fc938bf6032a5d3a8f08",
+      "object_source_sha256": "58df0da66886f27c6bed013efe9b4aef347e9d50b08e68dfd744d5aac8601d59",
+      "requires": "base x86-64",
+      "semantic": "rotate left by 43 destructively"
+    },
+    "rorx_same_register": {
+      "encoding": {
+        "address": "0x0",
+        "bytes": 6,
+        "bytes_hex": "c4 e3 fb f0 c0 15",
+        "mnemonic": "rorx",
+        "operands": "$0x15,%rax,%rax"
+      },
+      "instruction": "rorx $21, %rax, %rax",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 0.5,
+          "cycles_per_iteration": 1.03,
+          "instructions_per_iteration": 1.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 1.0
+        },
+        "meteorlake_proxy": {
+          "block_rthroughput": 0.5,
+          "cycles_per_iteration": 1.03,
+          "instructions_per_iteration": 1.0,
+          "iterations": 100,
+          "model": "meteorlake",
+          "uops_per_iteration": 1.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 0.3,
+          "cycles_per_iteration": 1.03,
+          "instructions_per_iteration": 1.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 1.0
+        }
+      },
+      "mca_source_sha256": "ed7950eb997c011e2991eeb1bae90a0a307b7fda65be5bdb2c3928fd787e651d",
+      "object_sha256": "eed96ed69add89b45f7a2aea315ab29caafbc8cd7a24f71b07c578774ecba503",
+      "object_source_sha256": "c530d5b238c41b877ed498e91e71cd6a229409152f06adac1a8ede3311343948",
+      "requires": "BMI2",
+      "semantic": "rotate left by 43 via rotate right by 21"
+    },
+    "shld_same_register": {
+      "encoding": {
+        "address": "0x0",
+        "bytes": 5,
+        "bytes_hex": "48 0f a4 c0 2b",
+        "mnemonic": "shld",
+        "operands": "$0x2b,%rax,%rax"
+      },
+      "instruction": "shldq $43, %rax, %rax",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 1.0,
+          "cycles_per_iteration": 3.03,
+          "instructions_per_iteration": 1.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 1.0
+        },
+        "meteorlake_proxy": {
+          "block_rthroughput": 1.0,
+          "cycles_per_iteration": 3.03,
+          "instructions_per_iteration": 1.0,
+          "iterations": 100,
+          "model": "meteorlake",
+          "uops_per_iteration": 1.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 0.3,
+          "cycles_per_iteration": 1.03,
+          "instructions_per_iteration": 1.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 1.0
+        }
+      },
+      "mca_source_sha256": "ffb1e42f6963f74d60dd341d82e840f9176953b40c4f41403df31d83dac913e9",
+      "object_sha256": "1658d9966bf7fc82ca7cb6ce68a89e09061ddccc2bf5b673e2f0f1544808fc98",
+      "object_source_sha256": "0a677717edf1525516274fde85f495443fa06358e636745ae0a4f942cc8a3535",
+      "requires": "base x86-64",
+      "semantic": "same-source/destination SHLD equals rotate left by 43"
+    }
+  },
+  "model_limits": {
+    "host_timing": "No host timing is collected; repeated target-core timing is required before promotion.",
+    "llvm_mca": "LLVM-MCA 16 models instruction scheduling but not the exact Core Ultra 7 255H P/E/LP-E implementation, frequency, or all front-end effects."
+  },
+  "primary_documentation": [
+    {
+      "title": "Intel 64 and IA-32 Architectures Software Developer's Manual",
+      "url": "https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html",
+      "used_for": "RORX, ROL, and SHLD semantics and encodings"
+    },
+    {
+      "title": "LLVM llvm-mca command guide",
+      "url": "https://llvm.org/docs/CommandGuide/llvm-mca.html",
+      "used_for": "static latency/uop/throughput proxies and limitations"
+    }
+  ],
+  "schema_version": 1,
+  "scope": {
+    "full_candidate_count": 4,
+    "host_timing": false,
+    "microprobe_count": 3,
+    "reason": "separate compiler-generated portable ROL from a forced same-register stream and reject SHLD before full expansion"
+  },
+  "summary": {
+    "all_builds_official_random_audits": "PASS",
+    "compiler_portable_control": {
+      "bytes": 1060,
+      "case": "portable_compiler_rol",
+      "instructions": 323,
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 120.5,
+          "cycles_per_iteration": 139.07,
+          "instructions_per_iteration": 323.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 482.0
+        },
+        "meteorlake_proxy": {
+          "block_rthroughput": 120.5,
+          "cycles_per_iteration": 139.07,
+          "instructions_per_iteration": 323.0,
+          "iterations": 100,
+          "model": "meteorlake",
+          "uops_per_iteration": 482.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 140.8,
+          "cycles_per_iteration": 140.79,
+          "instructions_per_iteration": 323.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 323.0
+        }
+      },
+      "moves": 1,
+      "rotate": {
+        "rol": 60,
+        "ror": 20
+      }
+    },
+    "forced_same_register_rol": {
+      "bytes": 1052,
+      "case": "forced_same_register_rol",
+      "instructions": 322,
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 120.5,
+          "cycles_per_iteration": 138.13,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 482.0
+        },
+        "meteorlake_proxy": {
+          "block_rthroughput": 120.5,
+          "cycles_per_iteration": 138.13,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "meteorlake",
+          "uops_per_iteration": 482.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 140.5,
+          "cycles_per_iteration": 140.55,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 322.0
+        }
+      },
+      "moves": 0,
+      "rotate": {
+        "rol": 80
+      }
+    },
+    "incumbent": {
+      "bytes": 1211,
+      "case": "bmi2_rorx",
+      "instructions": 322,
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 81.0,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 402.0
+        },
+        "meteorlake_proxy": {
+          "block_rthroughput": 81.0,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "meteorlake",
+          "uops_per_iteration": 402.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 140.5,
+          "cycles_per_iteration": 140.55,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 322.0
+        }
+      },
+      "moves": 0,
+      "rotate": {
+        "rorx": 80
+      }
+    },
+    "source_order_compiler_rol": {
+      "bytes": 1054,
+      "case": "source_order_compiler_rol",
+      "instructions": 323,
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 120.5,
+          "cycles_per_iteration": 141.09,
+          "instructions_per_iteration": 323.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 482.0
+        },
+        "meteorlake_proxy": {
+          "block_rthroughput": 120.5,
+          "cycles_per_iteration": 141.09,
+          "instructions_per_iteration": 323.0,
+          "iterations": 100,
+          "model": "meteorlake",
+          "uops_per_iteration": 482.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 140.8,
+          "cycles_per_iteration": 140.78,
+          "instructions_per_iteration": 323.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 323.0
+        }
+      },
+      "moves": 1,
+      "rotate": {
+        "rol": 60,
+        "ror": 20
+      }
+    }
+  },
+  "vectors": {
+    "code/testvector.txt": {
+      "archive_member": "code/testvector.txt",
+      "bytes": 153893,
+      "extracted_name": "testvector.txt",
+      "sha256": "4852415779f00d2a9020bc13690ece3ec2febf42af4b29a9f03185c1f63d2801"
+    },
+    "code/testvector_20round.txt": {
+      "archive_member": "code/testvector_20round.txt",
+      "bytes": 149,
+      "extracted_name": "testvector_20round.txt",
+      "sha256": "5625484c45ac7e2fb3ee865fb5078477522c2231f3abca0707133261916b4488"
+    }
+  },
+  "verification_protocol": {
+    "complete_clock_delimited_loop_audit_every_full_case": true,
+    "official_vectors_every_full_case": true,
+    "random_cases_per_case": 100000,
+    "random_differential_every_full_case": true,
+    "random_state_and_constants": true,
+    "round_counts": [
+      1,
+      20
+    ],
+    "supplied_default_official_vectors_every_full_case": true
+  }
+}

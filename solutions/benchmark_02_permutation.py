@@ -10,6 +10,7 @@ import os
 import platform
 import random
 import re
+import secrets
 import shutil
 import shlex
 import statistics
@@ -17,8 +18,14 @@ import subprocess
 import sys
 import tempfile
 import time
+from decimal import Decimal
 from pathlib import Path
 from zipfile import ZipFile
+
+try:
+    import resource
+except ImportError:  # pragma: no cover - unavailable on non-POSIX hosts
+    resource = None  # type: ignore[assignment]
 
 if __package__:
     from .challenge02_loop_audit import (
@@ -39,6 +46,10 @@ else:
 TIMING_PATTERN = re.compile(
     r"^average per 20rounds = ([0-9]+(?:\.[0-9]+)?) us$", re.MULTILINE
 )
+TOTAL_ELAPSED_PATTERN = re.compile(
+    r"^total elapsed time\s+=\s+([0-9]+(?:\.[0-9]+)?) sec$",
+    re.MULTILINE,
+)
 FINAL_STATE_PATTERN = re.compile(
     r"^benchmark final state = "
     r"([0-9a-fA-F]{16}) ([0-9a-fA-F]{16}) "
@@ -58,6 +69,9 @@ ORACLE_ITERATIONS_PATTERN = re.compile(
     r"^oracle_final_state_iterations=([0-9]+)$", re.MULTILINE
 )
 ITERATIONS_PATTERN = re.compile(r"const int iterations = [0-9]+;")
+MIN_CHILD_CPU_COVERAGE_ITERATIONS = 1_000_000
+MIN_MEDIAN_CHILD_CPU_COVERAGE = 0.65
+MAX_MEDIAN_CHILD_CPU_COVERAGE = 1.05
 
 
 def parse_contest_timing_output(stdout: str) -> dict[str, object]:
@@ -65,17 +79,55 @@ def parse_contest_timing_output(stdout: str) -> dict[str, object]:
 
     states = FINAL_STATE_PATTERN.findall(stdout)
     iterations = ITERATIONS_OUTPUT_PATTERN.findall(stdout)
+    elapsed_times = TOTAL_ELAPSED_PATTERN.findall(stdout)
     timings = TIMING_PATTERN.findall(stdout)
-    counts = (len(states), len(iterations), len(timings))
-    if counts != (1, 1, 1):
+    counts = (len(states), len(iterations), len(elapsed_times), len(timings))
+    if counts != (1, 1, 1, 1):
         raise ValueError(
-            "expected exactly one final-state, iterations, and timing line; "
+            "expected exactly one final-state, iterations, total-time, and "
+            "average-time line; "
             f"found {counts}"
+        )
+    iteration_count = int(iterations[0])
+    if iteration_count <= 0:
+        raise ValueError("reported iteration count must be positive")
+    elapsed_text = elapsed_times[0]
+    average_text = timings[0]
+    elapsed = Decimal(elapsed_text)
+    average = Decimal(average_text)
+    if elapsed <= 0 or average <= 0:
+        raise ValueError("reported total and average timing must be positive")
+
+    elapsed_error = Decimal(5).scaleb(
+        -len(elapsed_text.partition(".")[2]) - 1
+    )
+    average_error = Decimal(5).scaleb(
+        -len(average_text.partition(".")[2]) - 1
+    )
+    multiplier = Decimal(1_000_000) / Decimal(iteration_count)
+    average_from_elapsed_low = max(
+        Decimal(0), elapsed - elapsed_error
+    ) * multiplier
+    average_from_elapsed_high = (elapsed + elapsed_error) * multiplier
+    average_print_low = max(Decimal(0), average - average_error)
+    average_print_high = average + average_error
+    if (
+        average_from_elapsed_high < average_print_low
+        or average_print_high < average_from_elapsed_low
+    ):
+        raise ValueError(
+            "reported average is inconsistent with total elapsed time and "
+            f"iterations ({average_text} us vs {elapsed_text} sec / "
+            f"{iteration_count})"
         )
     return {
         "final_state": tuple(value.lower() for value in states[0]),
-        "iterations": int(iterations[0]),
-        "internal_ns": float(timings[0]) * 1_000.0,
+        "iterations": iteration_count,
+        "total_elapsed_s": float(elapsed),
+        "printed_average_us": float(average),
+        "internal_ns": float(
+            elapsed * Decimal(1_000_000_000) / Decimal(iteration_count)
+        ),
     }
 
 
@@ -175,6 +227,11 @@ def main() -> None:
         parser.error("--warmups must be at least 1")
     if args.samples < 5:
         parser.error("--samples must be at least 5")
+    if resource is None or not hasattr(resource, "RUSAGE_CHILDREN"):
+        parser.error(
+            "child CPU accounting is unavailable; timing validation requires "
+            "POSIX getrusage(RUSAGE_CHILDREN)"
+        )
     if args.campaign_id is not None and not re.fullmatch(
         r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", args.campaign_id
     ):
@@ -331,12 +388,42 @@ def main() -> None:
         root / "solutions" / "02_optimization" / "verify_contest_candidate_02.c"
     )
     internal_samples: dict[str, list[float]] = {name: [] for name, _ in cases}
+    inner_elapsed_samples: dict[str, list[float]] = {
+        name: [] for name, _ in cases
+    }
+    printed_average_samples: dict[str, list[float]] = {
+        name: [] for name, _ in cases
+    }
     wall_samples: dict[str, list[float]] = {name: [] for name, _ in cases}
+    child_cpu_samples: dict[str, list[float]] = {name: [] for name, _ in cases}
     source_snapshots = {name: source.read_bytes() for name, source in cases}
     source_hashes = {
         name: hashlib.sha256(source_snapshots[name]).hexdigest()
         for name, _ in cases
     }
+    semantic_challenge_nonce = secrets.token_hex(16)
+    semantic_challenge_derivation_payload = {
+        "schema_version": 1,
+        "campaign_id": args.campaign_id,
+        "nonce_hex": semantic_challenge_nonce,
+        "measured_iterations": args.iterations,
+        "source_sha256": dict(sorted(source_hashes.items())),
+    }
+    semantic_challenge_digest = hashlib.sha256(
+        json.dumps(
+            semantic_challenge_derivation_payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+    semantic_challenge_iterations = 4_096 + (
+        int(semantic_challenge_digest[:16], 16) % 61_440
+    )
+    if semantic_challenge_iterations == args.iterations:
+        semantic_challenge_iterations = (
+            4_096 + (semantic_challenge_iterations - 4_096 + 1) % 61_440
+        )
 
     with tempfile.TemporaryDirectory(prefix="challenge02-repeat-") as directory:
         temporary = Path(directory)
@@ -415,7 +502,52 @@ def main() -> None:
             "status": "PASS",
         }
 
+        oracle_challenge_command = [
+            str(oracle),
+            "--final-state",
+            str(semantic_challenge_iterations),
+        ]
+        print("$", shlex.join(oracle_challenge_command), flush=True)
+        oracle_challenge_run = subprocess.run(
+            oracle_challenge_command,
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        try:
+            oracle_challenge_iterations, expected_challenge_final_state = (
+                parse_oracle_final_state(oracle_challenge_run.stdout)
+            )
+        except ValueError as error:
+            parser.error(
+                "independent alternate-iteration oracle output is malformed: "
+                f"{error}\nstdout:\n{oracle_challenge_run.stdout}\n"
+                f"stderr:\n{oracle_challenge_run.stderr}"
+            )
+        if (
+            oracle_challenge_run.returncode != 0
+            or oracle_challenge_run.stderr
+            or oracle_challenge_iterations != semantic_challenge_iterations
+        ):
+            parser.error(
+                "independent alternate-iteration oracle validation failed "
+                f"(exit {oracle_challenge_run.returncode}, iterations "
+                f"{oracle_challenge_iterations}, expected "
+                f"{semantic_challenge_iterations})\n"
+                f"stdout:\n{oracle_challenge_run.stdout}\n"
+                f"stderr:\n{oracle_challenge_run.stderr}"
+            )
+        semantic_challenge_oracle = {
+            "expected_final_state": list(expected_challenge_final_state),
+            "stdout_sha256": hashlib.sha256(
+                oracle_challenge_run.stdout.encode()
+            ).hexdigest(),
+            "status": "PASS",
+        }
+
         executables: dict[str, Path] = {}
+        semantic_challenge_executables: dict[str, Path] = {}
         candidate_verification: dict[str, dict[str, object]] = {}
         assembly_audits: dict[str, dict[str, object]] = {}
         rewritten_source_hashes: dict[str, str] = {}
@@ -564,6 +696,32 @@ def main() -> None:
             subprocess.run(command, check=True)
             executables[name] = executable
 
+            challenge_rewritten, challenge_replacements = ITERATIONS_PATTERN.subn(
+                f"const int iterations = {semantic_challenge_iterations};",
+                source_snapshots[name].decode("utf-8"),
+            )
+            if challenge_replacements != 1:
+                raise RuntimeError(
+                    "expected exactly one timing iteration declaration in "
+                    f"{source} for semantic challenge, found "
+                    f"{challenge_replacements}"
+                )
+            challenge_source = temporary / f"{name}_semantic_challenge.c"
+            challenge_source.write_text(challenge_rewritten, encoding="utf-8")
+            challenge_executable = temporary / f"{name}_semantic_challenge"
+            challenge_command = [
+                args.compiler,
+                *flags,
+                *case_flags[name],
+                *source_context_flags[name],
+                str(challenge_source),
+                "-o",
+                str(challenge_executable),
+            ]
+            print("$", shlex.join(challenge_command), flush=True)
+            subprocess.run(challenge_command, check=True)
+            semantic_challenge_executables[name] = challenge_executable
+
             if name in audit_modes:
                 mode = audit_modes[name]
                 audit = audit_main_timing_loop(
@@ -587,6 +745,52 @@ def main() -> None:
                         f"assembly audit failed for measured case {name}: "
                         + "; ".join(errors)
                     )
+
+        timed_main_semantic_challenge_cases: dict[str, dict[str, object]] = {}
+        for name, _ in cases:
+            print(
+                "semantic_challenge "
+                f"case={name} iterations={semantic_challenge_iterations}",
+                flush=True,
+            )
+            completed = subprocess.run(
+                [str(semantic_challenge_executables[name])],
+                cwd=temporary,
+                check=False,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            try:
+                timed_result = parse_contest_timing_output(completed.stdout)
+                parse_error = None
+            except ValueError as error:
+                timed_result = None
+                parse_error = str(error)
+            valid = (
+                completed.returncode == 0
+                and not completed.stderr
+                and "one-round testvector verification: OK (1000 pairs checked)"
+                in completed.stdout
+                and "20-round testvector verification: OK" in completed.stdout
+                and timed_result is not None
+                and timed_result["iterations"] == semantic_challenge_iterations
+                and timed_result["final_state"] == expected_challenge_final_state
+            )
+            if not valid:
+                parser.error(
+                    f"timed-main semantic challenge failed for {name} "
+                    f"(exit {completed.returncode}, parse={parse_error!r})\n"
+                    f"expected_iterations={semantic_challenge_iterations} "
+                    "expected_final_state="
+                    f"{' '.join(expected_challenge_final_state)}\n"
+                    f"stdout:\n{completed.stdout}\nstderr:\n{completed.stderr}"
+                )
+            assert timed_result is not None
+            timed_main_semantic_challenge_cases[name] = {
+                "observed_final_state": list(timed_result["final_state"]),
+                "status": "PASS",
+            }
 
         timed_main_validation_cases: dict[str, dict[str, object]] = {}
         for name, _ in cases:
@@ -678,6 +882,18 @@ def main() -> None:
             if (sample // len(cases)) % 2:
                 order = list(reversed(order))
             for name, _ in order:
+                assert resource is not None
+                try:
+                    child_usage_before = resource.getrusage(
+                        resource.RUSAGE_CHILDREN
+                    )
+                except (OSError, ValueError) as error:
+                    parser.error(
+                        f"cannot read child CPU usage before sample: {error}"
+                    )
+                child_cpu_before = (
+                    child_usage_before.ru_utime + child_usage_before.ru_stime
+                )
                 start_ns = time.perf_counter_ns()
                 completed = subprocess.run(
                     [str(executables[name])],
@@ -688,6 +904,23 @@ def main() -> None:
                     stderr=subprocess.PIPE,
                 )
                 elapsed_s = (time.perf_counter_ns() - start_ns) / 1_000_000_000.0
+                try:
+                    child_usage_after = resource.getrusage(
+                        resource.RUSAGE_CHILDREN
+                    )
+                except (OSError, ValueError) as error:
+                    parser.error(
+                        f"cannot read child CPU usage after sample: {error}"
+                    )
+                child_cpu_s = (
+                    child_usage_after.ru_utime
+                    + child_usage_after.ru_stime
+                    - child_cpu_before
+                )
+                if child_cpu_s <= 0.0:
+                    parser.error(
+                        f"child CPU clock did not advance for measured case {name}"
+                    )
                 try:
                     timed_result = parse_contest_timing_output(completed.stdout)
                     parse_error = None
@@ -713,13 +946,58 @@ def main() -> None:
                     )
                 assert timed_result is not None
                 internal_ns = float(timed_result["internal_ns"])
+                inner_elapsed_s = float(timed_result["total_elapsed_s"])
+                printed_average_us = float(timed_result["printed_average_us"])
                 internal_samples[name].append(internal_ns)
+                inner_elapsed_samples[name].append(inner_elapsed_s)
+                printed_average_samples[name].append(printed_average_us)
                 wall_samples[name].append(elapsed_s)
+                child_cpu_samples[name].append(child_cpu_s)
                 print(
                     f"sample={sample + 1} case={name} "
-                    f"internal_ns={internal_ns:.3f} wall_s={elapsed_s:.6f}",
+                    f"internal_ns={internal_ns:.3f} wall_s={elapsed_s:.6f} "
+                    f"child_cpu_s={child_cpu_s:.6f} "
+                    f"printed_average_us={printed_average_us:.6f}",
                     flush=True,
                 )
+
+    coverage_enforced = args.iterations >= MIN_CHILD_CPU_COVERAGE_ITERATIONS
+    timed_workload_cpu_coverage: dict[str, dict[str, float | str]] = {}
+    for name, _ in cases:
+        coverages = [
+            (internal_ns * args.iterations / 1_000_000_000.0) / child_cpu_s
+            for internal_ns, child_cpu_s in zip(
+                internal_samples[name], child_cpu_samples[name]
+            )
+        ]
+        median_coverage = statistics.median(coverages)
+        status = "PASS" if coverage_enforced else "NOT_ENFORCED"
+        timed_workload_cpu_coverage[name] = {
+            "median_inner_to_child_cpu": median_coverage,
+            "min_inner_to_child_cpu": min(coverages),
+            "max_inner_to_child_cpu": max(coverages),
+            "status": status,
+        }
+        if coverage_enforced and median_coverage < MIN_MEDIAN_CHILD_CPU_COVERAGE:
+            parser.error(
+                "timed workload child-CPU coverage is too low for "
+                f"{name}: median={median_coverage:.6f}, expected at least "
+                f"{MIN_MEDIAN_CHILD_CPU_COVERAGE:.2f}"
+            )
+        if coverage_enforced and median_coverage > MAX_MEDIAN_CHILD_CPU_COVERAGE:
+            parser.error(
+                "timed workload child-CPU coverage is implausibly high for "
+                f"{name}: median={median_coverage:.6f}, expected at most "
+                f"{MAX_MEDIAN_CHILD_CPU_COVERAGE:.2f}"
+            )
+    if coverage_enforced:
+        print("timing_eligibility=eligible child_cpu_coverage=PASS")
+    else:
+        print(
+            "timing_eligibility=diagnostic-only "
+            "reason='iterations below 1000000; child-CPU coverage gate is not "
+            "enforced'"
+        )
 
     summaries: dict[str, dict[str, float | int]] = {}
     print("summary:")
@@ -879,6 +1157,11 @@ def main() -> None:
                 "random_differential_cases": args.random_cases,
                 "candidate_random_differential": True,
                 "timed_main_repeated_call_validation": True,
+                "timed_main_alternate_iteration_challenge": True,
+                "timed_workload_child_cpu_validation": True,
+                "internal_ns_source": (
+                    "printed-total-elapsed-seconds-divided-by-iterations"
+                ),
                 "order": "balanced-cyclic-reversed",
                 "bootstrap_resamples": 5_000,
             },
@@ -909,8 +1192,39 @@ def main() -> None:
                 "oracle": oracle_validation,
                 "cases": timed_main_validation_cases,
             },
+            "timed_main_semantic_challenge": {
+                "mode": "unpredictable-alternate-iteration",
+                "iterations": semantic_challenge_iterations,
+                "derivation": {
+                    **semantic_challenge_derivation_payload,
+                    "digest_sha256": semantic_challenge_digest,
+                },
+                "oracle": semantic_challenge_oracle,
+                "cases": timed_main_semantic_challenge_cases,
+            },
             "internal_ns_per_20round": internal_samples,
+            "inner_elapsed_seconds": inner_elapsed_samples,
+            "printed_average_us_per_20round": printed_average_samples,
             "outer_wall_seconds": wall_samples,
+            "child_cpu_seconds": child_cpu_samples,
+            "timed_workload_cpu_coverage": {
+                "minimum_iterations": MIN_CHILD_CPU_COVERAGE_ITERATIONS,
+                "median_bounds": {
+                    "low": MIN_MEDIAN_CHILD_CPU_COVERAGE,
+                    "high": MAX_MEDIAN_CHILD_CPU_COVERAGE,
+                },
+                "enforced": coverage_enforced,
+                "eligibility": (
+                    "eligible" if coverage_enforced else "diagnostic-only"
+                ),
+                "reason": (
+                    None
+                    if coverage_enforced
+                    else "iterations below 1000000; child-CPU coverage gate "
+                    "is not enforced"
+                ),
+                "cases": timed_workload_cpu_coverage,
+            },
             "summaries": summaries,
             "comparisons": comparisons,
         }

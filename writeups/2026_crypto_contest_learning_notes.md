@@ -11,7 +11,7 @@
 | 번호 | 주제 | 상태 | 최종 결과 | 상세 writeup |
 |---:|---|---|---|---|
 | 1 | 고전 암호와 분류 | 완료 | Caesar shift `6`, Vigenère key `KLVOJ`, 재현 가능한 분류 모델과 식별 불가능성 분석 | [01_암호분석](01_암호분석.md) |
-| 2 | 256비트 permutation 구현 | scalar incumbent 완료·9차 SIMD/compact block/측정 무결성 진단 완료·255H 실측 미정 | `rot={43,7,29,14}`, 2-round scalar full-unroll, 122-insn/549B AVX2와 136B block2 | [02_암호구현](02_암호구현.md) |
+| 2 | 256비트 permutation 구현 | scalar incumbent 완료·10차 counted frontend/codegen/측정 계약 진단 완료·255H 실측 미정 | `rot={43,7,29,14}`, 2-round scalar full-unroll, 122-insn/549B AVX2와 122B/29-static counted block2 | [02_암호구현](02_암호구현.md) |
 | 3 | TLS 1.2 AES-GCM 위조 | 완료 | nonce 재사용으로 `H`와 `E_K(J0)`를 복원하고 유효한 급여 변경 record 생성 | [03_네트워크보안](03_네트워크보안.md) |
 | 4 | LLM weight steganography | 완료 | `CRYPTO{G00D_J0B!_y0u_f0und_7h3_h1dd3n_s3cr37_1n_LLM}` 추출 | [04_디지털포렌식](04_디지털포렌식.md) |
 | 5 | textbook-BGV | 완료 | ternary secret 64계수, 날짜 `20260410→20260411`, 고정 `State` 복원 | [05_동형암호](05_동형암호.md) |
@@ -54,9 +54,12 @@
   1/20라운드를 먼저 검증하고, warm-up 직전 실제 측정 binary 자체를 감사한다.
   score loop의 320개 core 연산과 call/stack/memory 부재, codegen hash와 정렬을
   같은 JSON에 남긴다. 독립 oracle가 계산한 반복 후 256-bit state와 선언한
-  반복 횟수를 semantic preflight, 모든 warm-up·sample process에서도 맞춰야 한다.
-  schema 2--4 raw JSON은 당시 정확성·성능 기록이지만 이 반복 의미 보증은 없는
-  역사 자료로 구분한다.
+  반복 횟수를 semantic preflight, 모든 warm-up·sample process에서도 맞춰야
+  한다. current protocol은 total/average 일치와 total-derived ns, child-CPU
+  coverage, fresh nonce에서 유도한 alternate iteration challenge까지 요구한다.
+  이는 재현한 우회에 대한 방어선이지 모든 악성 C에 대한 암호학적 증명은 아니다.
+  9차 schema-5 JSON은 이 protocol hash 변경 전 역사 자료이고, schema 2--4 raw
+  JSON은 repeated-call 의미 보증도 없는 더 오래된 기록으로 구분한다.
 - 292-byte 작은 portable ROL은 `0.985x (0.958--1.002)`였고, XOR/ADD 저비트
   완전탐색과 120개 GCC/link 조합에서도 채택할 승자가 없었다.
   GCC 13.3에서 `-mtune=alderlake`는 실제 hot-loop schedule을 바꿨고 근사
@@ -136,6 +139,29 @@
   3,000,000회·6 warm-up·32 samples로 schema-5 재측정했다. 새 후보의
   모든 paired bootstrap CI가 1을 포함해, code footprint 감소는 확인했지만
   현 AMD host의 처리량 승자로는 선택하지 않았다. scalar incumbent는 유지한다.
+- 10차는 열 pair의 quotient/remainder 분해를 block 크기 1--10까지 생성했다.
+  exact GCC 13.3·공식 vector·임의 state/상수 100,000건을 통과한 Pareto point는
+  counted block 2의 **122B/29-static/133-dynamic**, block 3+tail 1의
+  **238B/53/129**, counted block 5의 **292B/65/127**이다. 모두 hot memory 0과
+  `100.03/180.03` Alder/Zen-2 dependency proxy를 유지한다. x86 `LOOP`는 더
+  짧은 encoding에도 Intel proxy µop/throughput이 나빠 target 전에는 기각했다.
+- high state를 VEX.vvvv/destination에 두고 low scratch를 ModRM에 두는 세
+  register 배치는 549B baseline과 동률이었다. `VPADDQ` rotate merge도
+  byte/instruction/model tie이고, right-branch XOR은 Intel proxy는 그대로인 채
+  Zen-2 proxy만 `180.03 -> 160.03`이었다. 강제 same-register `ROL`은
+  322 instructions/1,052B로 작지만 Intel proxy가 `RORX`의
+  `121.06 cycles/402 µops`에서 `138.13/482`로 악화됐다. `SHLD`는 serial
+  latency proxy `3.03`으로 `RORX`의 `1.03`보다 길어 full expansion 전에
+  기각했다. 모두 255H 실측이 아닌 정적 선별 결과다.
+- current protocol의 적대적 회귀는 timer 뒤에서 계산을 완성하는 후보를
+  child-CPU coverage로, 알려진 최종 상태를 하드코딩한 후보를 fresh
+  nonce/campaign/source-hash 기반 alternate iteration으로, 출력 average만
+  절반으로 쓰는 후보를 total/average 일치와 total-derived ns로 거절한다.
+- counted block 2/3/5를 full549와 CPU 1/3에서 3,000,000회·6 warm-up·32
+  samples로 측정했다. CPU 1 block 3은 `1.005x (1.001--1.014)`였지만 campaign
+  도중 host 부하가 크게 변했고, CPU 3의 `1.001x (0.997--1.004)`에서
+  재현되지 않았으며 1% 승격 기준에도 못 미쳤다. 나머지 새 후보 interval은
+  1을 포함했다. scalar incumbent를 유지하고 세 후보는 255H target-only로 둔다.
 - `autotune_02_255h.py`는 pinned CPUID와 Linux topology로 P/E/LP-E를 보수적으로
   분류하고 `probe → screen → confirm → decide`를 실행한다. 두 session·core type별
   두 physical core·correctness/assembly gate가 갖춰지지 않으면 winner 대신
@@ -153,8 +179,9 @@
   7개까지 포함한 28-case screen도 직접 검증 28/28과 assembly audit
   28/28을 통과했으며, 짧은 smoke timing은 성능 근거로 쓰지 않았다.
   9차의 549-byte commutative source가 기존 assembly entry를 대체하고 548-byte
-  `DEC` 대조군과 compact block2 두 entry가 추가된 최신 manifest는
-  **30-case**이며, 새 두 entry는 각각 별도 exact audit·random gate를 통과했다.
+  `DEC` 대조군과 기존 compact block2를 더한 상태는 30 case였다. 10차 counted
+  block-2/3/5를 추가한 최신 manifest는 **33-case**이며, 새 세 entry도 각각
+  exact audit·random gate를 통과했다.
 - 측정 도구와 raw 기록은 [02 optimization README](../solutions/02_optimization/README.md),
   [deep review](../solutions/02_optimization/deep_review_02.md),
   [inline raw samples](../solutions/02_optimization/inline_results_02.json),
@@ -174,6 +201,11 @@
   [9차 compact block screen](../solutions/02_optimization/avx2_pair_block_results_02.json),
   [9차 CPU 1 schema-5 timing](../solutions/02_optimization/ninth_wave_timing_02_cpu1.json),
   [9차 CPU 3 schema-5 timing](../solutions/02_optimization/ninth_wave_timing_02_cpu3.json),
+  [10차 counted frontend screen](../solutions/02_optimization/tenth_avx2_counted_frontends_results_02.json),
+  [10차 AVX2 codegen screen](../solutions/02_optimization/tenth_codegen_results_02.json),
+  [10차 scalar rotate screen](../solutions/02_optimization/tenth_codegen_scalar_rotate_results_02.json),
+  [10차 CPU 1 current-schema-5 timing](../solutions/02_optimization/tenth_wave_timing_02_cpu1.json),
+  [10차 CPU 3 current-schema-5 timing](../solutions/02_optimization/tenth_wave_timing_02_cpu3.json),
   [timing stability 진단](../solutions/02_optimization/timing_stability_results_02.json),
   [schedule CPU 0 raw](../solutions/02_optimization/gcc133_schedule_results_02_cpu0.json),
   [schedule CPU 4 raw](../solutions/02_optimization/gcc133_schedule_results_02_cpu4.json),

@@ -1,0 +1,1781 @@
+{
+  "all_checks_passed": true,
+  "cases": {
+    "dec_block10_tail0": {
+      "assembly_sha256": "841f542523cdde6e4fe3ed33dc2a28a174184f0e93101986f29595fd10185994",
+      "binary_audit": {
+        "binary_sha256": "f734a3e8ee3c146b38983c2ba1f4586f6fefa8f0e8cabe099b9d03025b8b43cf",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "legacy_addressed_loop_sha256": "fb7c170c1ed2bc9d7262b625b9298f64b053d13bc1637edae66a83e3d8923a32",
+        "loop_bytes": 562,
+        "loop_instructions": 125,
+        "loop_start": "0x4014f0",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "dec": 1,
+          "jne": 2,
+          "mov": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "58c0c91b802ebdb5164dba5e1fbf11255aa6dcba513ac00d153f30403298eb10",
+        "push_pop": 0,
+        "text_bytes": 6223
+      },
+      "block_pairs": 10,
+      "control": "dec/jne",
+      "dynamic_trace": {
+        "alignment_padding_excluded": true,
+        "binary_alignment_nop_instructions": 0,
+        "instruction_scope": "modeled non-padding instructions",
+        "instructions": 125,
+        "instructions_including_binary_alignment_nops": 125,
+        "method": "exact-GCC-assembly-CFG-expansion-one-outer-iteration-v1",
+        "mnemonics": {
+          "decl": 1,
+          "jne": 2,
+          "movl": 1,
+          "subl": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "sha256": "ea60c2f82b6289333d605240ba7e25c67a1857ca5f514d3dfee461b8073550d3"
+      },
+      "included_sources": [],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 20.8,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 125.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "total_instructions": 12500,
+          "total_uops": 12500,
+          "uops_per_iteration": 125.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 125.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "total_instructions": 12500,
+          "total_uops": 12500,
+          "uops_per_iteration": 125.0
+        }
+      },
+      "loop_text_sha256": "7729ad9639229b507399be56f38eec90e9e211d43a133cc01d505800494a36e4",
+      "measured_binary_assembled_from_reported_assembly": true,
+      "name": "dec_block10_tail0",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "required_stdout_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK",
+          "benchmark final state = 407b6c00d4644ffb 7b5eeeeb7bbbfd53 787627ff592edbdb 942319215bb84f88"
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_vectors": 1,
+        "validated_stdout_lines_sha256": "ee989e9dbe8571ce5f2a8b2f82251550c0ccaf80c3264edaf0a95928ac5f1d3f"
+      },
+      "persistent_source": null,
+      "quotient": 1,
+      "remainder_pairs": 0,
+      "source": "sources/dec_block10_tail0.c",
+      "source_sha256": "360eb0af1dd36d005159a81df4e724ee3adb9624256a6c376ec6b2ea11d36539",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "stdout_sha256": "1884f2cd986b4c5fd3d7e2f52e2482e518aa563f83fc7fe811cbbfd4dcff30c9"
+      }
+    },
+    "dec_block1_tail0": {
+      "assembly_sha256": "87b3e602bb454e19f6d7abf6649111fc0ce338f916a8c84f796578a486f3b106",
+      "binary_audit": {
+        "binary_sha256": "fb649d3b910a7a72069a9f6b62ae03ed9c228cff9d4d907211f1c95f398b3c4d",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "legacy_addressed_loop_sha256": "28274b6a4820768c73b1c90d57f88b96d5d8618268027664e003c828e8510d1e",
+        "loop_bytes": 68,
+        "loop_instructions": 17,
+        "loop_start": "0x4014f0",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "dec": 1,
+          "jne": 2,
+          "mov": 1,
+          "sub": 1,
+          "vpaddq": 2,
+          "vpor": 2,
+          "vpshufb": 2,
+          "vpsllvq": 2,
+          "vpsrlvq": 2,
+          "vpxor": 2
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "2ba3af9f0c76e2a0bdb94014be2b9a1d6aeb1f111f2028a5d2b8f2a2de0831b2",
+        "push_pop": 0,
+        "text_bytes": 5237
+      },
+      "block_pairs": 1,
+      "control": "dec/jne",
+      "dynamic_trace": {
+        "alignment_padding_excluded": true,
+        "binary_alignment_nop_instructions": 0,
+        "instruction_scope": "modeled non-padding instructions",
+        "instructions": 143,
+        "instructions_including_binary_alignment_nops": 143,
+        "method": "exact-GCC-assembly-CFG-expansion-one-outer-iteration-v1",
+        "mnemonics": {
+          "decl": 10,
+          "jne": 11,
+          "movl": 1,
+          "subl": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "sha256": "a92eb1ac2a7f3f93fdbd4445f9023b6d436b821a5f25fed875298775b67a491e"
+      },
+      "included_sources": [],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 23.8,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 143.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "total_instructions": 14300,
+          "total_uops": 14300,
+          "uops_per_iteration": 143.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 143.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "total_instructions": 14300,
+          "total_uops": 14300,
+          "uops_per_iteration": 143.0
+        }
+      },
+      "loop_text_sha256": "1914a90d650970a429449ba72e5f611d0d868c3fa8fac149fe5ac83c1323504e",
+      "measured_binary_assembled_from_reported_assembly": true,
+      "name": "dec_block1_tail0",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "required_stdout_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK",
+          "benchmark final state = 407b6c00d4644ffb 7b5eeeeb7bbbfd53 787627ff592edbdb 942319215bb84f88"
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_vectors": 1,
+        "validated_stdout_lines_sha256": "ee989e9dbe8571ce5f2a8b2f82251550c0ccaf80c3264edaf0a95928ac5f1d3f"
+      },
+      "persistent_source": null,
+      "quotient": 10,
+      "remainder_pairs": 0,
+      "source": "sources/dec_block1_tail0.c",
+      "source_sha256": "75b1def975012321d5d9500d31230ce90ab119d5b71ba930d0e7e0f54de423f0",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "stdout_sha256": "1884f2cd986b4c5fd3d7e2f52e2482e518aa563f83fc7fe811cbbfd4dcff30c9"
+      }
+    },
+    "dec_block2_tail0": {
+      "assembly_sha256": "17aa6306fce6de9578071172d028963c49d947d5631f66511711ba9bad8aca32",
+      "binary_audit": {
+        "binary_sha256": "32300d0648f7d2ae99ebc50dadc8d8e16ca6783b7d04794252715f364e4a54aa",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "legacy_addressed_loop_sha256": "e6bb5d8447565192c3709f28ade28d88ecb1861c8574478e8d3884b4348e8f69",
+        "loop_bytes": 122,
+        "loop_instructions": 29,
+        "loop_start": "0x4014f0",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "dec": 1,
+          "jne": 2,
+          "mov": 1,
+          "sub": 1,
+          "vpaddq": 4,
+          "vpor": 4,
+          "vpshufb": 4,
+          "vpsllvq": 4,
+          "vpsrlvq": 4,
+          "vpxor": 4
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "0932632d29a89be9509dcbb662428c1f0e5dd49cdd55b1516d3b21684e5f5479",
+        "push_pop": 0,
+        "text_bytes": 5339
+      },
+      "block_pairs": 2,
+      "control": "dec/jne",
+      "dynamic_trace": {
+        "alignment_padding_excluded": true,
+        "binary_alignment_nop_instructions": 0,
+        "instruction_scope": "modeled non-padding instructions",
+        "instructions": 133,
+        "instructions_including_binary_alignment_nops": 133,
+        "method": "exact-GCC-assembly-CFG-expansion-one-outer-iteration-v1",
+        "mnemonics": {
+          "decl": 5,
+          "jne": 6,
+          "movl": 1,
+          "subl": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "sha256": "60aa7935e5515a335f99537ba4fba1d4dd298fd6b5311ac68c35a3217a6374b8"
+      },
+      "included_sources": [
+        {
+          "persistent_source": "solutions/02_optimization/contest_simd_avx2_pair_block3_tail1.c",
+          "sha256": "0949c99dc62759259244b31a0c2644ddbdf0682437585c674dd6d2dbb15bc559",
+          "source": "sources/contest_simd_avx2_pair_block3_tail1.c"
+        }
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 22.2,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 133.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "total_instructions": 13300,
+          "total_uops": 13300,
+          "uops_per_iteration": 133.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 133.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "total_instructions": 13300,
+          "total_uops": 13300,
+          "uops_per_iteration": 133.0
+        }
+      },
+      "loop_text_sha256": "3e947b508f2ec4f0e6ce070550e61222da022800a1b758d8708361b0fb2d100c",
+      "measured_binary_assembled_from_reported_assembly": true,
+      "name": "dec_block2_tail0",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "required_stdout_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK",
+          "benchmark final state = 407b6c00d4644ffb 7b5eeeeb7bbbfd53 787627ff592edbdb 942319215bb84f88"
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_vectors": 1,
+        "validated_stdout_lines_sha256": "ee989e9dbe8571ce5f2a8b2f82251550c0ccaf80c3264edaf0a95928ac5f1d3f"
+      },
+      "persistent_source": "solutions/02_optimization/contest_simd_avx2_pair_block2_counted.c",
+      "quotient": 5,
+      "remainder_pairs": 0,
+      "source": "sources/contest_simd_avx2_pair_block2_counted.c",
+      "source_sha256": "154b2e449296c6130bf8e108a949443fb901ac6479f4e028cbf7420d9d109c60",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "stdout_sha256": "1884f2cd986b4c5fd3d7e2f52e2482e518aa563f83fc7fe811cbbfd4dcff30c9"
+      }
+    },
+    "dec_block3_tail1": {
+      "assembly_sha256": "81302a6daea7fff3cb8ea5fa221d4c79a4151f8e9995ce1b4acb0bc005c717e8",
+      "binary_audit": {
+        "binary_sha256": "c568b8844ea02e2f835ef6e4f01407368b05d3ac02c6f61e72f9abba4a34e6af",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "legacy_addressed_loop_sha256": "c33fdef5ef98ddce2bfeda8c163ca70c4bba106c92874ea6ac065d7854c67f02",
+        "loop_bytes": 238,
+        "loop_instructions": 53,
+        "loop_start": "0x4014f0",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "dec": 1,
+          "jne": 2,
+          "mov": 1,
+          "sub": 1,
+          "vpaddq": 8,
+          "vpor": 8,
+          "vpshufb": 8,
+          "vpsllvq": 8,
+          "vpsrlvq": 8,
+          "vpxor": 8
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "f75f5e31a9bb35da3d00709540270051d129a64dd7a913d52c059dda09026a9a",
+        "push_pop": 0,
+        "text_bytes": 5579
+      },
+      "block_pairs": 3,
+      "control": "dec/jne",
+      "dynamic_trace": {
+        "alignment_padding_excluded": true,
+        "binary_alignment_nop_instructions": 0,
+        "instruction_scope": "modeled non-padding instructions",
+        "instructions": 129,
+        "instructions_including_binary_alignment_nops": 129,
+        "method": "exact-GCC-assembly-CFG-expansion-one-outer-iteration-v1",
+        "mnemonics": {
+          "decl": 3,
+          "jne": 4,
+          "movl": 1,
+          "subl": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "sha256": "dbe1cf4a68242a90b97ac4c25088b612eec4e6f360c04ae17ac9d72f6f0c6046"
+      },
+      "included_sources": [],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 21.5,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 129.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "total_instructions": 12900,
+          "total_uops": 12900,
+          "uops_per_iteration": 129.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 129.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "total_instructions": 12900,
+          "total_uops": 12900,
+          "uops_per_iteration": 129.0
+        }
+      },
+      "loop_text_sha256": "1c0c602aee90cdbd12e2da3ccf7e7176e77a5690a3337ae5048700216e3ec030",
+      "measured_binary_assembled_from_reported_assembly": true,
+      "name": "dec_block3_tail1",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "required_stdout_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK",
+          "benchmark final state = 407b6c00d4644ffb 7b5eeeeb7bbbfd53 787627ff592edbdb 942319215bb84f88"
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_vectors": 1,
+        "validated_stdout_lines_sha256": "ee989e9dbe8571ce5f2a8b2f82251550c0ccaf80c3264edaf0a95928ac5f1d3f"
+      },
+      "persistent_source": "solutions/02_optimization/contest_simd_avx2_pair_block3_tail1.c",
+      "quotient": 3,
+      "remainder_pairs": 1,
+      "source": "sources/contest_simd_avx2_pair_block3_tail1.c",
+      "source_sha256": "0949c99dc62759259244b31a0c2644ddbdf0682437585c674dd6d2dbb15bc559",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "stdout_sha256": "1884f2cd986b4c5fd3d7e2f52e2482e518aa563f83fc7fe811cbbfd4dcff30c9"
+      }
+    },
+    "dec_block4_tail2": {
+      "assembly_sha256": "29d771bc640be39db99917b0329d90d0dd9f8bc45b6bb0a3f751fb7050cec1af",
+      "binary_audit": {
+        "binary_sha256": "59363a190f2d49061a6c246d3beac97d9a309e890be30f0ce3190371b21704af",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "legacy_addressed_loop_sha256": "182cc31fc53a2e122a2849551f2b1a9bb3378942ec6eb4cca4d2fb3ba1ed3b6a",
+        "loop_bytes": 346,
+        "loop_instructions": 77,
+        "loop_start": "0x4014f0",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "dec": 1,
+          "jne": 2,
+          "mov": 1,
+          "sub": 1,
+          "vpaddq": 12,
+          "vpor": 12,
+          "vpshufb": 12,
+          "vpsllvq": 12,
+          "vpsrlvq": 12,
+          "vpxor": 12
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "9337a0d111982dad7e1fdc74121d3caf8824ab74ab958989a621418d9ac524d6",
+        "push_pop": 0,
+        "text_bytes": 5783
+      },
+      "block_pairs": 4,
+      "control": "dec/jne",
+      "dynamic_trace": {
+        "alignment_padding_excluded": true,
+        "binary_alignment_nop_instructions": 0,
+        "instruction_scope": "modeled non-padding instructions",
+        "instructions": 127,
+        "instructions_including_binary_alignment_nops": 127,
+        "method": "exact-GCC-assembly-CFG-expansion-one-outer-iteration-v1",
+        "mnemonics": {
+          "decl": 2,
+          "jne": 3,
+          "movl": 1,
+          "subl": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "sha256": "f19ae56cddf34a6bea622736b3ff2afaaf065b7d46bb72e4adfd94bda043c5d2"
+      },
+      "included_sources": [],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 21.2,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 127.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "total_instructions": 12700,
+          "total_uops": 12700,
+          "uops_per_iteration": 127.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 127.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "total_instructions": 12700,
+          "total_uops": 12700,
+          "uops_per_iteration": 127.0
+        }
+      },
+      "loop_text_sha256": "c83b647a292e2ce960f338436adadd8c10ec0e8d2c664048ed4cbc91c4dbb1b0",
+      "measured_binary_assembled_from_reported_assembly": true,
+      "name": "dec_block4_tail2",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "required_stdout_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK",
+          "benchmark final state = 407b6c00d4644ffb 7b5eeeeb7bbbfd53 787627ff592edbdb 942319215bb84f88"
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_vectors": 1,
+        "validated_stdout_lines_sha256": "ee989e9dbe8571ce5f2a8b2f82251550c0ccaf80c3264edaf0a95928ac5f1d3f"
+      },
+      "persistent_source": null,
+      "quotient": 2,
+      "remainder_pairs": 2,
+      "source": "sources/dec_block4_tail2.c",
+      "source_sha256": "b1163607cd06872f85f6fd771680e7114327f231e57774e5a30d9ce0615a11dd",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "stdout_sha256": "1884f2cd986b4c5fd3d7e2f52e2482e518aa563f83fc7fe811cbbfd4dcff30c9"
+      }
+    },
+    "dec_block5_tail0": {
+      "assembly_sha256": "b93f10912394d2364c4dbc9dc39a7063d7144ff3747750b0a8ac50c3ee1c233c",
+      "binary_audit": {
+        "binary_sha256": "df136827a2b606c0ed2ce0b36b57c6c841666c7cc8a4e8509add83a3ab25e6d0",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "legacy_addressed_loop_sha256": "7fc9dbf2ab1293852bd18a22071fdbdf98920a833ac8330a41f070f9d04c14f6",
+        "loop_bytes": 292,
+        "loop_instructions": 65,
+        "loop_start": "0x4014f0",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "dec": 1,
+          "jne": 2,
+          "mov": 1,
+          "sub": 1,
+          "vpaddq": 10,
+          "vpor": 10,
+          "vpshufb": 10,
+          "vpsllvq": 10,
+          "vpsrlvq": 10,
+          "vpxor": 10
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "8c61610f7432ff25ab28db40a19332144faff3f2da106c956476858dae8ea6a9",
+        "push_pop": 0,
+        "text_bytes": 5681
+      },
+      "block_pairs": 5,
+      "control": "dec/jne",
+      "dynamic_trace": {
+        "alignment_padding_excluded": true,
+        "binary_alignment_nop_instructions": 0,
+        "instruction_scope": "modeled non-padding instructions",
+        "instructions": 127,
+        "instructions_including_binary_alignment_nops": 127,
+        "method": "exact-GCC-assembly-CFG-expansion-one-outer-iteration-v1",
+        "mnemonics": {
+          "decl": 2,
+          "jne": 3,
+          "movl": 1,
+          "subl": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "sha256": "febd06148799770c01097dec16b8cc379efe04e66509190720a4b13e4e849c90"
+      },
+      "included_sources": [
+        {
+          "persistent_source": "solutions/02_optimization/contest_simd_avx2_pair_block3_tail1.c",
+          "sha256": "0949c99dc62759259244b31a0c2644ddbdf0682437585c674dd6d2dbb15bc559",
+          "source": "sources/contest_simd_avx2_pair_block3_tail1.c"
+        }
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 21.2,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 127.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "total_instructions": 12700,
+          "total_uops": 12700,
+          "uops_per_iteration": 127.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 127.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "total_instructions": 12700,
+          "total_uops": 12700,
+          "uops_per_iteration": 127.0
+        }
+      },
+      "loop_text_sha256": "8f3aee4aea10dce73c2fc77138dcdfb2a4860035c8e09bd649e34251b355db47",
+      "measured_binary_assembled_from_reported_assembly": true,
+      "name": "dec_block5_tail0",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "required_stdout_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK",
+          "benchmark final state = 407b6c00d4644ffb 7b5eeeeb7bbbfd53 787627ff592edbdb 942319215bb84f88"
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_vectors": 1,
+        "validated_stdout_lines_sha256": "ee989e9dbe8571ce5f2a8b2f82251550c0ccaf80c3264edaf0a95928ac5f1d3f"
+      },
+      "persistent_source": "solutions/02_optimization/contest_simd_avx2_pair_block5_counted.c",
+      "quotient": 2,
+      "remainder_pairs": 0,
+      "source": "sources/contest_simd_avx2_pair_block5_counted.c",
+      "source_sha256": "5e7404a3319b6efb097002d7ddc67719387fa85d85e8a01ab32ec63e9dded3b1",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "stdout_sha256": "1884f2cd986b4c5fd3d7e2f52e2482e518aa563f83fc7fe811cbbfd4dcff30c9"
+      }
+    },
+    "dec_block6_tail4": {
+      "assembly_sha256": "6ca47bdd3e6a81098b1ecf9c853da934c4c0862bf3d312aae0305836eef3ab9b",
+      "binary_audit": {
+        "binary_sha256": "6d441e588293269859c4e8a05b3e417dca59e9768ce3f49bfdc2b6d6be2558f1",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "legacy_addressed_loop_sha256": "cfcbb60adf5eb7bd7b17321939903a119aba1a2b54d93dc9327edbd372841d01",
+        "loop_bytes": 562,
+        "loop_instructions": 125,
+        "loop_start": "0x4014f0",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "dec": 1,
+          "jne": 2,
+          "mov": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "feb7ffb17480017e565c39566ec3efd8103fb7c14a84e461cc776ccaaa6ad96f",
+        "push_pop": 0,
+        "text_bytes": 6223
+      },
+      "block_pairs": 6,
+      "control": "dec/jne",
+      "dynamic_trace": {
+        "alignment_padding_excluded": true,
+        "binary_alignment_nop_instructions": 0,
+        "instruction_scope": "modeled non-padding instructions",
+        "instructions": 125,
+        "instructions_including_binary_alignment_nops": 125,
+        "method": "exact-GCC-assembly-CFG-expansion-one-outer-iteration-v1",
+        "mnemonics": {
+          "decl": 1,
+          "jne": 2,
+          "movl": 1,
+          "subl": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "sha256": "cdcc77332cf4dbee55313079eab091bc0fcf3a92d2375157119829056b0d5793"
+      },
+      "included_sources": [],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 20.8,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 125.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "total_instructions": 12500,
+          "total_uops": 12500,
+          "uops_per_iteration": 125.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 125.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "total_instructions": 12500,
+          "total_uops": 12500,
+          "uops_per_iteration": 125.0
+        }
+      },
+      "loop_text_sha256": "b2de24fad6e04ea70ffb850034ebb1441439f10e7873d7899963fd704332bd57",
+      "measured_binary_assembled_from_reported_assembly": true,
+      "name": "dec_block6_tail4",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "required_stdout_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK",
+          "benchmark final state = 407b6c00d4644ffb 7b5eeeeb7bbbfd53 787627ff592edbdb 942319215bb84f88"
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_vectors": 1,
+        "validated_stdout_lines_sha256": "ee989e9dbe8571ce5f2a8b2f82251550c0ccaf80c3264edaf0a95928ac5f1d3f"
+      },
+      "persistent_source": null,
+      "quotient": 1,
+      "remainder_pairs": 4,
+      "source": "sources/dec_block6_tail4.c",
+      "source_sha256": "7735965487bb3b2027419c33352da3f24b2a9406afe6e50add10d27e8a6d46c1",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "stdout_sha256": "1884f2cd986b4c5fd3d7e2f52e2482e518aa563f83fc7fe811cbbfd4dcff30c9"
+      }
+    },
+    "dec_block7_tail3": {
+      "assembly_sha256": "ef7609faf330706990a5c38b87845ad07b82d2e21bf9718591fb454c89e759e6",
+      "binary_audit": {
+        "binary_sha256": "14fbf53520c271e377fc44079389f2e831499ed3de5842ea71b5d5fdfabed7ef",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "legacy_addressed_loop_sha256": "42f23d46d1aea5782c84c6b7397ff1d575c97415306bc9594875bd1a9635fc1e",
+        "loop_bytes": 562,
+        "loop_instructions": 125,
+        "loop_start": "0x4014f0",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "dec": 1,
+          "jne": 2,
+          "mov": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "6c572fb4288bd8357c96cde9aa8680008f986437a4b9af35e70586746dfa0352",
+        "push_pop": 0,
+        "text_bytes": 6223
+      },
+      "block_pairs": 7,
+      "control": "dec/jne",
+      "dynamic_trace": {
+        "alignment_padding_excluded": true,
+        "binary_alignment_nop_instructions": 0,
+        "instruction_scope": "modeled non-padding instructions",
+        "instructions": 125,
+        "instructions_including_binary_alignment_nops": 125,
+        "method": "exact-GCC-assembly-CFG-expansion-one-outer-iteration-v1",
+        "mnemonics": {
+          "decl": 1,
+          "jne": 2,
+          "movl": 1,
+          "subl": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "sha256": "9122ccbb35d73553088a21ffe93816a0ced56c2be0c6447a6f9497d2a6cdd550"
+      },
+      "included_sources": [],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 20.8,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 125.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "total_instructions": 12500,
+          "total_uops": 12500,
+          "uops_per_iteration": 125.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 125.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "total_instructions": 12500,
+          "total_uops": 12500,
+          "uops_per_iteration": 125.0
+        }
+      },
+      "loop_text_sha256": "cd6f42dc2de1933de13bfc762f279b7d6a4f7eb2a0df24d1c0615f9bc59a7e16",
+      "measured_binary_assembled_from_reported_assembly": true,
+      "name": "dec_block7_tail3",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "required_stdout_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK",
+          "benchmark final state = 407b6c00d4644ffb 7b5eeeeb7bbbfd53 787627ff592edbdb 942319215bb84f88"
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_vectors": 1,
+        "validated_stdout_lines_sha256": "ee989e9dbe8571ce5f2a8b2f82251550c0ccaf80c3264edaf0a95928ac5f1d3f"
+      },
+      "persistent_source": null,
+      "quotient": 1,
+      "remainder_pairs": 3,
+      "source": "sources/dec_block7_tail3.c",
+      "source_sha256": "dc65439d256c58016b72a2f5b556826e29092df4302fbe636b261c05fa8104c3",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "stdout_sha256": "1884f2cd986b4c5fd3d7e2f52e2482e518aa563f83fc7fe811cbbfd4dcff30c9"
+      }
+    },
+    "dec_block8_tail2": {
+      "assembly_sha256": "199af438a1ef821d0e25ac61e03aeb5453f1ba634e7862ec833f6a1bf9192386",
+      "binary_audit": {
+        "binary_sha256": "d54aded81044a82e67bbb5bd9f93a0d7b8b48e9d5ac37ac15a536cf78587b911",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "legacy_addressed_loop_sha256": "9f8556fa8ec3c70ffe6071a5d13fd982c6245f7f59bd3190b575a513c2c62f9d",
+        "loop_bytes": 562,
+        "loop_instructions": 125,
+        "loop_start": "0x4014f0",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "dec": 1,
+          "jne": 2,
+          "mov": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "ba231e73b21b0fb9b8486c703bff398b74cfe3b28c5ea7d8c95fde02730f16f4",
+        "push_pop": 0,
+        "text_bytes": 6223
+      },
+      "block_pairs": 8,
+      "control": "dec/jne",
+      "dynamic_trace": {
+        "alignment_padding_excluded": true,
+        "binary_alignment_nop_instructions": 0,
+        "instruction_scope": "modeled non-padding instructions",
+        "instructions": 125,
+        "instructions_including_binary_alignment_nops": 125,
+        "method": "exact-GCC-assembly-CFG-expansion-one-outer-iteration-v1",
+        "mnemonics": {
+          "decl": 1,
+          "jne": 2,
+          "movl": 1,
+          "subl": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "sha256": "bdebc3be0c47d1afcc0333ee05cd254fff0bd29136eb17d5424b17fa80846391"
+      },
+      "included_sources": [],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 20.8,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 125.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "total_instructions": 12500,
+          "total_uops": 12500,
+          "uops_per_iteration": 125.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 125.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "total_instructions": 12500,
+          "total_uops": 12500,
+          "uops_per_iteration": 125.0
+        }
+      },
+      "loop_text_sha256": "845f735103e857afa7c91f56aebd5ec4a49afd8e0c8cc68bf810053803e089c7",
+      "measured_binary_assembled_from_reported_assembly": true,
+      "name": "dec_block8_tail2",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "required_stdout_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK",
+          "benchmark final state = 407b6c00d4644ffb 7b5eeeeb7bbbfd53 787627ff592edbdb 942319215bb84f88"
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_vectors": 1,
+        "validated_stdout_lines_sha256": "ee989e9dbe8571ce5f2a8b2f82251550c0ccaf80c3264edaf0a95928ac5f1d3f"
+      },
+      "persistent_source": null,
+      "quotient": 1,
+      "remainder_pairs": 2,
+      "source": "sources/dec_block8_tail2.c",
+      "source_sha256": "fd14d9329d7195fd037a5bad785dea80bebff21c431a93744611d76595559cf9",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "stdout_sha256": "1884f2cd986b4c5fd3d7e2f52e2482e518aa563f83fc7fe811cbbfd4dcff30c9"
+      }
+    },
+    "dec_block9_tail1": {
+      "assembly_sha256": "34c51f1e697652454c58f87f85db789a108aac4f4419501ad77ddbf131dfda90",
+      "binary_audit": {
+        "binary_sha256": "75ddf3482353a974459b25cd779829a4acb2cb48c4d68787fd951aebbcb78cb2",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "legacy_addressed_loop_sha256": "bffd89ccf4c31d76fd4fdd59ffd499f22e490a0216d812f5407f80c59b235f2b",
+        "loop_bytes": 562,
+        "loop_instructions": 125,
+        "loop_start": "0x4014f0",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "dec": 1,
+          "jne": 2,
+          "mov": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "7432f9eb382ab934e1dd6d35c999c38d57a615d556b063c15d904695fe603290",
+        "push_pop": 0,
+        "text_bytes": 6223
+      },
+      "block_pairs": 9,
+      "control": "dec/jne",
+      "dynamic_trace": {
+        "alignment_padding_excluded": true,
+        "binary_alignment_nop_instructions": 0,
+        "instruction_scope": "modeled non-padding instructions",
+        "instructions": 125,
+        "instructions_including_binary_alignment_nops": 125,
+        "method": "exact-GCC-assembly-CFG-expansion-one-outer-iteration-v1",
+        "mnemonics": {
+          "decl": 1,
+          "jne": 2,
+          "movl": 1,
+          "subl": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "sha256": "d1b4ffdd10a2e5eeb1788edede63619716882825906aeb6bb4c3fabb349de67e"
+      },
+      "included_sources": [],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 20.8,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 125.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "total_instructions": 12500,
+          "total_uops": 12500,
+          "uops_per_iteration": 125.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 125.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "total_instructions": 12500,
+          "total_uops": 12500,
+          "uops_per_iteration": 125.0
+        }
+      },
+      "loop_text_sha256": "f2305e55907aa04b1802364a3912d2d11bd9103a7192c0d81b876b7506ccc99b",
+      "measured_binary_assembled_from_reported_assembly": true,
+      "name": "dec_block9_tail1",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "required_stdout_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK",
+          "benchmark final state = 407b6c00d4644ffb 7b5eeeeb7bbbfd53 787627ff592edbdb 942319215bb84f88"
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_vectors": 1,
+        "validated_stdout_lines_sha256": "ee989e9dbe8571ce5f2a8b2f82251550c0ccaf80c3264edaf0a95928ac5f1d3f"
+      },
+      "persistent_source": null,
+      "quotient": 1,
+      "remainder_pairs": 1,
+      "source": "sources/dec_block9_tail1.c",
+      "source_sha256": "a943f9ca5810e3ca172992b29603627e616457bff86f77521ac8d129ab6bbe39",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "stdout_sha256": "1884f2cd986b4c5fd3d7e2f52e2482e518aa563f83fc7fe811cbbfd4dcff30c9"
+      }
+    },
+    "full_inline": {
+      "assembly_sha256": "47e06cc366cac5dc861bfa0877cf0a0693090a0a0c75e59e172792d911c1ac76",
+      "binary_audit": {
+        "binary_sha256": "c014850ce80925e4c8fc86eae00b8ce1143cfa2f2831c5fe07e96eaba39ad4f2",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "legacy_addressed_loop_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "loop_bytes": 549,
+        "loop_instructions": 122,
+        "loop_start": "0x401500",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 0,
+        "loop_start_mod_64": 0,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "text_bytes": 6210
+      },
+      "block_pairs": 10,
+      "control": "none",
+      "dynamic_trace": {
+        "alignment_padding_excluded": true,
+        "binary_alignment_nop_instructions": 0,
+        "instruction_scope": "modeled non-padding instructions",
+        "instructions": 122,
+        "instructions_including_binary_alignment_nops": 122,
+        "method": "exact-GCC-assembly-CFG-expansion-one-outer-iteration-v1",
+        "mnemonics": {
+          "jne": 1,
+          "subl": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "sha256": "721c7389a888bc06f652d872dba235799e2e8478c4545d92ca184e97cf294e8a"
+      },
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 20.3,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "total_instructions": 12200,
+          "total_uops": 12200,
+          "uops_per_iteration": 122.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "total_instructions": 12200,
+          "total_uops": 12200,
+          "uops_per_iteration": 122.0
+        }
+      },
+      "loop_text_sha256": "d4b44e5d380575cb57312eac7f6d4e718e7f0de3577585c13b7617eaf231a0e7",
+      "measured_binary_assembled_from_reported_assembly": true,
+      "name": "full_inline",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "required_stdout_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK",
+          "benchmark final state = 407b6c00d4644ffb 7b5eeeeb7bbbfd53 787627ff592edbdb 942319215bb84f88"
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_vectors": 1,
+        "validated_stdout_lines_sha256": "ee989e9dbe8571ce5f2a8b2f82251550c0ccaf80c3264edaf0a95928ac5f1d3f"
+      },
+      "persistent_source": "solutions/02_optimization/contest_simd_avx2_inline_asm.c",
+      "quotient": 1,
+      "remainder_pairs": 0,
+      "source": "sources/full_inline.c",
+      "source_sha256": "c6f43f26dcf1bb0cd83d51dd52495e264c6b8303c0b06e89cb84b1cae62d45dc",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "stdout_sha256": "1884f2cd986b4c5fd3d7e2f52e2482e518aa563f83fc7fe811cbbfd4dcff30c9"
+      }
+    },
+    "loop_block1_tail0": {
+      "assembly_sha256": "8bea7c4743c31a159c41b8eedf381a4a6ddfad1752c5084dc729b2a1b3340057",
+      "binary_audit": {
+        "binary_sha256": "c4fa540cfcd0934df9b28fc3a3a5380fd8bb3f804937b99755e5db806a668b6a",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "legacy_addressed_loop_sha256": "290ac3a9d059a6f3bbb482128bca61a91e2688456587ed177bbae1f7d30759b2",
+        "loop_bytes": 66,
+        "loop_instructions": 16,
+        "loop_start": "0x4014f0",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "jne": 1,
+          "loop": 1,
+          "mov": 1,
+          "sub": 1,
+          "vpaddq": 2,
+          "vpor": 2,
+          "vpshufb": 2,
+          "vpsllvq": 2,
+          "vpsrlvq": 2,
+          "vpxor": 2
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "e46246ab94361c4258b2bb49401739ce5648e213d76fb567865b0afa5644a07f",
+        "push_pop": 0,
+        "text_bytes": 5235
+      },
+      "block_pairs": 1,
+      "control": "x86 loop",
+      "dynamic_trace": {
+        "alignment_padding_excluded": true,
+        "binary_alignment_nop_instructions": 0,
+        "instruction_scope": "modeled non-padding instructions",
+        "instructions": 133,
+        "instructions_including_binary_alignment_nops": 133,
+        "method": "exact-GCC-assembly-CFG-expansion-one-outer-iteration-v1",
+        "mnemonics": {
+          "jne": 1,
+          "loop": 10,
+          "movl": 1,
+          "subl": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "sha256": "ff4d63345f8cfba6560b53ccf0ef774213753269edb26832a6a2853da3ced158"
+      },
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 32.2,
+          "cycles_per_iteration": 100.07,
+          "instructions_per_iteration": 133.0,
+          "iterations": 100,
+          "total_cycles": 10007,
+          "total_instructions": 13300,
+          "total_uops": 19300,
+          "uops_per_iteration": 193.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 133.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "total_instructions": 13300,
+          "total_uops": 13300,
+          "uops_per_iteration": 133.0
+        }
+      },
+      "loop_text_sha256": "77d4128ed1dea6b3eb817101698ce41a69f99b3cf570df1c43d5b8a76d1157c6",
+      "measured_binary_assembled_from_reported_assembly": true,
+      "name": "loop_block1_tail0",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "required_stdout_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK",
+          "benchmark final state = 407b6c00d4644ffb 7b5eeeeb7bbbfd53 787627ff592edbdb 942319215bb84f88"
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_vectors": 1,
+        "validated_stdout_lines_sha256": "ee989e9dbe8571ce5f2a8b2f82251550c0ccaf80c3264edaf0a95928ac5f1d3f"
+      },
+      "persistent_source": null,
+      "quotient": 10,
+      "remainder_pairs": 0,
+      "source": "sources/loop_block1_tail0.c",
+      "source_sha256": "cbafa8f00958994a60098a9b1160a1c6467824870332447b43544c5179522e22",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "stdout_sha256": "1884f2cd986b4c5fd3d7e2f52e2482e518aa563f83fc7fe811cbbfd4dcff30c9"
+      }
+    },
+    "loop_block2_tail0": {
+      "assembly_sha256": "32b7305cbc0dad309b3a5c23a23ee943d68dd632dc1fbaa0263e653ba48cdff0",
+      "binary_audit": {
+        "binary_sha256": "3b9452cc2f2df5a2b11476d502c7fc55e9a9b0ba34d3055f5f26ce60821f66fb",
+        "calls": 0,
+        "core_counts": {
+          "add_or_lea": 0,
+          "bswap": 0,
+          "rotate": 0,
+          "xor": 0
+        },
+        "legacy_addressed_loop_sha256": "a9c0d01dbc9b7fb7a344ba199e3a36ac0cf04efc0b6abb58eeb6b3a41e1fd09a",
+        "loop_bytes": 120,
+        "loop_instructions": 28,
+        "loop_start": "0x4014f0",
+        "loop_start_mod_16": 0,
+        "loop_start_mod_32": 16,
+        "loop_start_mod_64": 48,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "jne": 1,
+          "loop": 1,
+          "mov": 1,
+          "sub": 1,
+          "vpaddq": 4,
+          "vpor": 4,
+          "vpshufb": 4,
+          "vpsllvq": 4,
+          "vpsrlvq": 4,
+          "vpxor": 4
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_loop_sha256": "7430325ceb910276dc486c73d403d27d3da22a7bb7c3c0ceaad636c750fffe95",
+        "push_pop": 0,
+        "text_bytes": 5337
+      },
+      "block_pairs": 2,
+      "control": "x86 loop",
+      "dynamic_trace": {
+        "alignment_padding_excluded": true,
+        "binary_alignment_nop_instructions": 0,
+        "instruction_scope": "modeled non-padding instructions",
+        "instructions": 128,
+        "instructions_including_binary_alignment_nops": 128,
+        "method": "exact-GCC-assembly-CFG-expansion-one-outer-iteration-v1",
+        "mnemonics": {
+          "jne": 1,
+          "loop": 5,
+          "movl": 1,
+          "subl": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "sha256": "2869bb60d1a0bbfaf16fb4990677aa203c0c378f6526314d0840e04219c42df7"
+      },
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 26.3,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 128.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "total_instructions": 12800,
+          "total_uops": 15800,
+          "uops_per_iteration": 158.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 128.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "total_instructions": 12800,
+          "total_uops": 12800,
+          "uops_per_iteration": 128.0
+        }
+      },
+      "loop_text_sha256": "a842c5e65ab96f96b3c6faece5704e7a1ea31a30e15fed2baa505058d4ed764b",
+      "measured_binary_assembled_from_reported_assembly": true,
+      "name": "loop_block2_tail0",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "required_stdout_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK",
+          "benchmark final state = 407b6c00d4644ffb 7b5eeeeb7bbbfd53 787627ff592edbdb 942319215bb84f88"
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_vectors": 1,
+        "validated_stdout_lines_sha256": "ee989e9dbe8571ce5f2a8b2f82251550c0ccaf80c3264edaf0a95928ac5f1d3f"
+      },
+      "persistent_source": null,
+      "quotient": 5,
+      "remainder_pairs": 0,
+      "source": "sources/loop_block2_tail0.c",
+      "source_sha256": "302a8a80ca0650489b798175e5004994d71c251d0fd2a2be856a1c813e41a62a",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "status": "PASS",
+        "stderr": "",
+        "stdout_sha256": "1884f2cd986b4c5fd3d7e2f52e2482e518aa563f83fc7fe811cbbfd4dcff30c9"
+      }
+    }
+  },
+  "checks": {
+    "all_dynamic_traces_have_twenty_transforms": true,
+    "all_exact_static_shapes_match": true,
+    "all_measured_binaries_use_reported_assembly": true,
+    "all_official_vectors_pass": true,
+    "all_random_differentials_pass": true,
+    "all_sources_hash_bound": true,
+    "all_thirteen_cases_present": true,
+    "block2_strictly_dominates_prior_intrinsic_block2_shape": true,
+    "block3_strictly_dominates_prior_intrinsic_block5_shape": true,
+    "conventional_controls_keep_proxy_latency": true,
+    "loop_controls_have_expected_proxy_latency": true,
+    "loop_frontend_penalty_is_visible_on_alderlake": true,
+    "mca_instruction_counts_match_dynamic_traces": true,
+    "retained_candidates_are_exact_case_sources": true
+  },
+  "decision": {
+    "block2_interpretation": "2x5 counted inline asm is the smallest persistent conventional candidate with 133 modeled dynamic instructions: 122 bytes/29 static, no hot memory, and unchanged proxy latency. It strictly improves the prior intrinsic block2 shape (136 bytes/30 static/133 dynamic), so it remains a target-only timing candidate.",
+    "block3_interpretation": "3+3+3+1 is a new conventional-control Pareto point: 238 bytes, 53 static instructions, 129 modeled dynamic instructions, no hot memory, and unchanged proxy latency. It strictly improves the prior intrinsic block5 shape (321 bytes/69 static/131 dynamic), but remains a target-only candidate pending independent 255H timing.",
+    "block5_interpretation": "5+5 is the second retained conventional Pareto point at 292 bytes/65 static/127 dynamic, no hot memory, and unchanged proxy latency. It preserves the two-instruction dynamic control advantage over block3; block4 is rejected because block5 is smaller at the same dynamic count and throughput.",
+    "blocks_6_to_10": "reject: quotient one leaves all twenty transforms static and adds count control, so each is 562 bytes/125 dynamic versus the 549-byte/122-dynamic full-inline stream.",
+    "manifest_candidate_proposals": [
+      {
+        "name": "avx2_pair_block2_counted",
+        "role": "four-lane-avx2-two-pairs-by-five-counted-frontend-candidate",
+        "source": "solutions/02_optimization/contest_simd_avx2_pair_block2_counted.c",
+        "timing_policy": "target-only"
+      },
+      {
+        "name": "avx2_pair_block3_tail1",
+        "role": "four-lane-avx2-three-pairs-by-three-plus-one-compact-frontend-candidate",
+        "source": "solutions/02_optimization/contest_simd_avx2_pair_block3_tail1.c",
+        "timing_policy": "target-only"
+      },
+      {
+        "name": "avx2_pair_block5_counted",
+        "role": "four-lane-avx2-five-pairs-by-two-counted-frontend-candidate",
+        "source": "solutions/02_optimization/contest_simd_avx2_pair_block5_counted.c",
+        "timing_policy": "target-only"
+      }
+    ],
+    "mca_caveat": "LLVM-MCA is a static scheduling proxy, not a Core Ultra 7 255H timing result. It does not establish branch prediction, frontend/uop-cache residency, frequency, or x86 LOOP behavior on the contest target; promotion requires schema-5 paired timing on independent target affinities.",
+    "retained_candidates": [
+      "dec_block2_tail0",
+      "dec_block3_tail1",
+      "dec_block5_tail0"
+    ],
+    "x86_loop": "do not promote from static evidence: LOOP reaches 66/120 bytes and 133/128 modeled instructions for block1/block2, but Alder Lake's model expands its uops and worsens block throughput; LLVM's Zen 2 LOOP model is also too optimistic to settle hardware behavior."
+  },
+  "environment": {
+    "container_image": {
+      "id": "sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "reference": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "repo_digest": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818"
+    },
+    "container_tools": {
+      "binutils": {
+        "ld": {
+          "resolved": "/usr/bin/x86_64-linux-gnu-ld.bfd",
+          "sha256": "f6d71a1bcd45764550a42dfaa179bc43b63ee879ec6f875bfd39fca013515da7",
+          "version": "GNU ld (GNU Binutils for Debian) 2.40"
+        },
+        "objdump": {
+          "resolved": "/usr/bin/x86_64-linux-gnu-objdump",
+          "sha256": "19717049e8ecd98cfbb17fd9eb25e9fd896ecec2fc4af6b931f3dd0bc4e903de",
+          "version": "GNU objdump (GNU Binutils for Debian) 2.40"
+        },
+        "size": {
+          "resolved": "/usr/bin/x86_64-linux-gnu-size",
+          "sha256": "d2dc6eb962bfc841403cc8b72191bfd829b50d8796b611689e92cfb051cf10ee",
+          "version": "GNU size (GNU Binutils for Debian) 2.40"
+        }
+      },
+      "compiler": {
+        "resolved": "/usr/local/bin/gcc",
+        "sha256": "9cf4ebd67847ba021fb489173a8f327403b335127d3714ac93a6f1eec6974008",
+        "version": "gcc (GCC) 13.3.0"
+      },
+      "python": {
+        "resolved": "/usr/bin/python3.11",
+        "sha256": "a83c0370d91532c96d4060a0e7c107d1f2889dad8a98e03395e86ef0373fd467",
+        "version": "Python 3.11.2"
+      }
+    },
+    "host_tools": {
+      "llvm_mca": {
+        "dynamic_environment": "LD_* removed; LC_ALL=C; LANG=C",
+        "dynamic_libraries": {
+          "ld-linux-x86-64.so.2": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+            "sha256": "02bcda52c1a5dfc236f94d9e5255b4a0e26347d8a372a5223b650e31f291ce3c"
+          },
+          "libLLVM-16.so.1": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libLLVM-16.so.1",
+            "sha256": "f62d254b7f2bf42df8c8b07d46ee3bb4c2cafeca436b2e6bc6ccbe4581f58f40"
+          },
+          "libbsd.so.0": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libbsd.so.0.11.7",
+            "sha256": "c34693b27401e6e74d7ac32184c79bfb0cca936d3b1be990d435124a6a5686f5"
+          },
+          "libc.so.6": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+            "sha256": "6b4a45352fd0c540a9c7c718f35ce8c8e46a4e482f9d3885a910c32d1a0e1421"
+          },
+          "libedit.so.2": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libedit.so.2.0.70",
+            "sha256": "d1633f035639f571895a48a2f9cef073517d8617c2df10b91e686ec24e87c976"
+          },
+          "libffi.so.8": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libffi.so.8.1.2",
+            "sha256": "983e72b7e964f3db43fe8a3dc8b338e731fade6ca38df6867aebb58186aaeb68"
+          },
+          "libgcc_s.so.1": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+            "sha256": "2bd1552c47799ef67e701e81d4383061fd76059868e446e63560f0dd0d5ec14e"
+          },
+          "libicudata.so.72": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libicudata.so.72.1",
+            "sha256": "5f572a055d6410ab50fc45770d529109dcc4fe8888f3b2834f76730ff19ebf58"
+          },
+          "libicuuc.so.72": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libicuuc.so.72.1",
+            "sha256": "6ae74e03d74c29774be16f877aeba4b8c347ea83d8cb43b730fd283e205b375e"
+          },
+          "liblzma.so.5": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.1",
+            "sha256": "983464a4e0e840f85b519cb7b6153b60c75d6473f4d4c32a5a37b3f9894c52c3"
+          },
+          "libm.so.6": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libm.so.6",
+            "sha256": "7f2ca87f652f56b094462474b076749e90e689d0ecb9cb63c7679820b271b4e7"
+          },
+          "libmd.so.0": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libmd.so.0.0.5",
+            "sha256": "9e8462f7650da0b39ecfe1680fa87fe393f0710b324250931ab36fa0135b14cc"
+          },
+          "libstdc++.so.6": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30",
+            "sha256": "e7848e32af4932840ba775169041759a2a8dd5a008af360e5c55bce506eebcf4"
+          },
+          "libtinfo.so.6": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libtinfo.so.6.4",
+            "sha256": "5c19747909b3815b996ac20b94bccb1faf1c6ff1ad240b05792ee4feab733a88"
+          },
+          "libxml2.so.2": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libxml2.so.2.9.14",
+            "sha256": "c05750a6f1c9a90c254df313a9dda9b4c958c0a768b0faf4c15e04b3515c7d93"
+          },
+          "libz.so.1": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libz.so.1.2.13",
+            "sha256": "7e2a72b4c4b38c61e6962de6e3f4a5e9ae692e732c68deead10a7ce2135a7f68"
+          },
+          "libz3.so.4": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libz3.so.4",
+            "sha256": "7b396b8bc0ea2c0df1eb8f3aefa269478151251191877fb2869a371f81ea0ac4"
+          },
+          "libzstd.so.1": {
+            "resolved": "/usr/lib/x86_64-linux-gnu/libzstd.so.1.5.4",
+            "sha256": "37412b7ac11063c25a375bdff6f4fdb340362f926cd9c3a55962e8a9c9bc702e"
+          }
+        },
+        "dynamic_loader": {
+          "resolved": "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+          "sha256": "02bcda52c1a5dfc236f94d9e5255b4a0e26347d8a372a5223b650e31f291ce3c"
+        },
+        "requested": "llvm-mca-16",
+        "resolved": "/usr/lib/llvm-16/bin/llvm-mca",
+        "sha256": "e7f38b12a3c228c8b0bcea0bf63cc56939286adf9ae5397a43d408322e3c6fbf",
+        "version": "Debian LLVM version 16.0.6"
+      },
+      "python": {
+        "requested": "/usr/bin/python3",
+        "resolved": "/usr/bin/python3.11",
+        "sha256": "6d972cf21be56fe3c947ab6ba257ff8d08c342dd2714442986791bd9a6dfabfe",
+        "version": "Python 3.11.2"
+      },
+      "runtime": {
+        "client_version": "29.1.2",
+        "requested": "docker",
+        "resolved": "/usr/bin/docker",
+        "sha256": "d2e14b11c7f003526b80d5d4995f3c2c02161e96014b924d071f928f063d2789",
+        "version": "Docker version 29.1.2, build 890dcca"
+      }
+    }
+  },
+  "experiment": "challenge-2 tenth-pass AVX2 quotient/remainder counted frontends",
+  "frontiers": {
+    "conventional_dec_and_full": [
+      "dec_block1_tail0",
+      "dec_block2_tail0",
+      "dec_block3_tail1",
+      "dec_block5_tail0",
+      "full_inline"
+    ],
+    "including_x86_loop": [
+      "dec_block1_tail0",
+      "dec_block2_tail0",
+      "dec_block3_tail1",
+      "dec_block5_tail0",
+      "full_inline",
+      "loop_block1_tail0",
+      "loop_block2_tail0"
+    ],
+    "metrics": [
+      "static loop bytes",
+      "modeled non-padding dynamic instructions",
+      "Alder Lake LLVM-MCA block reciprocal throughput"
+    ]
+  },
+  "protocol": {
+    "alternative_controls": "x86 LOOP for block sizes 1 and 2 only; larger bodies exceed LOOP's signed rel8 branch reach",
+    "container_command_timeout_seconds": 180,
+    "container_timeout_seconds": 900,
+    "dynamic_trace_scope": "one exact outer timing-loop iteration; emitted alignment padding excluded and separately accounted for",
+    "input_snapshot": "all dependencies loaded once; generated/container inputs materialized from that snapshot; live inputs rehashed at end",
+    "mca_iterations": 100,
+    "mca_models": [
+      "alderlake",
+      "znver2"
+    ],
+    "official_one_round_pairs": 1000,
+    "official_twenty_round_vectors": 1,
+    "pair_decompositions": "DEC/JNE block sizes 1..10 using quotient=floor(10/block) plus inline remainder",
+    "random_cases_per_case": 100000,
+    "random_seed": "0x243f6a8885a308d3",
+    "round_counts": [
+      1,
+      20
+    ],
+    "temporary_artifacts_retained": false
+  },
+  "schema_version": 1,
+  "scope": "single-state 20-round contest-fixed rotation/reversal permutation; exact GCC 13.3 static measured-loop audit, official vectors, 100,000 arbitrary-state/arbitrary-constant differential cases at rounds 1/20, and LLVM-MCA proxies; no 255H timing",
+  "sources": {
+    "container_driver_sha256": "55b8b0a47797d3807479e9a6d456c7b5ac067034b582cd106f75ac944ed2ee5f",
+    "dependencies": {
+      "block2_candidate": {
+        "path": "solutions/02_optimization/contest_simd_avx2_pair_block2_counted.c",
+        "sha256": "154b2e449296c6130bf8e108a949443fb901ac6479f4e028cbf7420d9d109c60"
+      },
+      "block5_candidate": {
+        "path": "solutions/02_optimization/contest_simd_avx2_pair_block5_counted.c",
+        "sha256": "5e7404a3319b6efb097002d7ddc67719387fa85d85e8a01ab32ec63e9dded3b1"
+      },
+      "candidate_verifier": {
+        "path": "solutions/02_optimization/verify_contest_candidate_02.c",
+        "sha256": "8245f1baf23fe82e1a1b22dc7c25e5e1fd5b102ca833f26d4c88342088c80b35"
+      },
+      "full_inline_source": {
+        "path": "solutions/02_optimization/contest_simd_avx2_inline_asm.c",
+        "sha256": "c6f43f26dcf1bb0cd83d51dd52495e264c6b8303c0b06e89cb84b1cae62d45dc"
+      },
+      "loop_audit": {
+        "path": "solutions/challenge02_loop_audit.py",
+        "sha256": "8b4e1e90af9d4224500ead177bc02ddc5912805757ce2137ab89a990af0128b1"
+      },
+      "problem_archive": {
+        "path": "problems/2_\uc554\ud638\uad6c\ud604.zip",
+        "sha256": "d0c3158adda8ba258becfc0e347267c0f2f0112738ec732be6dcb5477342e88e"
+      },
+      "screen_helper": {
+        "path": "solutions/02_optimization/screen_avx2_pair_blocks_02.py",
+        "sha256": "ceca3c841a441c8e7f41cd07a91f25eefd7620ac2f28caef9986d6b47b45bfa4"
+      },
+      "template_candidate": {
+        "path": "solutions/02_optimization/contest_simd_avx2_pair_block3_tail1.c",
+        "sha256": "0949c99dc62759259244b31a0c2644ddbdf0682437585c674dd6d2dbb15bc559"
+      }
+    },
+    "generated_source_hashes": {
+      "dec_block10_tail0": "360eb0af1dd36d005159a81df4e724ee3adb9624256a6c376ec6b2ea11d36539",
+      "dec_block1_tail0": "75b1def975012321d5d9500d31230ce90ab119d5b71ba930d0e7e0f54de423f0",
+      "dec_block2_tail0": "154b2e449296c6130bf8e108a949443fb901ac6479f4e028cbf7420d9d109c60",
+      "dec_block3_tail1": "0949c99dc62759259244b31a0c2644ddbdf0682437585c674dd6d2dbb15bc559",
+      "dec_block4_tail2": "b1163607cd06872f85f6fd771680e7114327f231e57774e5a30d9ce0615a11dd",
+      "dec_block5_tail0": "5e7404a3319b6efb097002d7ddc67719387fa85d85e8a01ab32ec63e9dded3b1",
+      "dec_block6_tail4": "7735965487bb3b2027419c33352da3f24b2a9406afe6e50add10d27e8a6d46c1",
+      "dec_block7_tail3": "dc65439d256c58016b72a2f5b556826e29092df4302fbe636b261c05fa8104c3",
+      "dec_block8_tail2": "fd14d9329d7195fd037a5bad785dea80bebff21c431a93744611d76595559cf9",
+      "dec_block9_tail1": "a943f9ca5810e3ca172992b29603627e616457bff86f77521ac8d129ab6bbe39",
+      "full_inline": "c6f43f26dcf1bb0cd83d51dd52495e264c6b8303c0b06e89cb84b1cae62d45dc",
+      "loop_block1_tail0": "cbafa8f00958994a60098a9b1160a1c6467824870332447b43544c5179522e22",
+      "loop_block2_tail0": "302a8a80ca0650489b798175e5004994d71c251d0fd2a2be856a1c813e41a62a"
+    },
+    "screen_script": {
+      "path": "solutions/02_optimization/screen_tenth_avx2_counted_frontends_02.py",
+      "sha256": "932e81287a3970e4a1191dd655023f79dd888c75425ae9b3849473364fbe6417"
+    }
+  }
+}

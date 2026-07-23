@@ -47,6 +47,9 @@ MIN_CONFIRM_WARMUPS = 6
 MIN_CONFIRM_SAMPLES = 40
 MIN_RANDOM_CASES = 100_000
 BENCHMARK_SCHEMA_VERSION = 5
+MIN_CHILD_CPU_COVERAGE_ITERATIONS = 1_000_000
+MIN_MEDIAN_CHILD_CPU_COVERAGE = 0.65
+MAX_MEDIAN_CHILD_CPU_COVERAGE = 1.05
 P_MEDIAN_THRESHOLD = 1.010
 P_LOWER_THRESHOLD = 1.005
 SAFE_MEDIAN_THRESHOLD = 0.995
@@ -1407,6 +1410,12 @@ def run_one_campaign(
     out_dir: Path,
     dry_run: bool,
 ) -> dict[str, Any]:
+    if iterations < MIN_CHILD_CPU_COVERAGE_ITERATIONS:
+        raise AutotuneError(
+            "autotune timing campaigns require at least "
+            f"{MIN_CHILD_CPU_COVERAGE_ITERATIONS} iterations; smaller runs are "
+            "diagnostic-only because the child-CPU coverage gate is disabled"
+        )
     stem = f"{candidate_name}-" if candidate_name else ""
     stem += f"{core_type.replace('_', '-')}-cpu{cpu}"
     final_json = (out_dir / f"{stem}.json").resolve()
@@ -2073,9 +2082,14 @@ def timed_main_validation_errors(
         not isinstance(name, str) or not name for name in expected_names
     ):
         return ["timed-main expected case names are malformed or duplicated"]
-    if any(
-        not isinstance(value, int) or isinstance(value, bool) or value < 0
-        for value in (expected_iterations, expected_warmups, expected_samples)
+    if (
+        any(
+            not isinstance(value, int) or isinstance(value, bool)
+            for value in (expected_iterations, expected_warmups, expected_samples)
+        )
+        or expected_iterations <= 0
+        or expected_warmups < 0
+        or expected_samples <= 0
     ):
         return ["timed-main expected process counts are malformed"]
 
@@ -2100,10 +2114,45 @@ def timed_main_validation_errors(
     validation = report.get("timed_main_validation")
     oracle = validation.get("oracle") if isinstance(validation, dict) else None
     cases = validation.get("cases") if isinstance(validation, dict) else None
+    semantic_challenge = report.get("timed_main_semantic_challenge")
+    challenge_oracle = (
+        semantic_challenge.get("oracle")
+        if isinstance(semantic_challenge, dict)
+        else None
+    )
+    challenge_cases = (
+        semantic_challenge.get("cases")
+        if isinstance(semantic_challenge, dict)
+        else None
+    )
     oracle_state = (
         state_words(oracle.get("expected_final_state"))
         if isinstance(oracle, dict)
         else None
+    )
+    challenge_state = (
+        state_words(challenge_oracle.get("expected_final_state"))
+        if isinstance(challenge_oracle, dict)
+        else None
+    )
+    challenge_iterations = (
+        semantic_challenge.get("iterations")
+        if isinstance(semantic_challenge, dict)
+        else None
+    )
+    challenge_derivation = (
+        semantic_challenge.get("derivation")
+        if isinstance(semantic_challenge, dict)
+        else None
+    )
+    internal_samples = report.get("internal_ns_per_20round")
+    inner_elapsed_samples = report.get("inner_elapsed_seconds")
+    printed_average_samples = report.get("printed_average_us_per_20round")
+    wall_samples = report.get("outer_wall_seconds")
+    child_cpu_samples = report.get("child_cpu_seconds")
+    cpu_coverage = report.get("timed_workload_cpu_coverage")
+    cpu_coverage_cases = (
+        cpu_coverage.get("cases") if isinstance(cpu_coverage, dict) else None
     )
 
     if check_global:
@@ -2119,6 +2168,19 @@ def timed_main_validation_errors(
                 errors.append(
                     "timed-main repeated-call validation config gate is not true"
                 )
+            if config.get("timed_main_alternate_iteration_challenge") is not True:
+                errors.append(
+                    "timed-main alternate-iteration challenge config gate is not true"
+                )
+            if config.get("timed_workload_child_cpu_validation") is not True:
+                errors.append(
+                    "timed-main child-CPU coverage config gate is not true"
+                )
+            if (
+                config.get("internal_ns_source")
+                != "printed-total-elapsed-seconds-divided-by-iterations"
+            ):
+                errors.append("timed-main internal sample source is invalid")
             for key, expected in (
                 ("iterations", expected_iterations),
                 ("warmups", expected_warmups),
@@ -2182,6 +2244,265 @@ def timed_main_validation_errors(
             )
         elif not expected_name_set.issubset(cases):
             errors.append("one or more timed-main case records are missing")
+        if not isinstance(semantic_challenge, dict):
+            errors.append(
+                "timed-main alternate-iteration challenge is missing or malformed"
+            )
+        else:
+            if set(semantic_challenge) != {
+                "mode",
+                "iterations",
+                "derivation",
+                "oracle",
+                "cases",
+            }:
+                errors.append(
+                    "timed-main alternate-iteration challenge has an unexpected shape"
+                )
+            if (
+                semantic_challenge.get("mode")
+                != "unpredictable-alternate-iteration"
+            ):
+                errors.append(
+                    "timed-main alternate-iteration challenge mode is invalid"
+                )
+            if (
+                not isinstance(challenge_iterations, int)
+                or isinstance(challenge_iterations, bool)
+                or challenge_iterations <= 0
+                or challenge_iterations == expected_iterations
+            ):
+                errors.append(
+                    "timed-main alternate-iteration challenge count is invalid"
+                )
+        sources = report.get("sources")
+        expected_source_hashes: dict[str, str] = {}
+        if isinstance(sources, dict):
+            for name in expected_names:
+                source_record = sources.get(name)
+                source_hash = (
+                    source_record.get("sha256")
+                    if isinstance(source_record, dict)
+                    else None
+                )
+                if isinstance(source_hash, str) and re.fullmatch(
+                    r"[0-9a-f]{64}", source_hash
+                ):
+                    expected_source_hashes[name] = source_hash
+        if not isinstance(challenge_derivation, dict):
+            errors.append(
+                "timed-main alternate-iteration derivation is missing or malformed"
+            )
+        else:
+            if set(challenge_derivation) != {
+                "schema_version",
+                "campaign_id",
+                "nonce_hex",
+                "measured_iterations",
+                "source_sha256",
+                "digest_sha256",
+            }:
+                errors.append(
+                    "timed-main alternate-iteration derivation has an unexpected "
+                    "shape"
+                )
+            if challenge_derivation.get("schema_version") != 1:
+                errors.append(
+                    "timed-main alternate-iteration derivation schema is invalid"
+                )
+            if challenge_derivation.get("campaign_id") != report.get("campaign_id"):
+                errors.append(
+                    "timed-main alternate-iteration derivation campaign id differs"
+                )
+            nonce_hex = challenge_derivation.get("nonce_hex")
+            if not isinstance(nonce_hex, str) or not re.fullmatch(
+                r"[0-9a-f]{32}", nonce_hex
+            ):
+                errors.append(
+                    "timed-main alternate-iteration derivation nonce is malformed"
+                )
+            if not exact_integer(
+                challenge_derivation.get("measured_iterations"),
+                expected_iterations,
+            ):
+                errors.append(
+                    "timed-main alternate-iteration derivation iteration count "
+                    "differs"
+                )
+            if (
+                len(expected_source_hashes) != len(expected_names)
+                or challenge_derivation.get("source_sha256")
+                != dict(sorted(expected_source_hashes.items()))
+            ):
+                errors.append(
+                    "timed-main alternate-iteration derivation source hashes differ"
+                )
+            claimed_digest = challenge_derivation.get("digest_sha256")
+            derivation_payload = {
+                key: item
+                for key, item in challenge_derivation.items()
+                if key != "digest_sha256"
+            }
+            actual_digest = canonical_hash(derivation_payload)
+            if (
+                not isinstance(claimed_digest, str)
+                or not re.fullmatch(r"[0-9a-f]{64}", claimed_digest)
+                or claimed_digest != actual_digest
+            ):
+                errors.append(
+                    "timed-main alternate-iteration derivation digest differs"
+                )
+            else:
+                derived_iterations = 4_096 + (
+                    int(actual_digest[:16], 16) % 61_440
+                )
+                if derived_iterations == expected_iterations:
+                    derived_iterations = (
+                        4_096 + (derived_iterations - 4_096 + 1) % 61_440
+                    )
+                if challenge_iterations != derived_iterations:
+                    errors.append(
+                        "timed-main alternate-iteration count does not match its "
+                        "derivation"
+                    )
+        if not isinstance(challenge_oracle, dict):
+            errors.append(
+                "timed-main alternate-iteration oracle is missing or malformed"
+            )
+        else:
+            if set(challenge_oracle) != {
+                "expected_final_state",
+                "stdout_sha256",
+                "status",
+            }:
+                errors.append(
+                    "timed-main alternate-iteration oracle has an unexpected shape"
+                )
+            if challenge_state is None:
+                errors.append(
+                    "timed-main alternate-iteration oracle state is malformed"
+                )
+            challenge_stdout_sha256 = challenge_oracle.get("stdout_sha256")
+            if not isinstance(challenge_stdout_sha256, str) or not re.fullmatch(
+                r"[0-9a-f]{64}", challenge_stdout_sha256
+            ):
+                errors.append(
+                    "timed-main alternate-iteration oracle SHA-256 is malformed"
+                )
+            elif (
+                challenge_state is not None
+                and isinstance(challenge_iterations, int)
+                and not isinstance(challenge_iterations, bool)
+            ):
+                challenge_stdout = (
+                    "oracle_final_state_iterations="
+                    f"{challenge_iterations}\n"
+                    f"oracle_final_state={' '.join(challenge_state)}\n"
+                )
+                if challenge_stdout_sha256 != hashlib.sha256(
+                    challenge_stdout.encode()
+                ).hexdigest():
+                    errors.append(
+                        "timed-main alternate-iteration oracle SHA-256 does not "
+                        "bind its state"
+                    )
+            if challenge_oracle.get("status") != "PASS":
+                errors.append(
+                    "timed-main alternate-iteration oracle status is not PASS"
+                )
+        if not isinstance(challenge_cases, dict):
+            errors.append(
+                "timed-main alternate-iteration case records are missing or malformed"
+            )
+        elif require_exact_case_set and set(challenge_cases) != expected_name_set:
+            errors.append(
+                "timed-main alternate-iteration case set differs from the measured "
+                "campaign"
+            )
+        elif not expected_name_set.issubset(challenge_cases):
+            errors.append(
+                "one or more timed-main alternate-iteration case records are missing"
+            )
+        for label, records in (
+            ("internal timing", internal_samples),
+            ("inner elapsed timing", inner_elapsed_samples),
+            ("printed average timing", printed_average_samples),
+            ("outer-wall timing", wall_samples),
+            ("child-CPU timing", child_cpu_samples),
+        ):
+            if not isinstance(records, dict):
+                errors.append(f"timed-main {label} samples are missing or malformed")
+            elif require_exact_case_set and set(records) != expected_name_set:
+                errors.append(
+                    f"timed-main {label} case set differs from the measured campaign"
+                )
+            elif not expected_name_set.issubset(records):
+                errors.append(f"one or more timed-main {label} samples are missing")
+        expected_coverage_enforced = (
+            expected_iterations >= MIN_CHILD_CPU_COVERAGE_ITERATIONS
+        )
+        if not isinstance(cpu_coverage, dict):
+            errors.append(
+                "timed-main child-CPU coverage record is missing or malformed"
+            )
+        else:
+            if set(cpu_coverage) != {
+                "minimum_iterations",
+                "median_bounds",
+                "enforced",
+                "eligibility",
+                "reason",
+                "cases",
+            }:
+                errors.append(
+                    "timed-main child-CPU coverage record has an unexpected shape"
+                )
+            if not exact_integer(
+                cpu_coverage.get("minimum_iterations"),
+                MIN_CHILD_CPU_COVERAGE_ITERATIONS,
+            ):
+                errors.append(
+                    "timed-main child-CPU coverage iteration threshold changed"
+                )
+            if cpu_coverage.get("median_bounds") != {
+                "low": MIN_MEDIAN_CHILD_CPU_COVERAGE,
+                "high": MAX_MEDIAN_CHILD_CPU_COVERAGE,
+            }:
+                errors.append("timed-main child-CPU coverage bounds changed")
+            if cpu_coverage.get("enforced") is not expected_coverage_enforced:
+                errors.append(
+                    "timed-main child-CPU coverage enforcement flag is inconsistent"
+                )
+            expected_eligibility = (
+                "eligible" if expected_coverage_enforced else "diagnostic-only"
+            )
+            expected_reason = (
+                None
+                if expected_coverage_enforced
+                else "iterations below 1000000; child-CPU coverage gate is not "
+                "enforced"
+            )
+            if cpu_coverage.get("eligibility") != expected_eligibility:
+                errors.append(
+                    "timed-main child-CPU coverage eligibility is inconsistent"
+                )
+            if cpu_coverage.get("reason") != expected_reason:
+                errors.append(
+                    "timed-main child-CPU coverage reason is inconsistent"
+                )
+        if not isinstance(cpu_coverage_cases, dict):
+            errors.append(
+                "timed-main child-CPU coverage cases are missing or malformed"
+            )
+        elif require_exact_case_set and set(cpu_coverage_cases) != expected_name_set:
+            errors.append(
+                "timed-main child-CPU coverage case set differs from the measured "
+                "campaign"
+            )
+        elif not expected_name_set.issubset(cpu_coverage_cases):
+            errors.append(
+                "one or more timed-main child-CPU coverage cases are missing"
+            )
 
     if not check_cases:
         return errors
@@ -2220,6 +2541,179 @@ def timed_main_validation_errors(
             errors.append(f"{prefix}: observed final state differs from the oracle")
         if record.get("status") != "PASS":
             errors.append(f"{prefix}: status is not PASS")
+        challenge_record = (
+            challenge_cases.get(name) if isinstance(challenge_cases, dict) else None
+        )
+        if not isinstance(challenge_record, dict):
+            errors.append(
+                f"{prefix}: alternate-iteration validation is missing or malformed"
+            )
+            continue
+        if set(challenge_record) != {"observed_final_state", "status"}:
+            errors.append(
+                f"{prefix}: alternate-iteration validation has an unexpected shape"
+            )
+        challenge_observed_state = state_words(
+            challenge_record.get("observed_final_state")
+        )
+        if challenge_observed_state is None:
+            errors.append(
+                f"{prefix}: alternate-iteration observed state is malformed"
+            )
+        elif (
+            challenge_state is not None
+            and challenge_observed_state != challenge_state
+        ):
+            errors.append(
+                f"{prefix}: alternate-iteration state differs from the oracle"
+            )
+        if challenge_record.get("status") != "PASS":
+            errors.append(f"{prefix}: alternate-iteration status is not PASS")
+        sample_lists: dict[str, list[float]] = {}
+        for sample_label, records in (
+            ("internal timing", internal_samples),
+            ("inner elapsed timing", inner_elapsed_samples),
+            ("printed average timing", printed_average_samples),
+            ("outer-wall timing", wall_samples),
+            ("child-CPU timing", child_cpu_samples),
+        ):
+            values = records.get(name) if isinstance(records, dict) else None
+            if not isinstance(values, list) or len(values) != expected_samples:
+                errors.append(
+                    f"{prefix}: {sample_label} sample count is not "
+                    f"{expected_samples}"
+                )
+                continue
+            if any(
+                not isinstance(value, (int, float))
+                or isinstance(value, bool)
+                or not math.isfinite(float(value))
+                or float(value) <= 0.0
+                for value in values
+            ):
+                errors.append(
+                    f"{prefix}: {sample_label} samples must be finite and positive"
+                )
+                continue
+            sample_lists[sample_label] = [float(value) for value in values]
+        if {
+            "internal timing",
+            "inner elapsed timing",
+            "printed average timing",
+        }.issubset(sample_lists):
+            for sample_index, (
+                internal_ns,
+                inner_elapsed_s,
+                printed_average_us,
+            ) in enumerate(
+                zip(
+                    sample_lists["internal timing"],
+                    sample_lists["inner elapsed timing"],
+                    sample_lists["printed average timing"],
+                ),
+                start=1,
+            ):
+                expected_internal_ns = (
+                    inner_elapsed_s * 1_000_000_000.0 / expected_iterations
+                )
+                if not math.isclose(
+                    internal_ns,
+                    expected_internal_ns,
+                    rel_tol=1e-12,
+                    abs_tol=1e-15,
+                ):
+                    errors.append(
+                        f"{prefix}: internal sample {sample_index} is not derived "
+                        "from total elapsed time"
+                    )
+                expected_average_us = (
+                    inner_elapsed_s * 1_000_000.0 / expected_iterations
+                )
+                rounding_tolerance_us = (
+                    0.0000005 + 0.5 / expected_iterations + 1e-15
+                )
+                if (
+                    abs(printed_average_us - expected_average_us)
+                    > rounding_tolerance_us
+                ):
+                    errors.append(
+                        f"{prefix}: printed average sample {sample_index} is "
+                        "inconsistent with total elapsed time"
+                    )
+        coverage_record = (
+            cpu_coverage_cases.get(name)
+            if isinstance(cpu_coverage_cases, dict)
+            else None
+        )
+        if not isinstance(coverage_record, dict):
+            errors.append(
+                f"{prefix}: child-CPU coverage result is missing or malformed"
+            )
+            continue
+        if set(coverage_record) != {
+            "median_inner_to_child_cpu",
+            "min_inner_to_child_cpu",
+            "max_inner_to_child_cpu",
+            "status",
+        }:
+            errors.append(
+                f"{prefix}: child-CPU coverage result has an unexpected shape"
+            )
+        if {
+            "internal timing",
+            "child-CPU timing",
+        }.issubset(sample_lists):
+            observed_coverages = [
+                (internal_ns * expected_iterations / 1_000_000_000.0)
+                / child_cpu_s
+                for internal_ns, child_cpu_s in zip(
+                    sample_lists["internal timing"],
+                    sample_lists["child-CPU timing"],
+                )
+            ]
+            expected_coverage_values = {
+                "median_inner_to_child_cpu": statistics.median(
+                    observed_coverages
+                ),
+                "min_inner_to_child_cpu": min(observed_coverages),
+                "max_inner_to_child_cpu": max(observed_coverages),
+            }
+            for key, expected_value in expected_coverage_values.items():
+                recorded_value = coverage_record.get(key)
+                if (
+                    not isinstance(recorded_value, (int, float))
+                    or isinstance(recorded_value, bool)
+                    or not math.isclose(
+                        float(recorded_value),
+                        expected_value,
+                        rel_tol=1e-12,
+                        abs_tol=1e-15,
+                    )
+                ):
+                    errors.append(
+                        f"{prefix}: child-CPU coverage {key} does not match raw "
+                        "samples"
+                    )
+            coverage_is_enforced = (
+                expected_iterations >= MIN_CHILD_CPU_COVERAGE_ITERATIONS
+            )
+            expected_status = "PASS" if coverage_is_enforced else "NOT_ENFORCED"
+            if coverage_record.get("status") != expected_status:
+                errors.append(
+                    f"{prefix}: child-CPU coverage status is not {expected_status}"
+                )
+            median_coverage = expected_coverage_values[
+                "median_inner_to_child_cpu"
+            ]
+            if coverage_is_enforced and not (
+                MIN_MEDIAN_CHILD_CPU_COVERAGE
+                <= median_coverage
+                <= MAX_MEDIAN_CHILD_CPU_COVERAGE
+            ):
+                errors.append(
+                    f"{prefix}: child-CPU coverage median is outside the "
+                    "accepted bounds"
+                )
     return errors
 
 
@@ -2436,10 +2930,14 @@ def analyze_confirmation_campaign(
         )
     evidence: dict[str, Any] = {
         "schema_version": report.get("schema_version"),
+        "campaign_id": report.get("campaign_id"),
         "baseline": report.get("baseline"),
         "config": report.get("config"),
         "measurement_protocol_fingerprint": report_protocol,
         "timed_main_validation": report.get("timed_main_validation"),
+        "timed_main_semantic_challenge": report.get(
+            "timed_main_semantic_challenge"
+        ),
     }
     report_environment = report.get("environment")
     evidence["environment"] = (
@@ -2462,6 +2960,10 @@ def analyze_confirmation_campaign(
         "candidate_verification",
         "assembly_audits",
         "internal_ns_per_20round",
+        "inner_elapsed_seconds",
+        "printed_average_us_per_20round",
+        "outer_wall_seconds",
+        "child_cpu_seconds",
     ):
         records = report.get(field)
         evidence[field] = (
@@ -2472,7 +2974,21 @@ def analyze_confirmation_campaign(
             if isinstance(records, dict)
             else None
         )
+    evidence["timed_workload_cpu_coverage"] = report.get(
+        "timed_workload_cpu_coverage"
+    )
     result["evidence_fingerprint_sha256"] = canonical_hash(evidence)
+    semantic_challenge = report.get("timed_main_semantic_challenge")
+    semantic_derivation = (
+        semantic_challenge.get("derivation")
+        if isinstance(semantic_challenge, dict)
+        else None
+    )
+    if isinstance(semantic_derivation, dict):
+        result["semantic_challenge_nonce"] = semantic_derivation.get("nonce_hex")
+        result["semantic_challenge_derivation_sha256"] = canonical_hash(
+            semantic_derivation
+        )
     if report.get("baseline") != incumbent_name:
         result["failures"].append("benchmark baseline differs from campaign index")
     report_config = report.get("config")
@@ -2864,6 +3380,7 @@ def command_decide(args: argparse.Namespace) -> None:
     campaign_ids: defaultdict[str, list[str]] = defaultdict(list)
     evidence_fingerprints: defaultdict[str, list[str]] = defaultdict(list)
     paired_sample_fingerprints: defaultdict[str, list[str]] = defaultdict(list)
+    semantic_challenge_nonces: defaultdict[str, list[str]] = defaultdict(list)
     for row in analyses:
         reference = (
             f"{row.get('session')}/{row.get('candidate')}/"
@@ -2878,6 +3395,9 @@ def command_decide(args: argparse.Namespace) -> None:
         sample_fingerprint = row.get("paired_samples_sha256")
         if isinstance(sample_fingerprint, str) and sample_fingerprint:
             paired_sample_fingerprints[sample_fingerprint].append(reference)
+        challenge_nonce = row.get("semantic_challenge_nonce")
+        if isinstance(challenge_nonce, str) and challenge_nonce:
+            semantic_challenge_nonces[challenge_nonce].append(reference)
     for campaign_id, references in campaign_ids.items():
         if len(references) > 1:
             global_blockers.append(
@@ -2894,6 +3414,12 @@ def command_decide(args: argparse.Namespace) -> None:
             global_blockers.append(
                 "paired internal samples are reused by "
                 f"{', '.join(references)}: sha256={fingerprint}"
+            )
+    for nonce, references in semantic_challenge_nonces.items():
+        if len(references) > 1:
+            global_blockers.append(
+                "semantic challenge nonce is reused by "
+                f"{', '.join(references)}: nonce={nonce}"
             )
 
     required_types = ["p"] if args.policy == "p-only" else ["p", "e", "lp_e"]

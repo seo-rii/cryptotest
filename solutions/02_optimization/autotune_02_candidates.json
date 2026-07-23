@@ -469,6 +469,56 @@
       }
     },
     {
+      "name": "avx2_pair_block2_counted",
+      "source": "solutions/02_optimization/contest_simd_avx2_pair_block3_tail1.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-DCH2_TENTH_BLOCK2",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-two-pairs-by-five-counted-frontend-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-pair-block2-counted"
+      }
+    },
+    {
+      "name": "avx2_pair_block3_tail1",
+      "source": "solutions/02_optimization/contest_simd_avx2_pair_block3_tail1.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-three-pairs-by-three-plus-one-compact-frontend-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-pair-block3-tail1"
+      }
+    },
+    {
+      "name": "avx2_pair_block5_counted",
+      "source": "solutions/02_optimization/contest_simd_avx2_pair_block3_tail1.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-DCH2_TENTH_BLOCK5",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-five-pairs-by-two-counted-frontend-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-pair-block5-counted"
+      }
+    },
+    {
       "name": "inline_native",
       "source": "submissions/02/contest.c",
       "cflags": [

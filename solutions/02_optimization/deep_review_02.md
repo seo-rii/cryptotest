@@ -8,7 +8,11 @@ affinity에서 더 빨랐지만 순위가 뒤집혔다. 최신 commutative opera
 변형은 exact GCC 13.3 loop를 569 bytes에서 **549 bytes**로 줄였지만, 이전
 569-byte stream 대비 schema-5 AMD 실측은 CPU 1/3 모두 통계적 동률이었다.
 `DEC` counter의 548-byte 변형과 136-byte block-2 부분 언롤도 interval이 모두
-1을 포함했다. 따라서 이 셋은 255H-only 후보이며 scalar 제출을 교체하지 않는다.
+1을 포함했다. 10차에서 block-2/3/5 counted frontend를 각각
+`122B/29-static/133-dynamic`, `238B/53/129`, `292B/65/127`까지 줄였지만,
+CPU 1의 block-3 약 0.5% 신호는 nonstationary였고 CPU 3에서 재현되지 않았으며
+1% 승격 기준에도 못 미쳤다. 나머지 interval은 1을 포함했다. 따라서 이
+후보들은 255H-only이며 scalar 제출을 교체하지 않는다.
 이번 재검토에서
 scalar 본문을 다른 알고리즘으로 줄이지는 못했지만, 같은
 source를 score용 flag로 빌드해 그 본문을 `main`의 timing loop까지
@@ -38,14 +42,18 @@ code-generation 경로를 연다.
 3. digest로 고정한 공식 GCC 13.3.0에서 limit `700/2000`의 complete binary
    일치와 timing loop의 call 제거를 확인했다. 255H에서 남은 일은 이 사실을
    다시 추측하는 것이 아니라 scalar source/scheduler 변형, 122-instruction
-   lane-wise AVX2의 569/549/548-byte stream, block-2 loop, 그리고 재현 가능한
-   stream/alignment 배치 클래스의 실제 순위를 판정하는 것이다.
+   lane-wise AVX2의 569/549/548-byte stream, 기존 block-2와 새 counted
+   block-2/3/5 loop, 그리고 재현 가능한 stream/alignment 배치 클래스의 실제
+   순위를 판정하는 것이다.
 4. current schema 5는 독립 reference로 timing loop 전체의 최종 상태를 계산하고
-   preflight, warm-up, 모든 sample에서 iteration 수와 상태를 검증한다. schema
-   2--4 결과는 이 repeated-call integrity가 없는 역사적 자료로만 취급한다.
+   preflight, warm-up, 모든 sample에서 iteration 수와 상태를 검증한다. 여기에
+   total/average 일치, child CPU coverage와 nonce 기반 alternate-iteration
+   challenge를 더했다. 이는 재현한 세 우회를 막는 방어선이지 임의의 악성 C에
+   대한 암호학적 증명은 아니다. 9차 schema-5 파일은 이 protocol hash 변경 전
+   역사 자료이며 schema 2--4는 repeated-call integrity도 없는 더 오래된 자료다.
 5. one-state SIMD, partial unroll, table, 수동 재스케줄링은 target에서 두
-   독립 세션 모두 유의한 차이를 보이지 않는 한 채택하지 않는다. block-2는
-   frontend 민감도 대조군이지 현 제출안이 아니다.
+   독립 세션 모두 유의한 차이를 보이지 않는 한 채택하지 않는다. compact
+   block 계열은 frontend 민감도 대조군이지 현 제출안이 아니다.
 
 기존 18-candidate 원시 측정값은 [deep_results_02.txt](deep_results_02.txt),
 새 인라인 캠페인은 [CPU 0 결과](inline_results_02.json),
@@ -942,7 +950,124 @@ warm-up 6회, balanced sample 32개, random state·constant 100,000건을 사용
 speedup은 아니며, 548-byte counter와 block 2도 마찬가지다. raw schema-5 record는
 [`ninth_wave_timing_02_cpu1.json`](ninth_wave_timing_02_cpu1.json),
 [`ninth_wave_timing_02_cpu3.json`](ninth_wave_timing_02_cpu3.json)에 있다. scalar
-submission이 계속 incumbent이고 이 세 후보는 모두 255H-only다.
+submission이 계속 incumbent이고 이 세 후보는 모두 255H-only다. 두 파일은
+repeated-call gate는 포함하지만 10차 total/average, child-CPU와
+alternate-iteration gate가 protocol fingerprint에 들어가기 전 생성된 역사
+자료다. 새 `confirm`에 섞지 않고 현재 protocol로 다시 측정해야 한다.
+
+### 10차: counted Pareto frontend, encoding 대조군과 측정 방어
+
+#### quotient/remainder counted frontend
+
+기존 intrinsic block-2의 136B/30-static body에서 제어와 inline-assembly 경계를
+다시 정리하고, 열 round-pair를 `floor(10 / block)`번 반복한 뒤 나머지를 inline
+하는 block 크기 1--10을 모두 생성했다.
+[`screen_tenth_avx2_counted_frontends_02.py`](screen_tenth_avx2_counted_frontends_02.py)는
+각 full case를 exact GCC 13.3으로 만들고 complete timing-loop audit, 공식
+1-round 1,000쌍과 20-round vector, 임의 state·상수 100,000건의 1/20-round
+differential을 실행했다. conventional `DEC/JNE` Pareto frontier는 다음 세
+후보다.
+
+| 분해 | 정적 loop | 한 호출의 padding 제외 modeled 명령 |
+|---|---:|---:|
+| block 2: `2*5` | **122B / 29 instructions** | 133 |
+| block 3: `3+3+3+1` | **238B / 53 instructions** | 129 |
+| block 5: `5+5` | **292B / 65 instructions** | 127 |
+
+세 후보 모두 hot memory 0이고 full549와 같은 `100.03/180.03`
+Alder/Zen-2 dependency-path proxy를 보였다. 새 block 2는 기존 136B/30-static
+후보보다 엄격히 작다. block 3은 기존 321B/69-static block 5보다 작으면서
+동적 명령도 `131 -> 129`로 줄이고, 새 block 5는 block 3보다 정적 크기가
+54B 커지는 대신 동적 제어 두 명령을 더 없앤다. block 4는 같은 127-dynamic인
+block 5보다 크고, block 6--10은 transform 20개를 이미 모두 펼친 뒤 제어만
+추가해 full549에 지배된다.
+
+signed rel8 범위에 들어가는 block 1/2에는 x86 `LOOP` 대조군도 만들었다.
+각각 66B/120B까지 짧지만 Alder 모델에서 µop와 block throughput이 나빠졌고
+Zen-2 모델만으로 실제 동작을 결론낼 수도 없어 승격하지 않았다. 이 정적 모델은
+branch frontend나 255H의 실제 µop cache·주파수를 측정하지 않는다. 전체 CFG
+expansion, binary/source hash와 음성 결과는
+[`tenth_avx2_counted_frontends_results_02.json`](tenth_avx2_counted_frontends_results_02.json)에
+있다.
+
+#### register 위치, 식 재결합과 scalar rotate 대조군
+
+[`screen_tenth_codegen_02.py`](screen_tenth_codegen_02.py)는 이전 allocation
+11개와 flag/link 34개를 반복하지 않고, VEX register-extension 위치와 정확한
+재결합, 14개 source-controlled loop 시작 offset을 검사했다. high state를
+VEX.vvvv/destination에 두고 low scratch와 상수를 ModRM r/m에 두면
+`ymm8/12/15` 모두 549B/122 instructions/hot memory 0으로 baseline과 동률이다.
+반대로 high state가 ModRM에 오거나 allocator가 scratch까지 high register에
+두면 loop가 609B 또는 569B로 커진다. `VPADDQ` 쪽에서 rotate 두 branch를
+합치는 정확한 표현도 byte/instruction/model tie였다.
+
+상수 XOR을 right-shift branch로 옮긴 표현만 normalized scheduling이 달라졌다.
+Alder Lake와 Meteor Lake proxy는 baseline과 같은 `100.03` cycles지만 Zen-2
+교차-architecture proxy만 `180.03 -> 160.03`으로 줄었다. Intel target
+정적 근거가 없으므로 source 교체가 아니라 target-only 진단으로 남긴다. 시작
+offset 14개도 normalized instruction stream은 모두 같고, 주소를 제거한
+LLVM-MCA가 경계 효과를 순위화할 수 없어 실제 target 측정 항목이다. 구조화된
+29-case 결과는 [`tenth_codegen_results_02.json`](tenth_codegen_results_02.json)에
+있다.
+
+scalar에서는 [`screen_tenth_codegen_scalar_rotate_02.py`](screen_tenth_codegen_scalar_rotate_02.py)가
+same-register `ROL`, `RORX`, `SHLD`를 분리했다. 강제 `ROL`은
+**322 instructions/1,052B/0 MOV**로 `RORX` incumbent 1,211B보다 159B
+작다. 그러나 Alder/Meteor proxy는 `RORX`의 `121.06 cycles/402 µops`에서
+`ROL`의 `138.13/482`로 악화돼 code-size만 이겼다. same-register `SHLD`는
+rotate와 의미가 같지만 serial microprobe가 Intel proxy에서 명령당
+`3.03` cycles로 `RORX`의 `1.03`보다 길어 full expansion 전에 기각했다.
+ISA 의미와 encoding은 Intel SDM, proxy의 범위와 한계는 llvm-mca guide를
+따랐으며 결과는
+[`tenth_codegen_scalar_rotate_results_02.json`](tenth_codegen_scalar_rotate_results_02.json)에
+고정했다.
+
+#### current schema-5 우회 회귀와 host 재측정
+
+repeated final state만으로도 재현 가능한 세 우회가 남아 있었다. 첫째, timing
+loop를 짧게 실행하고 빠진 계산을 `clock()` 뒤에서 끝내면 출력 상태는 맞지만
+측정 구간은 짧다. 둘째, 알려진 iteration의 예상 상태를 timer 뒤에 상수로 쓰면
+state gate를 흉내 낼 수 있다. 셋째, 실제 total은 그대로 두고 출력 average만
+절반으로 쓰면 평균만 신뢰하는 consumer를 속인다.
+
+현재 runner는 이 세 경우를 다음처럼 좁혀 막는다.
+
+1. 측정 sample 전후의 `getrusage(RUSAGE_CHILDREN)`을 읽고, 1,000,000회 이상이면
+   `timed inner / child CPU` median이 `[0.65, 1.05]`에 있어야 한다. 첫 우회는
+   timer 밖 CPU가 커져 하한에서 거절된다.
+2. fresh 128-bit nonce, campaign id, 측정 iteration과 source hash로
+   `4096..65535`의 별도 iteration을 유도한다. 별도 binary와 독립 oracle의
+   final state를 대조하므로 알려진 주 반복 상태를 하드코딩한 둘째 우회가
+   거절된다.
+3. `total elapsed time`, iteration, 출력 average의 반올림 구간이 겹치는지
+   검사하고 실제 ns는 total/iteration에서 다시 계산한다. 셋째 우회는 parser에서
+   거절된다.
+
+autotuner는 raw timing/total/average/child-CPU sample 수, alternate challenge의
+nonce digest·campaign/source binding과 CPU coverage eligibility도 재검사한다.
+POSIX child CPU accounting이 없으면 성능 campaign을 시작하지 않고, 백만 회
+미만은 명시적으로 diagnostic-only다. 이 검사는 위 세 실행 가능한 공격의
+회귀를 막고 evidence contract를 강화하지만, runner를 알고 작성한 모든 악성 C의
+부재를 암호학적으로 증명하지는 않는다.
+
+두 AMD affinity에서 full549를 기준으로 새 counted block 2/3/5를 각각
+3,000,000 calls, warm-up 6, balanced sample 32, random 100,000건으로 측정했다.
+scalar control의 `full549/scalar`는 CPU 1에서
+`1.061 (1.041--1.120)`, CPU 3에서 `1.032 (1.021--1.057)`였고, 기존
+intrinsic block 2는 각각 `1.005 (0.996--1.013)`,
+`1.000 (0.999--1.001)`이었다.
+CPU 1의 `full549/candidate` paired median(CI)은 block 2가
+`1.003 (0.994--1.009)`, block 3이 `1.005 (1.001--1.014)`, block 5가
+`0.999 (0.990--1.009)`였다. CPU 3은 각각
+`0.999 (0.997--1.003)`, `1.001 (0.997--1.004)`,
+`1.000 (0.998--1.003)`이었다. CPU 1은 실행 도중 host 부하에 따라 median이
+크게 움직인 nonstationary campaign이었다. 그 안의 block-3 약 0.5% 단일 신호는
+CPU 3에서 재현되지 않았고 1% 승격 기준에도 못 미친다. 따라서 새 세 후보는
+frontend Pareto 점으로 255H manifest에는 남지만 full549나 scalar incumbent를
+교체하지 않는다. raw current-schema-5 record는
+[`tenth_wave_timing_02_cpu1.json`](tenth_wave_timing_02_cpu1.json)과
+[`tenth_wave_timing_02_cpu3.json`](tenth_wave_timing_02_cpu3.json)에 있으며,
+실제 Core Ultra 7 255H는 아직 측정하지 못했다.
 
 ### 255H용 보수적 판정 절차
 
@@ -986,9 +1111,10 @@ binary audit 19/19를 통과했다. 여기에 당시 서로 다른 569-byte stre
 28-case balanced smoke가 직접 검증 28/28, audit 28/28을 통과했고 28개 모두
 원래 source의 `-iquote` context를 기록했다. commutative 549-byte refinement는
 기존 assembly entry를 교체하고, 548-byte `DEC` control과 block-2 candidate가
-추가되어 현재 manifest는 **30 cases**다. 이 1,000-call timing 값은 성능 근거가
-아니라 통합 회귀 검사이며, 현재 confirmation에는 schema-5 repeated-call record도
-필수다.
+추가됐다. 10차의 counted block-2/3/5 세 Pareto point까지 더한 현재 manifest는
+**33 cases**다. 짧은 timing 값은 성능 근거가 아니라 통합 회귀 검사이며, 현재
+confirmation에는 repeated-call record뿐 아니라 alternate challenge,
+total-derived timing과 child-CPU coverage도 필수다.
 P-core 모든 campaign에서 paired median `>= 1.010`, 보정된 lower bound
 `> 1.005`이고 E/LP-E 안전성도 지킨 후보만 통과시킨다. 여러 후보가 동시에 통과하면
 자동으로 임의의 하나를 고르지 않고 별도 head-to-head를 요구한다. 따라서 현재
@@ -1041,8 +1167,12 @@ override가 필요하면 autotuner 승격 대상에서 제외한다.
 
 schema 5는 여기에 독립 repeated-call oracle을 더한다. 모든 case의 preflight,
 warm-up, sample output에서 iteration과 final state를 파싱해 oracle과 비교하고,
-정확한 process 수와 stdout hash를 JSON에 남긴다. autotuner screen/confirm/decide는
-이 record가 없거나 값·형식·hash binding이 맞지 않으면 fail-closed한다.
+정확한 process 수와 stdout hash를 JSON에 남긴다. current protocol은 total과
+average의 일치 및 total-derived ns, child-CPU coverage, nonce-derived alternate
+iteration record까지 요구한다. autotuner screen/confirm/decide는 이 record가
+없거나 값·형식·hash binding이 맞지 않으면 fail-closed한다. 9차 schema-5 JSON은
+repeated-call 검증은 했지만 이 protocol fingerprint 변경 전 생성됐으므로 새
+confirmation에는 current protocol로 재측정한 파일만 사용한다.
 
 schema 2의 과거 stages/alignment/codegen JSON에 있던 `random_differential_cases`는
 oracle self-test 횟수였으므로 그 파일들은 공식-vector gate가 있는 성능
@@ -1086,11 +1216,14 @@ flag를 빠뜨리지 않기 위한 재현 wrapper다. clean checkout에서는 �
 | commutative single-scratch AVX2 | 별도 source + 기본 AVX2 score flag | 549-byte scoped-bound stream, schema-5 AMD 동률 |
 | commutative AVX2 + `DEC` | 위 source + `-mtune-ctrl=use_incdec` | 548-byte compiler-control, target-only |
 | lane-wise AVX2 block 2 | 별도 source + 기본 AVX2 score flag | 136-byte/133-dynamic frontend 대조군, target-only |
+| counted AVX2 block 2 | 별도 source + 기본 AVX2 score flag | 122-byte/29-static/133-dynamic Pareto point, target-only |
+| counted AVX2 block 3 + tail 1 | 별도 source + 기본 AVX2 score flag | 238-byte/53-static/129-dynamic Pareto point, target-only |
+| counted AVX2 block 5 | 별도 source + 기본 AVX2 score flag | 292-byte/65-static/127-dynamic Pareto point, target-only |
 | lane-wise AVX2 layout representatives | generic 4개 + Alder 3개 nonbaseline flag 조합 | 8개 배치 클래스 중 기준 제외 7개, target-only |
 | adaptive full-unroll | `-mbmi2 -finline-limit=2000 -mtune=native` | target compiler 진단용 |
 
 `autotune_02_candidates.json`은 이 후보와 portable/partial-unroll 대조군을
-포함한 30-case manifest를 hash와 함께 고정한다. 먼저 `probe`와 짧은 `screen`으로 환경과 후보를
+포함한 33-case manifest를 hash와 함께 고정한다. 먼저 `probe`와 짧은 `screen`으로 환경과 후보를
 줄이고, 별도 시간대의 `confirm` 두 번을 저장한 다음 `decide`를 실행한다.
 
 ```bash
@@ -1119,7 +1252,7 @@ tune/IRA/scheduler flag를 더하지 않는다.
 - [Abel and Reineke, *uops.info: Characterizing Latency, Throughput, and Port Usage of Instructions on Intel Microarchitectures*, ASPLOS 2019](https://arxiv.org/abs/1810.04610) — instruction count만으로 성능을 단정하지 않고 latency, reciprocal throughput과 execution port를 분리해서 해석하는 근거다.
 - [Abel and Reineke, *nanoBench: A Low-Overhead Tool for Running Microbenchmarks on x86 Systems*, 2019](https://arxiv.org/abs/1911.03282) — warm-up, serialization, counter overhead와 반복 가능한 low-level 측정 설계의 참고 자료다. 이 VM에서는 필요한 performance counter가 없어 동일 수준의 port/frequency 판정을 주장하지 않았다.
 - [Intel, Intrinsics Guide](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html) — AVX2 variable shift, byte shuffle와 packed addition 후보의 ISA 형태를 확인했다.
-- [Intel, Intel® 64 and IA-32 Architectures Software Developer Manuals](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — 9차 commutative operand-order 분석에서 VEX.vvvv, ModRM r/m과 extension-bit에 따른 실제 instruction encoding 길이를 해석한 1차 자료다.
+- [Intel, Intel® 64 and IA-32 Architectures Software Developer Manuals](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — 9/10차 VEX.vvvv, ModRM r/m, extension-bit와 `RORX`/`ROL`/`SHLD`의 의미·encoding을 해석한 1차 자료다.
 - [Intel, Intel® 64 and IA-32 Architectures Optimization Reference Manual](https://www.intel.com/content/www/us/en/content-details/671488/intel-64-and-ia-32-architectures-optimization-reference-manual-volume-1.html) — loop unrolling, instruction frontend, code layout은 microarchitecture별 실측으로 결정해야 한다는 분석 기준으로 사용했다.
 - [Intel, *Processors and Processor Cores Based on Skymont Microarchitecture: Instruction Throughput and Latency*](https://www.intel.com/content/www/us/en/content-details/837381/intel-processors-and-processor-cores-based-on-skymont-microarchitecture-instruction-throughput-and-latency.html) — package 이름은 Xeon 6 E-core 범위이므로 255H client E-core에 대한 수치 전이는 조건부이며, 실제 target 측정이 필요한 이유를 뒷받침한다.
 - [Intel, *Processors and Processor Cores Based on Crestmont and Redwood Cove Microarchitecture: Instruction Throughput and Latency*](https://www.intel.com/content/www/us/en/content-details/825952/intel-processors-and-processor-cores-based-on-crestmont-and-redwood-cove-microarchitecture-instruction-throughput-and-latency.html) — PerfMon의 LP-E=Crestmont 설명이 맞을 때 적용할 conditional selected-row 모델과 package 한계를 재현했다.

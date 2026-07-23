@@ -63,7 +63,13 @@ state after every timed process; it rejects a deliberately halved loop that the
 older public-function and assembly gates misreported as 2.253x faster.  Fresh
 32-sample AMD campaigns put every new candidate's interval across 1.  These
 smaller streams are therefore target-only 255H candidates, not new submission
-incumbents.
+incumbents.  A tenth pass replaced the intrinsic compact blocks with exact
+counted-assembly front ends: block2, block3+tail1, and block5 now occupy
+122/238/292 bytes and execute 133/129/127 modeled non-padding instructions.
+Register placement, boundary placement, scalar destructive-rotate, and SHLD
+screens produced no static target winner.  The timing schema now also binds the
+reported average to total elapsed time, checks timed-work child-CPU coverage,
+and challenges each source at a nonce-derived alternate iteration count.
 
 \section{Recovering the structure}
 
@@ -387,7 +393,9 @@ Each row uses six discarded warm-ups, 32 balanced samples, 3,000,000 calls per
 sample, and the direct 100,000-case random-state/random-constant gate.  CPU 2
 reverses the CPU 1/3 ordering, demonstrating that even this VM cannot replace a
 255H measurement.  SSE2 was rejected at 781 instructions, 4,064 bytes, and
-about 0.40x.  Finally, 47 extra exact-GCC13 and 53 Clang 21 target/scheduler
+about 0.40x.  The official Core Ultra 7 255H product specification lists AVX2
+as its vector extension, so AVX-512 candidates are outside the supported target
+contract and were not pursued.  Finally, 47 extra exact-GCC13 and 53 Clang 21 target/scheduler
 combinations found no better static stream.  Clang's spill-free 1,208-byte
 Arrow Lake stream scored 133.79 on the approximate Alder model, and LLVM-MCA 16
 has no Lion Cove or Skymont model.  The scalar build therefore remains the
@@ -613,6 +621,111 @@ AMD host detects no throughput replacement.  The 549/548-byte forms and block2
 therefore remain target-only candidates while the adaptive scalar source stays
 the submission incumbent.
 
+\subsection{Tenth-wave counted front ends, code generation, and hardened timing}
+
+The previous compact blocks came from intrinsics and left avoidable frontend
+instructions.  An exact GCC 13.3 quotient/remainder screen generated all ten
+pair-block sizes with conventional \texttt{DEC/JNE} control and retained three
+Pareto points:
+
+\begin{center}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+AVX2 stream & Bytes & Static inst. & Modeled dynamic & Alder RThroughput \\
+\midrule
+Full 20-transform inline & 549 & 122 & 122 & 20.3 \\
+Block2 $\times 5$ & \textbf{122} & 29 & 133 & 22.2 \\
+Block3 $\times 3$ + tail1 & 238 & 53 & 129 & 21.5 \\
+Block5 $\times 2$ & 292 & 65 & 127 & 21.2 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+All counts cover the complete clock-delimited loop; the dynamic column excludes
+alignment padding.  Every stream has zero hot memory operands and the same
+100.03-cycle modeled dependency path.  Block2 strictly improves the older
+intrinsic block2's 136 bytes/30 static instructions at the same 133 dynamic
+instructions.  Block3 also dominates the old intrinsic block5's
+321 bytes/69 static/131 dynamic shape.  Blocks 6--10 leave all twenty transforms
+static while adding loop control, and \texttt{LOOP} either exceeds its signed
+8-bit reach or expands unfavorably in the Alder model.  All thirteen generated
+decompositions passed the supplied vectors, exact binary audits, and 100,000
+arbitrary-state/arbitrary-add/XOR-constant differential cases at one and twenty
+rounds.
+
+A separate 29-case register, expression, and boundary screen did not lower the
+549-byte floor for the current six-instruction transform.  Three high-state,
+low-scratch register assignments tied the baseline exactly.  Letting the
+allocator choose a high scratch register grew the loop to 569 bytes; putting
+the high state in ModRM grew it to 609 bytes; and over-constraining all fixed
+register classes produced 563 bytes, 124 instructions, and a hot constant
+reload.  Four exact reassociations kept 122 instructions and 549 bytes.  Moving
+the constant XOR to the right-shift branch reduced only the Zen-2 proxy from
+180.03 to 160.03 cycles; Alder Lake and Meteor Lake stayed at 100.03, so it is
+not an Intel-target promotion.  Fourteen controlled start offsets covered the
+important 16/32/64-byte boundaries but emitted one normalized stream; static
+\texttt{llvm-mca} cannot rank linked fetch-boundary effects.  Every full build
+again passed the official vectors, 100,000 random state/constant cases, and the
+exact measured-loop audit.
+
+The scalar size screen likewise found no replacement.  Forced same-register
+\texttt{ROL} removes the only move, keeps 322 instructions, and shrinks the
+loop from 1,211 to 1,052 bytes, but increases the Alder/Meteor proxy from
+121.06 cycles and 402 uops to 138.13 cycles and 482 uops.  Same-register
+\texttt{SHLD} is an exact
+rotate, but its serial microprobe costs 3.03 modeled cycles versus 1.03 for
+\texttt{RORX}; it was rejected before eighty uses were expanded.  These are
+code-size observations, not target speedups.
+
+The three counted candidates and the 549-byte full stream were then measured
+on CPU 1 and CPU 3 with six discarded warm-ups, 32 balanced samples, and
+3,000,000 calls per sample under the hardened schema 5.  The table reports
+\emph{full549/candidate} paired medians and deterministic 5,000-resample
+bootstrap intervals:
+
+\begin{center}
+\small
+\begin{tabular}{lrr}
+\toprule
+Candidate & CPU 1 paired (95\% CI) & CPU 3 paired (95\% CI) \\
+\midrule
+Block2 $\times 5$ & 1.002787 (0.993620--1.008628) & 0.999423 (0.996616--1.002621) \\
+Block3 $\times 3$ + tail1 & 1.005277 (1.001490--1.014413) & 1.001329 (0.997071--1.004260) \\
+Block5 $\times 2$ & 0.999420 (0.990163--1.008628) & 1.000233 (0.997524--1.002615) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Five of the six intervals include one.  CPU 1's lone block3 signal is only
+0.53\%, below the 1\% promotion threshold, and the run is visibly
+nonstationary: the full stream's first seven samples are 36.07--37.44 ns before
+the remaining samples jump mostly into the 55--64 ns range.  CPU 3 does not
+reproduce the signal.  It is therefore diagnostic evidence, not a win.  The
+measured binaries also passed 100,000 arbitrary-state/constant cases and exact
+loop audits.  A separate oracle validated every preflight, warm-up, and measured
+process at the declared iteration count, while a fresh 128-bit nonce, campaign
+id, source hashes, and measured count derived a second unpredictable count for
+an independent semantic challenge.
+
+Three adversarial regressions define what the added gates cover.  A source that
+times half the calls and recomputes the other half after \texttt{clock()} fails
+the 0.65--1.05 inner-time/child-CPU median coverage gate.  A source that times
+half the calls and writes the known final state afterward fails the
+nonce-derived alternate-count challenge.  A source that merely halves the
+printed average fails the exact consistency check against total elapsed time
+and the declared count.  These checks bind the recorded samples to the tested
+source more tightly; they do not constitute attestation against arbitrary
+hostile code that recognizes both generated builds, nor do they prove a
+specific instruction executes once per iteration.  Promotion still requires
+source review, the exact clock-delimited assembly contract, differential tests,
+and independent 255H campaigns.
+
+Consequently, no tenth-wave result displaces the adaptive scalar submission
+incumbent.  The smaller block2, block3+tail1, and block5 frontends remain
+target-only alternatives that may matter on the real Core Ultra 7 255H, but
+neither AMD timing nor a static scheduling proxy can select among them.
+
 The remaining target experiment is encoded as a guarded
 \texttt{probe--screen--confirm--decide} workflow.  It pins a CPUID probe to every
 allowed logical CPU, combines core type with Linux topology signals, and leaves
@@ -647,9 +760,10 @@ a 28-case manifest; a fresh balanced smoke passed 28/28 direct checks
 and 28/28 exact-binary audits, with source-local \texttt{-iquote} context
 recorded for every case.  Its 1,000-call provisional-host timing remains
 integration evidence only.  The 549-byte commutative source replaces the old
-assembly entry; its 548-byte counter control and block2 are the two additions
-that form the current 30-case schema-5 manifest.  Both new entries passed their dedicated
-random-state/random-constant and exact-audit screens.  Two deliberately undersized
+assembly entry; its 548-byte counter control and the old intrinsic block2
+formed the 30-case schema-5 manifest.  The three counted block2/block3/block5
+frontends extend it to 33 target cases.  All three additions passed their
+dedicated random-state/random-constant and exact-audit screens.  Two deliberately undersized
 AMD/GCC12 confirmation sessions kept the incumbent while naming every missing
 target/compiler/sample/warm-up/iteration/random-case gate.  Every P-core
 campaign needs paired median $\ge 1.010$ and an
@@ -665,9 +779,11 @@ The following all pass:
   \item the supplied 20-round pair;
   \item each candidate's public functions compared with the generic reference
         after one and twenty rounds for 100,000 deterministic random states and
-        random add/XOR constants; and
+        random add/XOR constants;
   \item separate complete binaries for the preserved previous and final
-        \texttt{contest.c} files.
+        \texttt{contest.c} files; and
+  \item the schema-5 repeated-call and nonce-derived alternate-count final
+        states for every measured candidate process.
 \end{itemize}
 
 \begin{lstlisting}
@@ -690,11 +806,15 @@ from the median of paired sample ratios in an observed run.
 
 The benchmark compiles complete contest files separately and can assign flags
 per case, including two builds of the same source.  It changes only the number
-of calls in the supplied timing loop, discards three whole-process warm-ups,
+of calls in the supplied timing loop, discards whole-process warm-ups (six in
+the confirmation campaigns),
 pins one logical CPU, and uses cyclic/reversed case order.  It retains all raw
-internal \texttt{clock()} and external wall samples, median, MAD, p05/p95, a
-deterministic bootstrap median interval, paired speedup, and outlier flags in
-JSON.  Every process also reruns the official vector checks.
+total \texttt{clock()}, printed-average, child-CPU, and external wall samples,
+median, MAD, p05/p95, a deterministic bootstrap median interval, paired
+speedup, and outlier flags in JSON.  The reported per-call value is recomputed
+from total elapsed time, and eligible score campaigns require plausible
+inner-time/child-CPU coverage.  Every process also reruns the official vector
+checks.
 Before timing, schema 5 compiles each \texttt{contest.c} with only \texttt{main}
 renamed, links it to an independent verifier translation unit, and directly
 calls that candidate.  This keeps the oracle self-test distinct from candidate
@@ -707,6 +827,8 @@ Python, or binary-tool revisions.  A candidate requiring verifier-only flag
 overrides is quarantined rather than promoted.  The independent repeated-call
 oracle then fixes the expected final state for the requested iteration count;
 every preflight, warm-up, and measured process must report that state exactly.
+A nonce-derived alternate-count build must independently reach its oracle state
+before timing begins.
 
 A 10,000,000-call, 15-sample campaign produced:
 
@@ -799,6 +921,12 @@ python3 solutions/02_optimization/screen_avx2_commutative_layout_02.py \
   --check
 python3 solutions/02_optimization/screen_avx2_pair_blocks_02.py \
   --check --jobs 4
+python3 solutions/02_optimization/\
+screen_tenth_avx2_counted_frontends_02.py --check
+python3 solutions/02_optimization/\
+screen_tenth_codegen_02.py --check
+python3 solutions/02_optimization/\
+screen_tenth_codegen_scalar_rotate_02.py --check
 python3 solutions/02_optimization/screen_gcc133_avx_flags_02.py \
   --json /tmp/challenge02-gcc133-avx-flags.json
 python3 solutions/02_optimization/analyze_255h_instruction_model_02.py \
@@ -830,6 +958,18 @@ python3 solutions/02_optimization/autotune_02_255h.py probe \
   --compiler /path/to/gcc-13.3.0 \
   --out /tmp/ch2-255h/topology.json
 \end{lstlisting}
+
+The three tenth-wave \texttt{--check} commands regenerate their static screens
+and compare them with the checked-in counted-frontend, code-generation, and
+scalar-rotate result JSON.  The two hardened host campaigns are preserved
+separately as
+\path{solutions/02_optimization/tenth_wave_timing_02_cpu1.json} and
+\path{tenth_wave_timing_02_cpu3.json}; they retain all 32 raw sample
+pairs, source/protocol/binary hashes, semantic challenges, and child-CPU
+coverage records.  Because timing and the fresh nonce are intentionally
+volatile, these files are measured evidence rather than byte-reproducible
+\texttt{--check} products.  The exact six-case timing invocation is recorded
+in \path{submissions/02/README.md}.
 
 For the longer candidate matrix:
 
@@ -878,8 +1018,8 @@ gcc -O3 -Wall -Wextra -o /tmp/challenge02-default \
     build command.
   \item GCC,
     \href{https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/Optimize-Options.html}
-    {GCC 13.3 Optimize Options}: inline thresholds, scheduling, IRA, PGO, and
-    LTO experiments.
+    {GCC 13.3 Optimize Options}: inline thresholds, scheduling, IRA, PGO, LTO,
+    and loop/jump/label-alignment controls.
   \item de Moura and Bj\o{}rner,
     \href{https://doi.org/10.1007/978-3-540-78800-3_24}
     {Z3: An Efficient SMT Solver}, TACAS 2008: bit-vector equivalence and
@@ -891,7 +1031,8 @@ gcc -O3 -Wall -Wextra -o /tmp/challenge02-default \
   \item LLVM,
     \href{https://llvm.org/docs/CommandGuide/llvm-mca.html}
     {llvm-mca Machine Code Analyzer}: scheduling-model throughput and resource
-    analysis, including the model-accuracy limitation of static estimates.
+    analysis for the Alder Lake, Meteor Lake, and Zen-2 proxy screens, including
+    the model-accuracy limitation of static estimates.
   \item Abel and Reineke,
     \href{https://arxiv.org/abs/1810.04610}
     {uops.info: Characterizing Latency, Throughput, and Port Usage of
@@ -911,7 +1052,9 @@ gcc -O3 -Wall -Wextra -o /tmp/challenge02-default \
     \href{https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html}
     {Intel 64 and IA-32 Architectures Software Developer Manuals}: VEX.vvvv,
     ModRM r/m, extension-bit, and instruction-length interpretation for the
-    commutative operand-order screen.
+    commutative operand-order/register-placement screen, plus the
+    \texttt{RORX}, \texttt{ROL}, and \texttt{SHLD} semantics and encodings used
+    by the scalar-rotate screen.
   \item Intel,
     \href{https://www.intel.com/content/www/us/en/content-details/837381/intel-processors-and-processor-cores-based-on-skymont-microarchitecture-instruction-throughput-and-latency.html}
     {Skymont Instruction Throughput and Latency}: a Xeon 6 E-core-scoped package
@@ -930,8 +1073,9 @@ gcc -O3 -Wall -Wextra -o /tmp/challenge02-default \
     cores additional Skymont cores, conflicting with the PerfMon Crestmont label.
   \item GCC,
     \href{https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/x86-Options.html}
-    {GCC 13.3 x86 Options}: Alder Lake tuning availability and why AMD
-    \texttt{-march=native} data cannot stand in for the Intel target.
+    {GCC 13.3 x86 Options}: AVX2 target and tuning controls, Alder Lake tuning
+    availability, and why AMD \texttt{-march=native} data cannot stand in for
+    the Intel target.
   \item Intel,
     \href{https://www.intel.com/content/www/us/en/products/sku/241751/intel-core-ultra-7-processor-255h-24m-cache-up-to-5-10-ghz/specifications.html}
     {Core Ultra 7 255H specifications}: 6 P, 8 E, and 2 LP-E cores and AVX2 as

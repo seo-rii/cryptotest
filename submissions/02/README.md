@@ -276,6 +276,109 @@ the incumbent.  Raw campaigns are
 and
 [`ninth_wave_timing_02_cpu3.json`](../../solutions/02_optimization/ninth_wave_timing_02_cpu3.json).
 
+These are historical schema-5 records from before the current protocol
+fingerprint added total/average, child-CPU, and alternate-iteration checks, so a
+new target confirmation must regenerate them with the current driver.
+
+A tenth pass replaced the avoidable counted-loop frontend and exhaustively
+screened quotient/remainder block sizes 1--10.  Three exact-GCC13 Pareto points
+survived official vectors, 100,000 arbitrary-state/arbitrary-constant cases at
+one/twenty rounds, and complete measured-loop audits:
+
+| candidate | static loop | modeled non-padding instructions / call |
+|---|---:|---:|
+| counted block 2 | **122 B / 29 instructions** | 133 |
+| block 3 plus tail 1 | **238 B / 53 instructions** | 129 |
+| counted block 5 | **292 B / 65 instructions** | 127 |
+
+All have zero hot memory and retain the full stream's `100.03/180.03`
+Alder/Zen-2 dependency proxies.  Counted block 2 is strictly smaller than the
+old 136 B/30-static form; block 3 is smaller and dynamically lighter than the
+old 321 B/69-static block 5; the new block 5 trades another 54 bytes for two
+fewer dynamic control instructions.  x86 `LOOP`, blocks 4 and 6--10 are retained
+only as negative/dominated records.  The reproducible evidence is
+[`tenth_avx2_counted_frontends_results_02.json`](../../solutions/02_optimization/tenth_avx2_counted_frontends_results_02.json).
+
+The companion code-generation screen found exact ties for three high-state,
+low-scratch VEX allocations and the `VPADDQ` rotate merge.  Moving XOR onto the
+right-shift branch improves only the Zen-2 proxy (`180.03 -> 160.03`), not
+either Intel proxy.  Forced same-register `ROL` reduces the scalar loop to
+322 instructions/1,052 bytes, but worsens the Intel proxy from the `RORX`
+incumbent's `121.06 cycles/402 µops` to `138.13/482`; `SHLD` was rejected at
+its `3.03`-cycle serial latency probe.  These are static diagnostics, not 255H
+measurements.  See
+[`tenth_codegen_results_02.json`](../../solutions/02_optimization/tenth_codegen_results_02.json)
+and
+[`tenth_codegen_scalar_rotate_results_02.json`](../../solutions/02_optimization/tenth_codegen_scalar_rotate_results_02.json).
+
+Current schema 5 also has executable regressions for three concrete bypasses.
+It rejects work moved after the end clock through timed-region/child-CPU
+coverage, a known final state written after a shortened loop through a fresh
+nonce/campaign/source-bound alternate iteration challenge, and a falsified
+printed average through total/average consistency while deriving nanoseconds
+from total elapsed time.  POSIX child CPU accounting is mandatory for eligible
+runs.  These checks defend the demonstrated measurement contract; they are not
+cryptographic attestation of every arbitrary C program.
+
+The counted candidates were compared directly with full549 on CPU 1 and CPU 3
+using 3,000,000 calls, six warm-ups, and 32 balanced samples.  The
+`full549/scalar` controls were `1.061x (1.041--1.120)` and
+`1.032x (1.021--1.057)`.  CPU 1's block-3
+signal was `1.005x (1.001--1.014)`, but that campaign was nonstationary, the
+signal was not reproduced on CPU 3 (`1.001x, 0.997--1.004`), and it is below
+the 1% promotion threshold.  Every other counted candidate interval included
+one.  The scalar incumbent is unchanged; all three are target-only.  Raw
+current-protocol records are
+[`tenth_wave_timing_02_cpu1.json`](../../solutions/02_optimization/tenth_wave_timing_02_cpu1.json)
+and
+[`tenth_wave_timing_02_cpu3.json`](../../solutions/02_optimization/tenth_wave_timing_02_cpu3.json).
+
+From the repository root, the six-case campaign shape is:
+
+```bash
+python3 solutions/benchmark_02_permutation.py \
+  --case scalar=submissions/02/contest.c \
+  --case full549=solutions/02_optimization/contest_simd_avx2_inline_asm.c \
+  --case old_block2=solutions/02_optimization/contest_simd_avx2_pair_block2.c \
+  --case block2_counted=solutions/02_optimization/contest_simd_avx2_pair_block3_tail1.c \
+  --case block3_tail1=solutions/02_optimization/contest_simd_avx2_pair_block3_tail1.c \
+  --case block5_counted=solutions/02_optimization/contest_simd_avx2_pair_block3_tail1.c \
+  --baseline full549 \
+  --case-cflag scalar=-mbmi2 \
+  --case-cflag scalar=-finline-limit=2000 \
+  --case-cflag full549=-mavx2 \
+  --case-cflag full549=-DCH2_SIMD_INLINE \
+  --case-cflag full549=-finline-limit=2000 \
+  --case-cflag old_block2=-mavx2 \
+  --case-cflag old_block2=-DCH2_SIMD_INLINE \
+  --case-cflag old_block2=-finline-limit=2000 \
+  --case-cflag block2_counted=-mavx2 \
+  --case-cflag block2_counted=-DCH2_SIMD_INLINE \
+  --case-cflag block2_counted=-DCH2_TENTH_BLOCK2 \
+  --case-cflag block2_counted=-finline-limit=2000 \
+  --case-cflag block3_tail1=-mavx2 \
+  --case-cflag block3_tail1=-DCH2_SIMD_INLINE \
+  --case-cflag block3_tail1=-finline-limit=2000 \
+  --case-cflag block5_counted=-mavx2 \
+  --case-cflag block5_counted=-DCH2_SIMD_INLINE \
+  --case-cflag block5_counted=-DCH2_TENTH_BLOCK5 \
+  --case-cflag block5_counted=-finline-limit=2000 \
+  --audit-mode scalar=full-inline-320 \
+  --audit-mode full549=avx2-inline-lanewise \
+  --audit-mode old_block2=avx2-inline-pair-block2 \
+  --audit-mode block2_counted=avx2-inline-pair-block2-counted \
+  --audit-mode block3_tail1=avx2-inline-pair-block3-tail1 \
+  --audit-mode block5_counted=avx2-inline-pair-block5-counted \
+  --cpu 1 --iterations 3000000 --warmups 6 --samples 32 \
+  --random-cases 100000 --campaign-id ch2-tenth-cpu1-rerun-a \
+  --json /tmp/challenge02-tenth-cpu1.json
+```
+
+Use a fresh campaign id and output path for every run; change `--cpu 1` to
+`--cpu 3` for the second affinity.  A new 255H decision still requires the
+separate `probe -> screen -> confirm -> decide` workflow below rather than
+treating these AMD campaigns as target measurements.
+
 On the actual 255H, use
 [`../../solutions/02_optimization/autotune_02_255h.py`](../../solutions/02_optimization/autotune_02_255h.py)
 to probe P/E/LP-E topology, screen candidates, run two-session holdout
@@ -300,6 +403,8 @@ manifest; a fresh balanced smoke passed 28/28 direct verifications and 28/28
 audits, with source-local `-iquote` context recorded for every case. Its
 1,000-call provisional-host timings are integration evidence only.  The
 549-byte commutative source replaces the old assembly entry; adding its
-548-byte counter control and compact block2 produces the current **30-case**
-schema-5 manifest.  The two new entries passed their dedicated
-exact-audit and random-state/random-constant gates.
+548-byte counter control and the old compact block2 produced the ninth-wave
+30-case state.  The three counted block-2/3/5 Pareto points expand the current
+schema-5 manifest to **33 cases**.  Current confirmation additionally requires
+the repeated state, alternate challenge, total-derived timing, and child-CPU
+coverage records.
