@@ -20,16 +20,77 @@ import time
 from pathlib import Path
 from zipfile import ZipFile
 
-from challenge02_loop_audit import (
-    AUDIT_MODES,
-    audit_main_timing_loop,
-    format_loop_summary,
-    validate_loop_audit,
+if __package__:
+    from .challenge02_loop_audit import (
+        AUDIT_MODES,
+        audit_main_timing_loop,
+        format_loop_summary,
+        validate_loop_audit,
+    )
+else:
+    from challenge02_loop_audit import (
+        AUDIT_MODES,
+        audit_main_timing_loop,
+        format_loop_summary,
+        validate_loop_audit,
+    )
+
+
+TIMING_PATTERN = re.compile(
+    r"^average per 20rounds = ([0-9]+(?:\.[0-9]+)?) us$", re.MULTILINE
 )
-
-
-TIMING_PATTERN = re.compile(r"average per 20rounds = ([0-9.]+) us")
+FINAL_STATE_PATTERN = re.compile(
+    r"^benchmark final state = "
+    r"([0-9a-fA-F]{16}) ([0-9a-fA-F]{16}) "
+    r"([0-9a-fA-F]{16}) ([0-9a-fA-F]{16})$",
+    re.MULTILINE,
+)
+ITERATIONS_OUTPUT_PATTERN = re.compile(
+    r"^iterations\s+=\s+([0-9]+)$", re.MULTILINE
+)
+ORACLE_FINAL_STATE_PATTERN = re.compile(
+    r"^oracle_final_state="
+    r"([0-9a-fA-F]{16}) ([0-9a-fA-F]{16}) "
+    r"([0-9a-fA-F]{16}) ([0-9a-fA-F]{16})$",
+    re.MULTILINE,
+)
+ORACLE_ITERATIONS_PATTERN = re.compile(
+    r"^oracle_final_state_iterations=([0-9]+)$", re.MULTILINE
+)
 ITERATIONS_PATTERN = re.compile(r"const int iterations = [0-9]+;")
+
+
+def parse_contest_timing_output(stdout: str) -> dict[str, object]:
+    """Parse the unique repeated-call result emitted by one contest process."""
+
+    states = FINAL_STATE_PATTERN.findall(stdout)
+    iterations = ITERATIONS_OUTPUT_PATTERN.findall(stdout)
+    timings = TIMING_PATTERN.findall(stdout)
+    counts = (len(states), len(iterations), len(timings))
+    if counts != (1, 1, 1):
+        raise ValueError(
+            "expected exactly one final-state, iterations, and timing line; "
+            f"found {counts}"
+        )
+    return {
+        "final_state": tuple(value.lower() for value in states[0]),
+        "iterations": int(iterations[0]),
+        "internal_ns": float(timings[0]) * 1_000.0,
+    }
+
+
+def parse_oracle_final_state(stdout: str) -> tuple[int, tuple[str, str, str, str]]:
+    """Parse the independent oracle's unique repeated-call result."""
+
+    states = ORACLE_FINAL_STATE_PATTERN.findall(stdout)
+    iterations = ORACLE_ITERATIONS_PATTERN.findall(stdout)
+    if len(states) != 1 or len(iterations) != 1:
+        raise ValueError(
+            "expected exactly one oracle final-state and iterations line; "
+            f"found states={len(states)} iterations={len(iterations)}"
+        )
+    state = tuple(value.lower() for value in states[0])
+    return int(iterations[0]), state
 
 
 def main() -> None:
@@ -309,6 +370,51 @@ def main() -> None:
         print("$", shlex.join(oracle_run), flush=True)
         subprocess.run(oracle_run, check=True)
 
+        oracle_final_command = [
+            str(oracle),
+            "--final-state",
+            str(args.iterations),
+        ]
+        print("$", shlex.join(oracle_final_command), flush=True)
+        oracle_final_run = subprocess.run(
+            oracle_final_command,
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        try:
+            oracle_iterations, expected_final_state = parse_oracle_final_state(
+                oracle_final_run.stdout
+            )
+        except ValueError as error:
+            parser.error(
+                "independent repeated-call oracle output is malformed: "
+                f"{error}\nstdout:\n{oracle_final_run.stdout}\n"
+                f"stderr:\n{oracle_final_run.stderr}"
+            )
+        if (
+            oracle_final_run.returncode != 0
+            or oracle_final_run.stderr
+            or oracle_iterations != args.iterations
+        ):
+            parser.error(
+                "independent repeated-call oracle validation failed "
+                f"(exit {oracle_final_run.returncode}, iterations "
+                f"{oracle_iterations}, expected {args.iterations})\n"
+                f"stdout:\n{oracle_final_run.stdout}\n"
+                f"stderr:\n{oracle_final_run.stderr}"
+            )
+        oracle_validation = {
+            "mode": "independent-reference-repeated-20-rounds",
+            "iterations": oracle_iterations,
+            "expected_final_state": list(expected_final_state),
+            "stdout_sha256": hashlib.sha256(
+                oracle_final_run.stdout.encode()
+            ).hexdigest(),
+            "status": "PASS",
+        }
+
         executables: dict[str, Path] = {}
         candidate_verification: dict[str, dict[str, object]] = {}
         assembly_audits: dict[str, dict[str, object]] = {}
@@ -482,6 +588,52 @@ def main() -> None:
                         + "; ".join(errors)
                     )
 
+        timed_main_validation_cases: dict[str, dict[str, object]] = {}
+        for name, _ in cases:
+            print(f"semantic_preflight case={name}", flush=True)
+            completed = subprocess.run(
+                [str(executables[name])],
+                cwd=temporary,
+                check=False,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            try:
+                timed_result = parse_contest_timing_output(completed.stdout)
+                parse_error = None
+            except ValueError as error:
+                timed_result = None
+                parse_error = str(error)
+            valid = (
+                completed.returncode == 0
+                and not completed.stderr
+                and "one-round testvector verification: OK (1000 pairs checked)"
+                in completed.stdout
+                and "20-round testvector verification: OK" in completed.stdout
+                and timed_result is not None
+                and timed_result["iterations"] == args.iterations
+                and timed_result["final_state"] == expected_final_state
+            )
+            if not valid:
+                parser.error(
+                    f"timed-main semantic preflight failed for {name} "
+                    f"(exit {completed.returncode}, parse={parse_error!r})\n"
+                    f"expected_iterations={args.iterations} "
+                    f"expected_final_state={' '.join(expected_final_state)}\n"
+                    f"stdout:\n{completed.stdout}\nstderr:\n{completed.stderr}"
+                )
+            assert timed_result is not None
+            timed_main_validation_cases[name] = {
+                "iterations": args.iterations,
+                "observed_final_state": list(timed_result["final_state"]),
+                "preflight_processes": 1,
+                "warmup_processes": args.warmups,
+                "measured_processes": args.samples,
+                "validated_processes": 1 + args.warmups + args.samples,
+                "status": "PASS",
+            }
+
         for warmup in range(args.warmups):
             shift = warmup % len(cases)
             order = cases[shift:] + cases[:shift]
@@ -497,16 +649,26 @@ def main() -> None:
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                 )
+                try:
+                    timed_result = parse_contest_timing_output(completed.stdout)
+                    parse_error = None
+                except ValueError as error:
+                    timed_result = None
+                    parse_error = str(error)
                 valid = (
                     completed.returncode == 0
+                    and not completed.stderr
                     and "one-round testvector verification: OK (1000 pairs checked)"
                     in completed.stdout
                     and "20-round testvector verification: OK" in completed.stdout
-                    and TIMING_PATTERN.search(completed.stdout) is not None
+                    and timed_result is not None
+                    and timed_result["iterations"] == args.iterations
+                    and timed_result["final_state"] == expected_final_state
                 )
                 if not valid:
                     parser.error(
-                        f"warmup validation failed for {name} (exit {completed.returncode})\n"
+                        f"warmup validation failed for {name} "
+                        f"(exit {completed.returncode}, parse={parse_error!r})\n"
                         f"stdout:\n{completed.stdout}\nstderr:\n{completed.stderr}"
                     )
 
@@ -526,22 +688,31 @@ def main() -> None:
                     stderr=subprocess.PIPE,
                 )
                 elapsed_s = (time.perf_counter_ns() - start_ns) / 1_000_000_000.0
-                match = TIMING_PATTERN.search(completed.stdout)
+                try:
+                    timed_result = parse_contest_timing_output(completed.stdout)
+                    parse_error = None
+                except ValueError as error:
+                    timed_result = None
+                    parse_error = str(error)
                 valid = (
                     completed.returncode == 0
+                    and not completed.stderr
                     and "one-round testvector verification: OK (1000 pairs checked)"
                     in completed.stdout
                     and "20-round testvector verification: OK" in completed.stdout
-                    and match is not None
+                    and timed_result is not None
+                    and timed_result["iterations"] == args.iterations
+                    and timed_result["final_state"] == expected_final_state
                 )
                 if not valid:
                     parser.error(
                         f"sample {sample + 1} validation failed for {name} "
-                        f"(exit {completed.returncode})\nstdout:\n{completed.stdout}\n"
+                        f"(exit {completed.returncode}, parse={parse_error!r})\n"
+                        f"stdout:\n{completed.stdout}\n"
                         f"stderr:\n{completed.stderr}"
                     )
-                assert match is not None
-                internal_ns = float(match.group(1)) * 1_000.0
+                assert timed_result is not None
+                internal_ns = float(timed_result["internal_ns"])
                 internal_samples[name].append(internal_ns)
                 wall_samples[name].append(elapsed_s)
                 print(
@@ -684,7 +855,7 @@ def main() -> None:
             ).encode()
         ).hexdigest()
         report = {
-            "schema_version": 4,
+            "schema_version": 5,
             "benchmark": "challenge02_contest_shaped",
             "campaign_id": args.campaign_id,
             "environment": {
@@ -707,6 +878,7 @@ def main() -> None:
                 "candidate_random_differential_cases": args.random_cases,
                 "random_differential_cases": args.random_cases,
                 "candidate_random_differential": True,
+                "timed_main_repeated_call_validation": True,
                 "order": "balanced-cyclic-reversed",
                 "bootstrap_resamples": 5_000,
             },
@@ -733,6 +905,10 @@ def main() -> None:
             },
             "candidate_verification": candidate_verification,
             "assembly_audits": assembly_audits,
+            "timed_main_validation": {
+                "oracle": oracle_validation,
+                "cases": timed_main_validation_cases,
+            },
             "internal_ns_per_20round": internal_samples,
             "outer_wall_seconds": wall_samples,
             "summaries": summaries,

@@ -90,12 +90,12 @@ static inline uint64_t bswap64_portable(uint64_t x) {
     __attribute__((always_inline, optimize("no-tree-vectorize"))) inline
 #elif defined(__GNUC__) && !defined(__clang__)
 #define PERMUTE20_ATTRIBUTE                                                   \
-    __attribute__((noinline, noclone, target("bmi2,avx2"),                       \
+    __attribute__((noinline, noclone, target("bmi2"),                       \
                    optimize("no-tree-vectorize"), aligned(64)))
 #elif defined(__clang__) && defined(__BMI2__)
 #define PERMUTE20_ATTRIBUTE __attribute__((always_inline)) inline
 #elif defined(__clang__)
-#define PERMUTE20_ATTRIBUTE __attribute__((noinline, target("bmi2,avx2"), aligned(64)))
+#define PERMUTE20_ATTRIBUTE __attribute__((noinline, target("bmi2"), aligned(64)))
 #else
 #define PERMUTE20_ATTRIBUTE
 #endif
@@ -111,96 +111,65 @@ static inline uint64_t transform_word(uint64_t value,
  * After two rounds the word reversal cancels.  Keep the four independent
  * chains in four AVX2 lanes; variable shifts implement their distinct rotates.
  */
-#define INLINE_ASM_TRANSFORM(LEFT, RIGHT, XOR_VALUE, ADD_VALUE)              \
-    "vpsrlvq %[" RIGHT "], %[value], %[scratch]\n\t"                     \
-    "vpsllvq %[" LEFT "], %[value], %[value]\n\t"                       \
-    "vpor %[value], %[scratch], %[value]\n\t"                          \
-    "vpxor %[value], %[" XOR_VALUE "], %[value]\n\t"                     \
-    "vpshufb %[byte_swap], %[value], %[value]\n\t"                        \
-    "vpaddq %[value], %[" ADD_VALUE "], %[value]\n\t"
+static inline __m256i keep_in_vector_register(__m256i value) {
+    __asm__("" : "+x"(value));
+    return value;
+}
+
+static inline __m256i rotl64_lanes_avx2(__m256i value,
+                                        __m256i left,
+                                        __m256i right) {
+    return _mm256_or_si256(_mm256_sllv_epi64(value, left),
+                           _mm256_srlv_epi64(value, right));
+}
+
+#define APPLY_TWO_ROUNDS_AVX2()                                               \
+    do {                                                                      \
+        value = rotl64_lanes_avx2(value, left_forward, right_forward);        \
+        value = _mm256_xor_si256(value, xor_forward);                         \
+        value = _mm256_shuffle_epi8(value, byte_swap);                        \
+        value = _mm256_add_epi64(value, add_reverse);                         \
+        value = rotl64_lanes_avx2(value, left_reverse, right_reverse);        \
+        value = _mm256_xor_si256(value, xor_reverse);                         \
+        value = _mm256_shuffle_epi8(value, byte_swap);                        \
+        value = _mm256_add_epi64(value, add_forward);                         \
+    } while (0)
 
 PERMUTE20_ATTRIBUTE static void permute_20rounds_unrolled(
     state256_t *restrict state,
     const uint64_t constants1[restrict 4],
     const uint64_t constants2[restrict 4]) {
-    register __m256i value __asm__("ymm0") =
-        _mm256_loadu_si256((const __m256i *)(const void *)state);
-    __m256i xor_forward =
-        _mm256_loadu_si256((const __m256i *)(const void *)constants2);
-    __m256i add_reverse =
-        _mm256_permute4x64_epi64(
-            _mm256_loadu_si256((const __m256i *)(const void *)constants1),
-            _MM_SHUFFLE(0, 1, 2, 3));
-    __m256i xor_reverse =
-        _mm256_permute4x64_epi64(xor_forward, _MM_SHUFFLE(0, 1, 2, 3));
+    __m256i value = _mm256_loadu_si256((const __m256i *)(const void *)state);
     __m256i add_forward =
         _mm256_loadu_si256((const __m256i *)(const void *)constants1);
-    __m256i scratch;
-    __m256i left_forward =
-        _mm256_setr_epi64x(43, 7, 29, 14);
-    __m256i right_forward =
-        _mm256_setr_epi64x(21, 57, 35, 50);
-    __m256i left_reverse =
-        _mm256_setr_epi64x(14, 29, 7, 43);
-    __m256i right_reverse =
-        _mm256_setr_epi64x(50, 35, 57, 21);
-    __m256i byte_swap =
-        _mm256_setr_epi8(
-            7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8,
-            7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8);
+    __m256i xor_forward =
+        _mm256_loadu_si256((const __m256i *)(const void *)constants2);
+    const __m256i add_reverse =
+        _mm256_permute4x64_epi64(add_forward, _MM_SHUFFLE(0, 1, 2, 3));
+    const __m256i xor_reverse =
+        _mm256_permute4x64_epi64(xor_forward, _MM_SHUFFLE(0, 1, 2, 3));
+    const __m256i left_forward = _mm256_setr_epi64x(43, 7, 29, 14);
+    const __m256i right_forward = _mm256_setr_epi64x(21, 57, 35, 50);
+    const __m256i left_reverse = _mm256_setr_epi64x(14, 29, 7, 43);
+    const __m256i right_reverse = _mm256_setr_epi64x(50, 35, 57, 21);
+    const __m256i byte_swap = _mm256_setr_epi8(
+        7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8,
+        7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8);
+    add_forward = keep_in_vector_register(add_forward);
+    xor_forward = keep_in_vector_register(xor_forward);
 
-    __asm__(
-        INLINE_ASM_TRANSFORM("left_forward", "right_forward", "xor_forward",
-                              "add_reverse")
-        INLINE_ASM_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
-                              "add_forward")
-        INLINE_ASM_TRANSFORM("left_forward", "right_forward", "xor_forward",
-                              "add_reverse")
-        INLINE_ASM_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
-                              "add_forward")
-        INLINE_ASM_TRANSFORM("left_forward", "right_forward", "xor_forward",
-                              "add_reverse")
-        INLINE_ASM_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
-                              "add_forward")
-        INLINE_ASM_TRANSFORM("left_forward", "right_forward", "xor_forward",
-                              "add_reverse")
-        INLINE_ASM_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
-                              "add_forward")
-        INLINE_ASM_TRANSFORM("left_forward", "right_forward", "xor_forward",
-                              "add_reverse")
-        INLINE_ASM_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
-                              "add_forward")
-        INLINE_ASM_TRANSFORM("left_forward", "right_forward", "xor_forward",
-                              "add_reverse")
-        INLINE_ASM_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
-                              "add_forward")
-        INLINE_ASM_TRANSFORM("left_forward", "right_forward", "xor_forward",
-                              "add_reverse")
-        INLINE_ASM_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
-                              "add_forward")
-        INLINE_ASM_TRANSFORM("left_forward", "right_forward", "xor_forward",
-                              "add_reverse")
-        INLINE_ASM_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
-                              "add_forward")
-        INLINE_ASM_TRANSFORM("left_forward", "right_forward", "xor_forward",
-                              "add_reverse")
-        INLINE_ASM_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
-                              "add_forward")
-        INLINE_ASM_TRANSFORM("left_forward", "right_forward", "xor_forward",
-                              "add_reverse")
-        INLINE_ASM_TRANSFORM("left_reverse", "right_reverse", "xor_reverse",
-                              "add_forward")
-        : [value] "+x"(value), [scratch] "=&x"(scratch)
-        : [xor_forward] "x"(xor_forward), [add_reverse] "x"(add_reverse),
-          [xor_reverse] "x"(xor_reverse), [add_forward] "x"(add_forward),
-          [left_forward] "x"(left_forward), [right_forward] "x"(right_forward),
-          [left_reverse] "x"(left_reverse), [right_reverse] "x"(right_reverse),
-          [byte_swap] "x"(byte_swap));
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC unroll 1
+#endif
+    for (unsigned int pair = 0; pair < 5U; ++pair) {
+        APPLY_TWO_ROUNDS_AVX2();
+        APPLY_TWO_ROUNDS_AVX2();
+    }
 
     _mm256_storeu_si256((__m256i *)(void *)state, value);
 }
 
-#undef INLINE_ASM_TRANSFORM
+#undef APPLY_TWO_ROUNDS_AVX2
 #undef PERMUTE20_ATTRIBUTE
 
 /* -------------------------------------------------

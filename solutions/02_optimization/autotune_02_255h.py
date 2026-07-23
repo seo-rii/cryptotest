@@ -46,6 +46,7 @@ MIN_CONFIRM_ITERATIONS = 5_000_000
 MIN_CONFIRM_WARMUPS = 6
 MIN_CONFIRM_SAMPLES = 40
 MIN_RANDOM_CASES = 100_000
+BENCHMARK_SCHEMA_VERSION = 5
 P_MEDIAN_THRESHOLD = 1.010
 P_LOWER_THRESHOLD = 1.005
 SAFE_MEDIAN_THRESHOLD = 0.995
@@ -1466,9 +1467,9 @@ def run_one_campaign(
         campaign["status"] = "FAIL"
         raise AutotuneError(f"benchmark produced no JSON for {stem}")
     benchmark = read_json(partial_json, "benchmark result")
-    if benchmark.get("schema_version") != 4:
+    if benchmark.get("schema_version") != BENCHMARK_SCHEMA_VERSION:
         raise AutotuneError(
-            f"{stem}: benchmark schema must be 4, got "
+            f"{stem}: benchmark schema must be {BENCHMARK_SCHEMA_VERSION}, got "
             f"{benchmark.get('schema_version')!r}"
         )
     if benchmark.get("baseline") != baseline:
@@ -1484,6 +1485,18 @@ def run_one_campaign(
     if actual_protocol != expected_protocol:
         raise AutotuneError(
             f"{stem}: benchmark measurement protocol differs from the campaign index"
+        )
+    timed_main_errors = timed_main_validation_errors(
+        benchmark,
+        expected_case_names=[candidate["name"] for candidate in selected],
+        expected_iterations=iterations,
+        expected_warmups=warmups,
+        expected_samples=samples,
+    )
+    if timed_main_errors:
+        raise AutotuneError(
+            f"{stem}: timed-main repeated-call validation failed: "
+            + "; ".join(timed_main_errors)
         )
     for candidate in selected:
         name = candidate["name"]
@@ -2040,6 +2053,176 @@ def integer_or_zero(value: object) -> int:
         return 0
 
 
+def timed_main_validation_errors(
+    report: dict[str, Any],
+    *,
+    expected_case_names: Sequence[str],
+    expected_iterations: int,
+    expected_warmups: int,
+    expected_samples: int,
+    require_exact_case_set: bool = True,
+    check_global: bool = True,
+    check_cases: bool = True,
+) -> list[str]:
+    """Validate schema-5 evidence that every timed process did the real work."""
+
+    errors: list[str] = []
+    expected_names = list(expected_case_names)
+    expected_name_set = set(expected_names)
+    if len(expected_names) != len(expected_name_set) or any(
+        not isinstance(name, str) or not name for name in expected_names
+    ):
+        return ["timed-main expected case names are malformed or duplicated"]
+    if any(
+        not isinstance(value, int) or isinstance(value, bool) or value < 0
+        for value in (expected_iterations, expected_warmups, expected_samples)
+    ):
+        return ["timed-main expected process counts are malformed"]
+
+    def exact_integer(value: object, expected: int) -> bool:
+        return (
+            isinstance(value, int)
+            and not isinstance(value, bool)
+            and value == expected
+        )
+
+    def state_words(value: object) -> list[str] | None:
+        if not isinstance(value, list) or len(value) != 4:
+            return None
+        if not all(
+            isinstance(word, str) and re.fullmatch(r"[0-9a-f]{16}", word)
+            for word in value
+        ):
+            return None
+        return list(value)
+
+    config = report.get("config")
+    validation = report.get("timed_main_validation")
+    oracle = validation.get("oracle") if isinstance(validation, dict) else None
+    cases = validation.get("cases") if isinstance(validation, dict) else None
+    oracle_state = (
+        state_words(oracle.get("expected_final_state"))
+        if isinstance(oracle, dict)
+        else None
+    )
+
+    if check_global:
+        if report.get("schema_version") != BENCHMARK_SCHEMA_VERSION:
+            errors.append(
+                "timed-main benchmark schema is not "
+                f"{BENCHMARK_SCHEMA_VERSION}"
+            )
+        if not isinstance(config, dict):
+            errors.append("timed-main benchmark config is missing or malformed")
+        else:
+            if config.get("timed_main_repeated_call_validation") is not True:
+                errors.append(
+                    "timed-main repeated-call validation config gate is not true"
+                )
+            for key, expected in (
+                ("iterations", expected_iterations),
+                ("warmups", expected_warmups),
+                ("samples_per_case", expected_samples),
+            ):
+                if not exact_integer(config.get(key), expected):
+                    errors.append(
+                        f"timed-main config {key}={config.get(key)!r}, "
+                        f"expected {expected}"
+                    )
+        if not isinstance(validation, dict):
+            errors.append("timed-main validation record is missing or malformed")
+        elif set(validation) != {"oracle", "cases"}:
+            errors.append("timed-main validation record has an unexpected shape")
+        if not isinstance(oracle, dict):
+            errors.append("timed-main oracle record is missing or malformed")
+        else:
+            if set(oracle) != {
+                "mode",
+                "iterations",
+                "expected_final_state",
+                "stdout_sha256",
+                "status",
+            }:
+                errors.append("timed-main oracle record has an unexpected shape")
+            if oracle.get("mode") != "independent-reference-repeated-20-rounds":
+                errors.append("timed-main oracle mode is not independent reference")
+            if not exact_integer(oracle.get("iterations"), expected_iterations):
+                errors.append(
+                    f"timed-main oracle iterations={oracle.get('iterations')!r}, "
+                    f"expected {expected_iterations}"
+                )
+            if oracle_state is None:
+                errors.append("timed-main oracle final state is malformed")
+            stdout_sha256 = oracle.get("stdout_sha256")
+            if not isinstance(stdout_sha256, str) or not re.fullmatch(
+                r"[0-9a-f]{64}", stdout_sha256
+            ):
+                errors.append("timed-main oracle stdout SHA-256 is malformed")
+            elif oracle_state is not None:
+                canonical_stdout = (
+                    f"oracle_final_state_iterations={expected_iterations}\n"
+                    f"oracle_final_state={' '.join(oracle_state)}\n"
+                )
+                expected_stdout_sha256 = hashlib.sha256(
+                    canonical_stdout.encode()
+                ).hexdigest()
+                if stdout_sha256 != expected_stdout_sha256:
+                    errors.append(
+                        "timed-main oracle stdout SHA-256 does not bind its state"
+                    )
+            if oracle.get("status") != "PASS":
+                errors.append("timed-main oracle status is not PASS")
+        if not isinstance(cases, dict):
+            errors.append("timed-main case records are missing or malformed")
+        elif require_exact_case_set and set(cases) != expected_name_set:
+            errors.append(
+                "timed-main case set differs from the measured campaign: "
+                f"got {sorted(str(name) for name in cases)}, "
+                f"expected {sorted(expected_name_set)}"
+            )
+        elif not expected_name_set.issubset(cases):
+            errors.append("one or more timed-main case records are missing")
+
+    if not check_cases:
+        return errors
+    for name in expected_names:
+        record = cases.get(name) if isinstance(cases, dict) else None
+        prefix = f"timed-main case {name}"
+        if not isinstance(record, dict):
+            errors.append(f"{prefix}: validation record is missing or malformed")
+            continue
+        if set(record) != {
+            "iterations",
+            "observed_final_state",
+            "preflight_processes",
+            "warmup_processes",
+            "measured_processes",
+            "validated_processes",
+            "status",
+        }:
+            errors.append(f"{prefix}: validation record has an unexpected shape")
+        expected_counts = (
+            ("iterations", expected_iterations),
+            ("preflight_processes", 1),
+            ("warmup_processes", expected_warmups),
+            ("measured_processes", expected_samples),
+            ("validated_processes", 1 + expected_warmups + expected_samples),
+        )
+        for key, expected in expected_counts:
+            if not exact_integer(record.get(key), expected):
+                errors.append(
+                    f"{prefix}: {key}={record.get(key)!r}, expected {expected}"
+                )
+        observed_state = state_words(record.get("observed_final_state"))
+        if observed_state is None:
+            errors.append(f"{prefix}: observed final state is malformed")
+        elif oracle_state is not None and observed_state != oracle_state:
+            errors.append(f"{prefix}: observed final state differs from the oracle")
+        if record.get("status") != "PASS":
+            errors.append(f"{prefix}: status is not PASS")
+    return errors
+
+
 def paired_bootstrap(
     ratios: Sequence[float], *, seed_text: str, comparison_count: int
 ) -> dict[str, float | int]:
@@ -2075,10 +2258,24 @@ def validate_report_case(
     cpu: int,
     common_cflags: Sequence[str],
     expected_random_cases: int,
+    expected_iterations: int,
+    expected_warmups: int,
+    expected_samples: int,
 ) -> tuple[list[str], list[str], tuple[object, ...] | None]:
     failures: list[str] = []
     missing: list[str] = []
     name = case["name"]
+    failures.extend(
+        timed_main_validation_errors(
+            report,
+            expected_case_names=[name],
+            expected_iterations=expected_iterations,
+            expected_warmups=expected_warmups,
+            expected_samples=expected_samples,
+            require_exact_case_set=False,
+            check_global=False,
+        )
+    )
     verifications = report.get("candidate_verification")
     verification = verifications.get(name) if isinstance(verifications, dict) else None
     if not isinstance(verification, dict):
@@ -2204,8 +2401,11 @@ def analyze_confirmation_campaign(
         result["failures"].append("benchmark artifact hash changed after the campaign")
         return result
     report = read_json(result_path, "confirmation benchmark")
-    if report.get("schema_version") != 4:
-        result["missing"].append("confirmation benchmark schema is not 4")
+    if report.get("schema_version") != BENCHMARK_SCHEMA_VERSION:
+        result["missing"].append(
+            "confirmation benchmark schema is not "
+            f"{BENCHMARK_SCHEMA_VERSION}"
+        )
         return result
     campaign_id = campaign.get("campaign_id")
     if not isinstance(campaign_id, str) or not re.fullmatch(
@@ -2239,6 +2439,7 @@ def analyze_confirmation_campaign(
         "baseline": report.get("baseline"),
         "config": report.get("config"),
         "measurement_protocol_fingerprint": report_protocol,
+        "timed_main_validation": report.get("timed_main_validation"),
     }
     report_environment = report.get("environment")
     evidence["environment"] = (
@@ -2294,6 +2495,16 @@ def analyze_confirmation_campaign(
                 f"benchmark config {key}={report_config.get(key)!r}, expected "
                 f"{expected!r} from the confirmation index"
             )
+    result["failures"].extend(
+        timed_main_validation_errors(
+            report,
+            expected_case_names=[str(incumbent_name), str(candidate_name)],
+            expected_iterations=index_config.get("iterations"),
+            expected_warmups=index_config.get("warmups"),
+            expected_samples=index_config.get("samples"),
+            check_cases=False,
+        )
+    )
     if report_config.get("order") != "balanced-cyclic-reversed":
         result["failures"].append(
             "benchmark did not use balanced cyclic/reversed case order"
@@ -2336,6 +2547,9 @@ def analyze_confirmation_campaign(
             cpu=cpu,
             common_cflags=manifest["common_cflags"],
             expected_random_cases=integer_or_zero(index_config.get("random_cases")),
+            expected_iterations=index_config.get("iterations"),
+            expected_warmups=index_config.get("warmups"),
+            expected_samples=index_config.get("samples"),
         )
         result["failures"].extend(failures)
         result["missing"].extend(missing)

@@ -101,7 +101,7 @@ and [CPU 4](../../solutions/02_optimization/gcc133_schedule_results_02_cpu4.json
 raw confirmation runs are retained. Exact constant-reordering controls can be
 emitted by
 [`analyze_constant_placement_02.py`](../../solutions/02_optimization/analyze_constant_placement_02.py);
-their schema-4 raw samples are linked from the deep review.
+their historical schema-4 raw samples are linked from the deep review.
 
 A fifth-wave exact-GCC13 screen added target-only candidates without changing
 the incumbent.  All 24 orders of the four independent chain assignments were
@@ -217,6 +217,65 @@ and
 [`instruction_model_255h_02.json`](../../solutions/02_optimization/instruction_model_255h_02.json);
 neither selects a 255H winner.
 
+A ninth pass tightened both the candidate and the measurement contract.  The
+benchmark had already verified candidates through their public one/twenty-round
+functions and audited the measured assembly, but those checks did not prove
+that timing `main` updated the state exactly the declared number of times.  A
+deliberately halved timing loop passed both old gates and appeared **2.253x**
+faster.  Schema 5 now computes an independent repeated-call final-state oracle
+and requires every semantic preflight, warm-up, and measured process to report
+that exact 256-bit state and iteration count.  It records the exact case set,
+process counts, and canonical output hashes in a fail-closed JSON contract.
+The halved loop, malformed iteration values, duplicated/missing output, and a
+state/hash mismatch are permanent regressions.  Older schema-2--4 JSON remains
+historical performance and assembly evidence, not evidence of this stronger
+repeated-call property.
+
+The same pass exploited commutativity in the VEX encoding.  Reversing the two
+sources of `VPOR`, `VPXOR`, and `VPADDQ` keeps the dependency graph unchanged
+but saves one byte on each of the twenty `VPOR` instructions.  Exact GCC 13.3
+therefore emits **122 instructions, 549 bytes, and no hot memory**.  This reaches
+the current `SUB`-counter lower bound of `20*27 + 3 + 6 = 549` bytes; the
+target-only `use_incdec` control is 548 bytes.  A digest-pinned 34-case
+flag/link screen passed all official vectors, 100,000 random states and random
+constants at one/twenty rounds, and exact audits.  It collapsed to five
+normalized streams and nine stream/alignment classes, all with unchanged
+100.03/180.03 Alder/Zen-2 proxy cycles.  The reproducible source and result are
+[`screen_avx2_commutative_layout_02.py`](../../solutions/02_optimization/screen_avx2_commutative_layout_02.py)
+and
+[`avx2_commutative_layout_results_02.json`](../../solutions/02_optimization/avx2_commutative_layout_results_02.json).
+
+An independent algorithm screen explored the midpoint between a completely
+unrolled vector loop and a tiny counted loop.  The retained block2 form handles
+two round-pairs per body and repeats it five times.  Its static timed region is
+only **136 bytes/30 instructions**; one call executes 133 modeled non-padding
+instructions (134 including one alignment NOP) rather than the full-unroll's
+122, has no hot memory, and retains the same modelled critical path.  Block1 is
+75 bytes/18 static but 143 modeled non-padding instructions (144 with its NOP).
+Block5 lowers that count to 131 (132 with its NOP) and Alder proxy
+throughput from 22.2 to 21.8 cycles, but grows to 321 bytes/69 static
+instructions; the slight model gain does not justify that footprint without
+target evidence.  Exhausting all `24*24=576`
+orders for the first two scalar stage-major chains produced no strict proxy
+improvement below the tuned 120.06-cycle reference.  See
+[`screen_avx2_pair_blocks_02.py`](../../solutions/02_optimization/screen_avx2_pair_blocks_02.py)
+and
+[`avx2_pair_block_results_02.json`](../../solutions/02_optimization/avx2_pair_block_results_02.json).
+
+Finally, schema-5 campaigns compared the old 569-byte stream with the new
+549-byte, 548-byte, aligned, and block2 candidates on CPU 1 and CPU 3.  Each
+used six discarded warm-ups and 32 balanced samples of 3,000,000 calls, with
+39 repeated-state-validated processes per candidate.  The 549-byte paired
+medians were 1.000451x (95% CI 0.999294--1.001894) and 1.000466x
+(0.998164--1.002395); block2 measured 0.999263x
+(0.997061--1.001998) and 0.999278x (0.997635--1.002321).  Every new
+candidate interval includes 1.  The footprint improvements are therefore
+preserved as 255H target-only candidates while the scalar submission remains
+the incumbent.  Raw campaigns are
+[`ninth_wave_timing_02_cpu1.json`](../../solutions/02_optimization/ninth_wave_timing_02_cpu1.json)
+and
+[`ninth_wave_timing_02_cpu3.json`](../../solutions/02_optimization/ninth_wave_timing_02_cpu3.json).
+
 On the actual 255H, use
 [`../../solutions/02_optimization/autotune_02_255h.py`](../../solutions/02_optimization/autotune_02_255h.py)
 to probe P/E/LP-E topology, screen candidates, run two-session holdout
@@ -236,7 +295,11 @@ passed all 15 direct verifications and all 15 measured-binary audits.  Those
 AVX2, passed 19/19 direct verifications and audits. After adding the distinct
 `-fira-region=one` and single-scratch 569-byte streams, a 21-case smoke passed
 21/21 direct verifications and measured-binary audits. Adding the seven
-nonbaseline stream/alignment representatives produced the current **28-case**
+nonbaseline stream/alignment representatives produced a **28-case**
 manifest; a fresh balanced smoke passed 28/28 direct verifications and 28/28
 audits, with source-local `-iquote` context recorded for every case. Its
-1,000-call provisional-host timings are integration evidence only.
+1,000-call provisional-host timings are integration evidence only.  The
+549-byte commutative source replaces the old assembly entry; adding its
+548-byte counter control and compact block2 produces the current **30-case**
+schema-5 manifest.  The two new entries passed their dedicated
+exact-audit and random-state/random-constant gates.

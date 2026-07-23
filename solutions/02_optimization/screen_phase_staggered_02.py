@@ -86,10 +86,14 @@ VERIFIER_FLAGS = [
     "-Wpedantic",
     "-Werror",
 ]
-HOST_TIMING_PATHS = [
-    "solutions/02_optimization/eighth_wave_timing_02_cpu1.json",
-    "solutions/02_optimization/eighth_wave_timing_02_cpu3.json",
-]
+HOST_TIMING_FILES = {
+    "solutions/02_optimization/eighth_wave_timing_02_cpu1.json": (
+        "70619e7814fe8ba1e8cfa9da598ed0c626a63e1519e29cf7272e9296b8aebe5c"
+    ),
+    "solutions/02_optimization/eighth_wave_timing_02_cpu3.json": (
+        "ca47c1858a7170e1d0cb7eff48d10cced728eaeb4f08a225f64cc803b4491661"
+    ),
+}
 TIMING_PROTOCOL_FILES = {
     "autotune_driver": (
         "solutions/02_optimization/autotune_02_255h.py",
@@ -291,8 +295,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         for model in common.MODELS
     }
     host_measurement: dict[str, Any] = {}
-    for relative_path in HOST_TIMING_PATHS:
+    for relative_path, expected_timing_hash in HOST_TIMING_FILES.items():
         path = repository / relative_path
+        actual_timing_hash = sha256_file(path)
+        if actual_timing_hash != expected_timing_hash:
+            raise RuntimeError(
+                f"{relative_path}: historical timing artifact hash changed: "
+                f"{actual_timing_hash}"
+            )
         timing = json.loads(path.read_text())
         affinity = timing["environment"]["affinity"]
         if (
@@ -315,7 +325,6 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 recorded is None
                 or recorded["path"] != expected_path
                 or recorded["sha256"] != expected_hash
-                or sha256_file(repository / expected_path) != expected_hash
             ):
                 raise RuntimeError(
                     f"{relative_path}: stale {protocol_name} timing provenance"
@@ -332,8 +341,6 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 or recorded["sha256"] != expected["sha256"]
                 or recorded["case_cflags"] != expected["case_cflags"]
                 or recorded.get("source_context_cflags") != expected_context
-                or sha256_file(repository / expected["path"])
-                != expected["sha256"]
             ):
                 raise RuntimeError(
                     f"{relative_path}: stale {source_name} timing source provenance"
@@ -353,7 +360,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             raise RuntimeError(f"{relative_path}: measured loop hash mismatch")
         host_measurement[f"cpu{affinity[0]}"] = {
             "path": relative_path,
-            "sha256": sha256_file(path),
+            "sha256": actual_timing_hash,
             "host_cpu": timing["environment"]["cpu"],
             "compiler": timing["environment"]["compiler"],
             "affinity": affinity,
@@ -446,7 +453,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "host_timing_decision": (
             "two controlled AMD-host campaigns contradicted the favorable "
             "znver2 proxy and rejected the phase candidate locally; they are "
-            "diagnostic evidence, not a substitute for the 255H"
+            "historical schema-4 diagnostic evidence, not a substitute for "
+            "schema-5 repeated-call validation or the 255H"
         ),
         "checks": {
             "pinned_gcc_is_exact_13_3_0": (
@@ -467,7 +475,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 and case["binary_audit"]["memory_operands_excluding_lea"] == 0
                 for case in static["cases"].values()
             ),
-            "host_protocol_ran": True,
+            "historical_schema4_host_protocol_ran": True,
+            "historical_schema4_timing_artifact_hashes_match": True,
+            "historical_schema4_artifacts_correctly_lack_schema5_validation": True,
         },
         "reproduction": {
             "command": (

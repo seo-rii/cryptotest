@@ -16,7 +16,9 @@
   "all_required_checks_passed": true,
   "checks": {
     "exact_timed_loop_audits_passed": true,
-    "host_protocol_ran": true,
+    "historical_schema4_artifacts_correctly_lack_schema5_validation": true,
+    "historical_schema4_host_protocol_ran": true,
+    "historical_schema4_timing_artifact_hashes_match": true,
     "official_vectors_passed": true,
     "pinned_gcc_is_exact_13_3_0": true,
     "random_state_and_constants_100k_passed": true,
@@ -184,7 +186,7 @@
       "sha256": "ca47c1858a7170e1d0cb7eff48d10cced728eaeb4f08a225f64cc803b4491661"
     }
   },
-  "host_timing_decision": "two controlled AMD-host campaigns contradicted the favorable znver2 proxy and rejected the phase candidate locally; they are diagnostic evidence, not a substitute for the 255H",
+  "host_timing_decision": "two controlled AMD-host campaigns contradicted the favorable znver2 proxy and rejected the phase candidate locally; they are historical schema-4 diagnostic evidence, not a substitute for schema-5 repeated-call validation or the 255H",
   "official_vector_smoke": {
     "avx2_current": {
       "one_round_pairs": 1000,

@@ -266,11 +266,20 @@ def benchmark_command(
 def validate_host(
     report: dict[str, Any], args: argparse.Namespace, repository: Path
 ) -> None:
+    common.validate_timed_main_validation(
+        report,
+        set(CASES),
+        args.iterations,
+        args.warmups,
+        args.samples,
+        "host",
+    )
     expected_config = {
         "iterations": args.iterations,
         "warmups": args.warmups,
         "samples_per_case": args.samples,
         "candidate_random_differential_cases": args.random_cases,
+        "timed_main_repeated_call_validation": True,
     }
     for key, expected in expected_config.items():
         if report.get("config", {}).get(key) != expected:
@@ -311,12 +320,14 @@ def validate_host(
 def compact_host(report: dict[str, Any], artifact_hash: str) -> dict[str, Any]:
     return {
         "artifact_sha256": artifact_hash,
+        "schema_version": report["schema_version"],
         "campaign_id": report["campaign_id"],
         "measurement_protocol": report["measurement_protocol"],
         "environment": report["environment"],
         "config": report["config"],
         "sources": report["sources"],
         "candidate_verification": report["candidate_verification"],
+        "timed_main_validation": report["timed_main_validation"],
         "assembly_audits": report["assembly_audits"],
         "summaries": report["summaries"],
         "comparisons": report["comparisons"],
@@ -498,6 +509,16 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 else all(
                     item["status"] == "PASS"
                     for item in host["candidate_verification"].values()
+                )
+            ),
+            "optional_host_timed_main_validation_passed": (
+                None
+                if host is None
+                else host["schema_version"] == 5
+                and host["timed_main_validation"]["oracle"]["status"] == "PASS"
+                and all(
+                    item["status"] == "PASS"
+                    for item in host["timed_main_validation"]["cases"].values()
                 )
             ),
         },

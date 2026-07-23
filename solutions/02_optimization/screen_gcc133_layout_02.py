@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -477,6 +478,106 @@ def main() -> None:
             temporary,
             args.random_cases,
         )
+        if smoke.get("schema_version") != 5:
+            raise RuntimeError(
+                "correctness smoke report schema is not 5: "
+                f"{smoke.get('schema_version')!r}"
+            )
+        smoke_config = smoke.get("config", {})
+        if not (
+            smoke_config.get("iterations") == 1000
+            and smoke_config.get("warmups") == 1
+            and smoke_config.get("samples_per_case") == 5
+            and smoke_config.get("timed_main_repeated_call_validation") is True
+        ):
+            raise RuntimeError("correctness smoke process counts changed")
+        timed_validation = smoke.get("timed_main_validation")
+        if not isinstance(timed_validation, dict):
+            raise RuntimeError("correctness smoke omitted timed_main_validation")
+        if set(timed_validation) != {"oracle", "cases"}:
+            raise RuntimeError("correctness smoke timed-main validation shape changed")
+        timed_oracle = timed_validation.get("oracle")
+        timed_cases = timed_validation.get("cases")
+        if not isinstance(timed_oracle, dict) or not isinstance(timed_cases, dict):
+            raise RuntimeError("correctness smoke timed-main validation is malformed")
+        if set(timed_oracle) != {
+            "mode",
+            "iterations",
+            "expected_final_state",
+            "stdout_sha256",
+            "status",
+        }:
+            raise RuntimeError("correctness smoke timed-main oracle shape changed")
+        if set(timed_cases) != set(TOP_CASES):
+            raise RuntimeError(
+                f"correctness smoke timed-main case set changed: {sorted(timed_cases)!r}"
+            )
+        expected_state = timed_oracle.get("expected_final_state")
+        valid_state = (
+            isinstance(expected_state, list)
+            and len(expected_state) == 4
+            and all(
+                isinstance(word, str) and re.fullmatch(r"[0-9a-f]{16}", word)
+                for word in expected_state
+            )
+        )
+        canonical_oracle_hash = (
+            hashlib.sha256(
+                (
+                    "oracle_final_state_iterations=1000\n"
+                    f"oracle_final_state={' '.join(expected_state)}\n"
+                ).encode()
+            ).hexdigest()
+            if valid_state
+            else None
+        )
+        if not (
+            timed_oracle.get("mode")
+            == "independent-reference-repeated-20-rounds"
+            and type(timed_oracle.get("iterations")) is int
+            and timed_oracle.get("iterations") == 1000
+            and valid_state
+            and isinstance(timed_oracle.get("stdout_sha256"), str)
+            and re.fullmatch(r"[0-9a-f]{64}", timed_oracle["stdout_sha256"])
+            and timed_oracle.get("stdout_sha256") == canonical_oracle_hash
+            and timed_oracle.get("status") == "PASS"
+        ):
+            raise RuntimeError("correctness smoke timed-main oracle did not pass")
+        for candidate, timed_case in timed_cases.items():
+            if isinstance(timed_case, dict) and set(timed_case) != {
+                "iterations",
+                "observed_final_state",
+                "preflight_processes",
+                "warmup_processes",
+                "measured_processes",
+                "validated_processes",
+                "status",
+            }:
+                raise RuntimeError(
+                    f"{candidate}: correctness smoke timed-main case shape changed"
+                )
+            if not isinstance(timed_case, dict) or not (
+                all(
+                    type(timed_case.get(field)) is int
+                    for field in (
+                        "iterations",
+                        "preflight_processes",
+                        "warmup_processes",
+                        "measured_processes",
+                        "validated_processes",
+                    )
+                )
+                and timed_case.get("iterations") == 1000
+                and timed_case.get("observed_final_state") == expected_state
+                and timed_case.get("preflight_processes") == 1
+                and timed_case.get("warmup_processes") == 1
+                and timed_case.get("measured_processes") == 5
+                and timed_case.get("validated_processes") == 7
+                and timed_case.get("status") == "PASS"
+            ):
+                raise RuntimeError(
+                    f"{candidate}: correctness smoke timed-main validation failed"
+                )
         compact_variants = {}
         for candidate, result in compiled["variants"].items():
             compact_variants[candidate] = {
@@ -504,6 +605,7 @@ def main() -> None:
         for candidate in TOP_CASES:
             top_evidence[candidate] = {
                 "random_differential": smoke["candidate_verification"][candidate],
+                "timed_main_validation": timed_cases[candidate],
                 "official_vectors_checked_on_every_smoke_process": True,
                 "measured_smoke_binary_audit": smoke["assembly_audits"][candidate],
             }
@@ -539,6 +641,13 @@ def main() -> None:
             "all_top_random_differential_gates_pass": all(
                 evidence["random_differential"]["status"] == "PASS"
                 for evidence in top_evidence.values()
+            ),
+            "all_top_timed_main_validations_pass": (
+                timed_oracle["status"] == "PASS"
+                and all(
+                    evidence["timed_main_validation"]["status"] == "PASS"
+                    for evidence in top_evidence.values()
+                )
             ),
             "all_top_measured_binary_audits_pass": all(
                 evidence["measured_smoke_binary_audit"]["status"] == "PASS"
@@ -581,6 +690,7 @@ def main() -> None:
             "checks": checks,
             "all_checks_passed": all(checks.values()),
             "shortlist": list(TOP_CASES),
+            "timed_main_validation": timed_validation,
             "top_evidence": top_evidence,
             "unique_streams": {
                 loop_hash: {

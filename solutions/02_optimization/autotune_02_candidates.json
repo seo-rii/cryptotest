@@ -436,6 +436,39 @@
       }
     },
     {
+      "name": "avx2_inline_asm_incdec",
+      "source": "solutions/02_optimization/contest_simd_avx2_inline_asm.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mtune-ctrl=use_incdec"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-548-byte-counter-encoding-diagnostic",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_pair_block2",
+      "source": "solutions/02_optimization/contest_simd_avx2_pair_block2.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-two-pairs-by-five-compact-frontend-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-pair-block2"
+      }
+    },
+    {
       "name": "inline_native",
       "source": "submissions/02/contest.c",
       "cflags": [

@@ -36,9 +36,7 @@ BASE = ROOT / BASE_RELATIVE
 BASE_SHA256 = "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751"
 RETAINED_RELATIVE = "solutions/02_optimization/contest_simd_avx2_inline_asm.c"
 RETAINED = ROOT / RETAINED_RELATIVE
-RETAINED_SHA256 = "778187b61a0a769cb012e5205edb5782df2c25418681651cb76d05739198307c"
-PHASE_RELATIVE = "solutions/02_optimization/contest_simd_avx2_phase_staggered.c"
-PHASE_SHA256 = "1824843868e3747634fd5eb8f39f08ce0b79588da8ca0f19fcaee810c2b12983"
+RETAINED_SHA256 = "c6f43f26dcf1bb0cd83d51dd52495e264c6b8303c0b06e89cb84b1cae62d45dc"
 VERIFIER_RELATIVE = "solutions/02_optimization/verify_contest_candidate_02.c"
 VERIFIER = ROOT / VERIFIER_RELATIVE
 VERIFIER_SHA256 = "8245f1baf23fe82e1a1b22dc7c25e5e1fd5b102ca833f26d4c88342088c80b35"
@@ -51,43 +49,68 @@ PRIOR_SCREEN_SHA256 = "addbc4e937f5fad6ea2bb22508476b7fc185db07eabde9e010549f072
 TIMING_PROTOCOL_FILES = {
     "autotune_driver": (
         "solutions/02_optimization/autotune_02_255h.py",
-        "36ba5ce6d130aa117c621844cd8c1f8bcb4c96e4518580d25afa688d3b976d09",
+        "b813ebbcf8a4eb3b22b9e2a555d2509bdba889ee22bc33039fca53f07cba76b7",
     ),
     "benchmark_driver": (
         "solutions/benchmark_02_permutation.py",
-        "4262926ecd8e4fcfabcc7c4e74a4c87bbc0450f995b31d4a60137f888bd59d42",
+        "d967f3e4c6d3bcdf48f8acb6aadee5999ad63d680a41aa98ad906edafb0c21cc",
     ),
     "candidate_verifier": (VERIFIER_RELATIVE, VERIFIER_SHA256),
     "loop_audit": (
         "solutions/challenge02_loop_audit.py",
-        "e73d27abfbb7eea9ee84e0216baaf7f39f128db0cffdcb79b469656f9c185e23",
+        "7d14dca7b8d4d4d9dbae96a0a5e49a06b488458293ce927018296cde0216952c",
     ),
     "problem_archive": (ARCHIVE_RELATIVE, ARCHIVE_SHA256),
     "reference_oracle": (
         "solutions/solve_02_permutation.c",
-        "fb6b5128f6777bdb5c9c940541d7052a317b596775d7ec0d7820d0610cb9aa42",
+        "b4aeb0647b47811aa1b799a92c1c29747aa60bdf4c1c5ed0545531ebf1f06112",
     ),
 }
 TIMING_SOURCES = {
-    "current": {
+    "current579": {
         "path": BASE_RELATIVE,
         "sha256": BASE_SHA256,
         "case_cflags": ["-mavx2", "-DCH2_SIMD_INLINE", "-finline-limit=2000"],
     },
-    "inline_asm": {
+    "old569": {
+        "path": BASE_RELATIVE,
+        "sha256": BASE_SHA256,
+        "case_cflags": [
+            "-mavx2",
+            "-DCH2_SIMD_INLINE",
+            "-finline-limit=2000",
+            "-fira-region=one",
+        ],
+    },
+    "comm549": {
         "path": RETAINED_RELATIVE,
         "sha256": RETAINED_SHA256,
         "case_cflags": ["-mavx2", "-DCH2_SIMD_INLINE", "-finline-limit=2000"],
     },
-    "phase": {
-        "path": PHASE_RELATIVE,
-        "sha256": PHASE_SHA256,
+    "comm548_incdec": {
+        "path": RETAINED_RELATIVE,
+        "sha256": RETAINED_SHA256,
         "case_cflags": [
             "-mavx2",
-            "-mbmi2",
             "-DCH2_SIMD_INLINE",
             "-finline-limit=2000",
+            "-mtune-ctrl=use_incdec",
         ],
+    },
+    "comm549_align32": {
+        "path": RETAINED_RELATIVE,
+        "sha256": RETAINED_SHA256,
+        "case_cflags": [
+            "-mavx2",
+            "-DCH2_SIMD_INLINE",
+            "-finline-limit=2000",
+            "-falign-loops=32",
+        ],
+    },
+    "block2": {
+        "path": "solutions/02_optimization/contest_simd_avx2_pair_block2.c",
+        "sha256": "7064f5cab6ed77587a46965952139978bfbdf713d98bc0c6f51648ece767fdb8",
+        "case_cflags": ["-mavx2", "-DCH2_SIMD_INLINE", "-finline-limit=2000"],
     },
 }
 
@@ -137,8 +160,8 @@ MCA_MODELS = {
 }
 MCA_ITERATIONS = 100
 HOST_TIMING_RELATIVES = [
-    "solutions/02_optimization/eighth_wave_timing_02_cpu1.json",
-    "solutions/02_optimization/eighth_wave_timing_02_cpu3.json",
+    "solutions/02_optimization/ninth_wave_timing_02_cpu1.json",
+    "solutions/02_optimization/ninth_wave_timing_02_cpu3.json",
 ]
 
 FUNCTION_START = "static inline __m256i keep_in_vector_register"
@@ -266,6 +289,17 @@ def variant_specs() -> dict[str, dict[str, Any]]:
             "pins": {"value": 0},
             "description": "pin only the changing state to ymm0",
         },
+        "asm_pin_value_one_scratch_commutative": {
+            "kind": "asm",
+            "scratch_count": 1,
+            "commutative_modrm_value": True,
+            "input_order": constants_first,
+            "pins": {"value": 0},
+            "description": (
+                "pin only the changing state to ymm0, then commute VPOR/"
+                "VPXOR/VPADDQ so that state occupies the ModRM source"
+            ),
+        },
         "asm_pin_low_data_one_scratch": {
             "kind": "asm",
             "scratch_count": 1,
@@ -368,7 +402,16 @@ def scratch_declaration(name: str, pin_key: str, pins: dict[str, int]) -> str:
 def asm_implementation(spec: dict[str, Any]) -> str:
     pins = spec["pins"]
     scratches = int(spec["scratch_count"])
-    if scratches == 1:
+    if scratches == 1 and spec.get("commutative_modrm_value", False):
+        macro = r'''#define INLINE_ASM_TRANSFORM(LEFT, RIGHT, XOR_VALUE, ADD_VALUE)              \
+    "vpsrlvq %[" RIGHT "], %[value], %[scratch]\n\t"                     \
+    "vpsllvq %[" LEFT "], %[value], %[value]\n\t"                       \
+    "vpor %[value], %[scratch], %[value]\n\t"                          \
+    "vpxor %[value], %[" XOR_VALUE "], %[value]\n\t"                     \
+    "vpshufb %[byte_swap], %[value], %[value]\n\t"                        \
+    "vpaddq %[value], %[" ADD_VALUE "], %[value]\n\t"
+'''
+    elif scratches == 1:
         macro = r'''#define INLINE_ASM_TRANSFORM(LEFT, RIGHT, XOR_VALUE, ADD_VALUE)              \
     "vpsrlvq %[" RIGHT "], %[value], %[scratch]\n\t"                     \
     "vpsllvq %[" LEFT "], %[value], %[value]\n\t"                       \
@@ -515,6 +558,9 @@ def generate_variants(destination: Path) -> dict[str, dict[str, Any]]:
             "kind": spec["kind"],
             "description": spec["description"],
             "scratch_count": spec.get("scratch_count"),
+            "commutative_modrm_value": spec.get(
+                "commutative_modrm_value", False
+            ),
             "pins": spec.get("pins", {}),
             "input_order": spec.get("input_order", []),
         }
@@ -1102,16 +1148,85 @@ def screen(args: argparse.Namespace) -> dict[str, Any]:
             timing = json.loads(path.read_text())
             affinity = timing["environment"]["affinity"]
             if (
-                timing["schema_version"] != 4
-                or timing["baseline"] != "current"
+                timing["schema_version"] != 5
+                or timing["baseline"] != "old569"
                 or timing["config"]["iterations"] != 3_000_000
                 or timing["config"]["warmups"] != 6
                 or timing["config"]["samples_per_case"] != 32
                 or timing["config"]["candidate_random_differential_cases"]
                 != 100_000
+                or timing["config"].get("timed_main_repeated_call_validation")
+                is not True
                 or len(affinity) != 1
+                or set(timing["sources"]) != set(TIMING_SOURCES)
             ):
                 raise RuntimeError(f"{relative_path}: host timing protocol mismatch")
+            timed_validation = timing.get("timed_main_validation")
+            if not isinstance(timed_validation, dict) or set(timed_validation) != {
+                "oracle",
+                "cases",
+            }:
+                raise RuntimeError(f"{relative_path}: timed-main record is malformed")
+            timed_oracle = timed_validation.get("oracle")
+            timed_cases = timed_validation.get("cases")
+            if not isinstance(timed_oracle, dict) or not isinstance(timed_cases, dict):
+                raise RuntimeError(f"{relative_path}: timed-main evidence is malformed")
+            expected_state = timed_oracle.get("expected_final_state")
+            canonical_stdout = (
+                "oracle_final_state_iterations=3000000\n"
+                f"oracle_final_state={' '.join(expected_state)}\n"
+                if isinstance(expected_state, list)
+                and len(expected_state) == 4
+                and all(
+                    isinstance(word, str)
+                    and re.fullmatch(r"[0-9a-f]{16}", word)
+                    for word in expected_state
+                )
+                else ""
+            )
+            if (
+                set(timed_oracle)
+                != {
+                    "mode",
+                    "iterations",
+                    "expected_final_state",
+                    "stdout_sha256",
+                    "status",
+                }
+                or timed_oracle.get("mode")
+                != "independent-reference-repeated-20-rounds"
+                or timed_oracle.get("iterations") != 3_000_000
+                or timed_oracle.get("status") != "PASS"
+                or not canonical_stdout
+                or timed_oracle.get("stdout_sha256")
+                != hashlib.sha256(canonical_stdout.encode()).hexdigest()
+                or set(timed_cases) != set(TIMING_SOURCES)
+            ):
+                raise RuntimeError(f"{relative_path}: timed-main oracle failed")
+            for name, record in timed_cases.items():
+                if (
+                    not isinstance(record, dict)
+                    or set(record)
+                    != {
+                        "iterations",
+                        "observed_final_state",
+                        "preflight_processes",
+                        "warmup_processes",
+                        "measured_processes",
+                        "validated_processes",
+                        "status",
+                    }
+                    or record.get("iterations") != 3_000_000
+                    or record.get("observed_final_state") != expected_state
+                    or record.get("preflight_processes") != 1
+                    or record.get("warmup_processes") != 6
+                    or record.get("measured_processes") != 32
+                    or record.get("validated_processes") != 39
+                    or record.get("status") != "PASS"
+                ):
+                    raise RuntimeError(
+                        f"{relative_path}: {name} timed-main validation failed"
+                    )
             protocol_files = timing["measurement_protocol"]["files"]
             for protocol_name, (expected_path, expected_hash) in (
                 TIMING_PROTOCOL_FILES.items()
@@ -1143,21 +1258,35 @@ def screen(args: argparse.Namespace) -> dict[str, Any]:
                     raise RuntimeError(
                         f"{relative_path}: stale {source_name} timing source provenance"
                     )
-            for name in ("current", "inline_asm"):
+            for name in TIMING_SOURCES:
                 if (
                     timing["candidate_verification"][name]["status"] != "PASS"
                     or timing["assembly_audits"][name]["status"] != "PASS"
                 ):
                     raise RuntimeError(f"{relative_path}: {name} validation failed")
-            if (
-                timing["assembly_audits"]["current"]["normalized_loop_sha256"]
-                != baseline_loop["normalized_sha256"]
-                or timing["assembly_audits"]["inline_asm"][
-                    "normalized_loop_sha256"
-                ]
-                != cases[retained]["loop"]["normalized_sha256"]
-            ):
-                raise RuntimeError(f"{relative_path}: measured loop hash mismatch")
+            expected_loop_hashes = {
+                "current579": baseline_loop["normalized_sha256"],
+                "old569": PRIOR_GCC_IRA_ONE_NORMALIZED_SHA256,
+                "comm549": cases[retained]["loop"]["normalized_sha256"],
+                "comm548_incdec": (
+                    "313dcc820be6159d23989db6dc37615ea104bd1f9430911d18229ef1241015d7"
+                ),
+                "comm549_align32": cases[retained]["loop"]["normalized_sha256"],
+                "block2": (
+                    "eebc7cbc001aa82677455e7367fa5f05439a5cba791294c5f9aa3a999c2902e1"
+                ),
+            }
+            for name, expected_hash in expected_loop_hashes.items():
+                if (
+                    timing["assembly_audits"][name]["normalized_loop_sha256"]
+                    != expected_hash
+                ):
+                    raise RuntimeError(
+                        f"{relative_path}: {name} measured loop hash mismatch"
+                    )
+            measured_candidates = [
+                name for name in TIMING_SOURCES if name != "old569"
+            ]
             host_measurement[f"cpu{affinity[0]}"] = {
                 "path": relative_path,
                 "sha256": sha256(path),
@@ -1173,23 +1302,25 @@ def screen(args: argparse.Namespace) -> dict[str, Any]:
                     ],
                     "order": timing["config"]["order"],
                 },
-                "baseline_median_ns": timing["summaries"]["current"][
-                    "median_ns"
-                ],
-                "candidate_median_ns": timing["summaries"]["inline_asm"][
-                    "median_ns"
-                ],
-                "paired_median_speedup": timing["comparisons"]["inline_asm"][
-                    "paired_median"
-                ],
-                "paired_bootstrap_ci95": [
-                    timing["comparisons"]["inline_asm"][
-                        "paired_bootstrap_ci95_low"
-                    ],
-                    timing["comparisons"]["inline_asm"][
-                        "paired_bootstrap_ci95_high"
-                    ],
-                ],
+                "baseline": "old569",
+                "baseline_median_ns": timing["summaries"]["old569"]["median_ns"],
+                "candidates": {
+                    name: {
+                        "median_ns": timing["summaries"][name]["median_ns"],
+                        "paired_median_speedup": timing["comparisons"][name][
+                            "paired_median"
+                        ],
+                        "paired_bootstrap_ci95": [
+                            timing["comparisons"][name][
+                                "paired_bootstrap_ci95_low"
+                            ],
+                            timing["comparisons"][name][
+                                "paired_bootstrap_ci95_high"
+                            ],
+                        ],
+                    }
+                    for name in measured_candidates
+                },
             }
 
     return {
@@ -1198,14 +1329,15 @@ def screen(args: argparse.Namespace) -> dict[str, Any]:
             "challenge": 2,
             "question": (
                 "Can a bounded single-block AVX2 inline-assembly allocation "
-                "remove the fixed-register experiment's hot-loop reload while "
-                "preserving or shrinking the exact GCC 13 loop?"
+                "and commutative operand encoding remove reloads and shrink the "
+                "exact GCC 13 loop without changing its dependency graph?"
             ),
             "host_timing_performed": True,
             "variants_attempted": len(cases),
             "search_policy": (
-                "enumerated allocator-chosen, partial-pinning, and two "
-                "encoding-aware low/high layouts; no register-map brute force"
+                "enumerated allocator-chosen, partial-pinning, two encoding-aware "
+                "low/high layouts, and one commutative ModRM/VEX operand order; "
+                "no register-map brute force"
             ),
             "contest_edit_scope": (
                 "generated candidates change only the single contest C source; "
@@ -1305,10 +1437,27 @@ def screen(args: argparse.Namespace) -> dict[str, Any]:
                         == PRIOR_GCC_IRA_ONE_NORMALIZED_SHA256
                     ),
                     "interpretation": (
-                        "the generated source ties gcc_ira_one at 122 "
-                        "instructions, 569 bytes, zero hot memory, and both "
-                        "proxy cycle counts, but its register assignment gives "
-                        "a distinct normalized instruction stream"
+                        "the generated source keeps 122 instructions, zero hot "
+                        "memory, and both proxy cycle counts, while commuting "
+                        "three operations per stage cuts a further 20 bytes "
+                        "below the 569-byte gcc_ira_one stream"
+                    ),
+                }
+            ),
+            "encoding_lower_bound": (
+                None
+                if retained is None
+                else {
+                    "bytes_per_transform": 27,
+                    "transform_count": 20,
+                    "sub_counter_bytes": 3,
+                    "near_jne_bytes": 6,
+                    "total_loop_bytes": 549,
+                    "derivation": "20*27 + 3 + 6",
+                    "incdec_target_only_loop_bytes": 548,
+                    "qualification": (
+                        "the bound is for this six-instruction AVX2 dataflow "
+                        "and current outer counter, not for all equivalent algorithms"
                     ),
                 }
             ),

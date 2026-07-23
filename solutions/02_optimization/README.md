@@ -4,7 +4,10 @@ This directory contains the original scalar candidate matrix plus the later
 GCC 13.3, source-order, SIMD, autotuning, split-width, code-generation, and
 timing-stability experiments.  Every promoted or retained target candidate is
 paired with an independent correctness oracle and an exact measured-binary
-audit.  The benchmark drivers are designed to avoid common sources of
+audit.  Current schema 5 also computes the expected state after the complete
+repeated timing workload in an independent reference implementation and checks
+that exact state after every preflight, warm-up, and measured process.  The
+benchmark drivers are designed to avoid common sources of
 misleading results:
 
 - every candidate is warmed up before measurement;
@@ -16,6 +19,8 @@ misleading results:
   single run or the arithmetic mean;
 - every timed result is preceded by all 1,000 supplied one-round vectors, the
   supplied 20-round vector, and randomized differential tests.
+- the declared iteration count, unique timing/final-state record, empty stderr,
+  and independent repeated-call final state must match for every process.
 
 ## Run
 
@@ -148,13 +153,15 @@ interleaved samples, CPU affinity, and the correctness gate before timing:
 
 The raw JSON is in [`inline_results_02.json`](inline_results_02.json) and
 [`inline_results_02_cpu4.json`](inline_results_02_cpu4.json). A three-stage
-default/`-mbmi2`/outer-inline ablation is in the older schema-2
+default/`-mbmi2`/outer-inline ablation is in the historical schema-2
 [`inline_stages_results_02.json`](inline_stages_results_02.json). The two main
-inline files are schema 3: they link each candidate to an independent verifier
+inline files are historical schema 3: they link each candidate to an independent verifier
 and compare one and twenty rounds for 100,000 random states and random add/XOR
-constants before timing. With `--audit-mode`, current schema 4 additionally
-audits each named case's exact performance executable against its timed-loop
-contract before warm-up. GCC 12 emitted
+constants before timing. Schema 4 later added an audit of each named case's
+exact performance executable against its timed-loop contract before warm-up.
+Those schema 2--4 records predate the schema-5 repeated-call final-state gate
+and are retained as historical evidence, not current-protocol confirmation.
+GCC 12 emitted
 byte-identical binaries for inline limits 700 and 2000.
 The digest-pinned GCC 13.3.0 reproduction now confirms the same equality for the
 complete binaries and the fully inlined timing loop.
@@ -249,7 +256,7 @@ two builds with 5,000,000 calls, six discarded warmups, and 40 samples:
 
 The inconsistent intervals and wrong microarchitecture prevent promotion, but
 the distinct 1,210-byte code stream is retained as a high-priority target-only
-candidate. The schema-4 raw samples and exact measured-binary audits are
+candidate. The historical schema-4 raw samples and exact measured-binary audits are
 [`gcc133_schedule_results_02_cpu0.json`](gcc133_schedule_results_02_cpu0.json)
 and [`gcc133_schedule_results_02_cpu4.json`](gcc133_schedule_results_02_cpu4.json).
 
@@ -260,7 +267,7 @@ python3 solutions/02_optimization/screen_gcc133_schedules_02.py \
 
 The constant/coordinate axis was also closed more tightly. Moving XOR after
 BSWAP or before rotate is an exact identity for arbitrary state and constants;
-100,000-case direct tests passed. Fresh schema-4, 24-sample campaigns on CPU
+100,000-case direct tests passed. Historical schema-4, 24-sample campaigns on CPU
 0/4 measured post-BSWAP at 0.959x/0.963x and pre-rotate at 0.965x/0.960x; all
 four 95% intervals stayed below 1. Both alternatives still contain 320 core
 operations. Forcing constants into memory creates 160 hot memory operands and
@@ -477,10 +484,10 @@ explicitly not evidence about the 255H.
 ## Eighth-wave register allocation, phase staggering, and target model
 
 The fixed-register failure suggested that the useful idea was compact low
-register encoding, not wholesale pinning.  A bounded ten-variant search in
+register encoding, not wholesale pinning.  A bounded allocation search in
 [`screen_avx2_inline_asm_alloc_02.py`](screen_avx2_inline_asm_alloc_02.py)
-tested allocator-chosen operands, partial pinning, one/two scratch registers,
-and encoding-aware low/high layouts under exact GCC 13.3.  Pinning only the
+initially tested ten allocator-chosen, partial-pinning, one/two-scratch, and
+encoding-aware low/high layouts under exact GCC 13.3.  Pinning only the
 changing state to `ymm0`, using one destructive shift plus one scratch, and
 leaving all constants to GCC produced a strict static winner:
 
@@ -489,14 +496,16 @@ leaving all constants to GCC produced a strict static winner:
 | current lane-wise AVX2 | 122 | 579 | 0 | 100.03 / 180.03 |
 | single-scratch inline assembly | 122 | **569** | 0 | 100.03 / 180.03 |
 
-The generated stream differs from the 569-byte `-fira-region=one` stream even
+The generated stream differed from the 569-byte `-fira-region=one` stream even
 though their aggregate metrics tie.  The retained
-[`contest_simd_avx2_inline_asm.c`](contest_simd_avx2_inline_asm.c) passes the
-supplied default build, all official vectors, and 100,000 random states and
-random constants at one and twenty rounds.  Eight other assembly allocations
-were rejected at 124 instructions with one or two hot loads.  Full data and
-source hashes are in
+candidate version passed the supplied default build, all official vectors, and
+100,000 random states and random constants at one and twenty rounds.  Eight
+other assembly allocations were rejected at 124 instructions with one or two
+hot loads.  Its exact historical source hash and full data are in
 [`avx2_inline_asm_alloc_results_02.json`](avx2_inline_asm_alloc_results_02.json).
+The live [`contest_simd_avx2_inline_asm.c`](contest_simd_avx2_inline_asm.c) is
+the ninth-wave 549-byte refinement described below; the screen now retains both
+allocation records.
 
 Two AMD/GCC 12 campaigns then compared the current YMM loop, the 569-byte
 source, and a new phase-staggered construction.  Each used six discarded
@@ -524,8 +533,9 @@ candidate is not registered for 255H promotion.  Raw timing is in
 The first staging attempt also exposed that a copied candidate with a quoted
 relative include lost its original source-directory context.  The shared
 benchmark driver now adds that directory with `-iquote` to both verifier-object
-and performance builds, records the context flags in schema 4, and the two raw
-campaigns above were rerun through the corrected path.
+and performance builds.  The two raw campaigns above were rerun through that
+corrected path, but remain historical schema-4 evidence without schema 5's
+repeated-call final-state check.
 
 An independent 65-case exact-GCC13 AVX backend screen covered preferred vector
 width, split loads/stores, VEX/vzeroupper controls, move/store width caps, cost
@@ -557,10 +567,105 @@ Isolated throughput rows also omit mixed-port, frontend, frequency, and
 whole-loop effects.  The hashes, exact selected rows, source conflict, topology
 inference, and structured gaps are recorded in
 [`instruction_model_255h_02.json`](instruction_model_255h_02.json); the model
-therefore does not choose a winner.  The two distinct 569-byte candidates and
-seven nonbaseline AVX2 stream/alignment representatives are in the target-only
-manifest.  Its fresh 28-case integration smoke passed 28/28 direct checks and
-28/28 measured-binary audits.
+therefore does not choose a winner.  At the end of the eighth wave, the two
+distinct 569-byte candidates and seven nonbaseline AVX2 stream/alignment
+representatives were in the target-only manifest.  That 28-case integration
+smoke passed 28/28 direct checks and measured-binary audits; the current
+30-case state is described below.
+
+## Ninth-wave timed-work validation and encoding/frontend search
+
+The score-facing benchmark previously proved each candidate function correct
+and audited the complete timed binary, but did not prove that `main` executed
+the declared number of calls.  A deliberately adversarial copy changed only
+the timed loop bound from `iterations` to `iterations / 2`.  It still passed
+the random candidate verifier and the strict 322-instruction inline audit, and
+the old protocol reported a false **2.253x** speedup.  This is a benchmark
+regression test, not an optimization result.
+
+Schema 5 closes that gap.  [`solve_02_permutation.c`](../solve_02_permutation.c)
+now has an independent `--final-state N` path that applies the reference
+20-round permutation exactly `N` times from the benchmark's initial state.
+[`benchmark_02_permutation.py`](../benchmark_02_permutation.py) requires one
+unambiguous timing line, iteration line, and four-word final-state line, an
+empty stderr, the declared iteration count, and equality with that oracle for
+the semantic preflight and every warm-up and measured process.  The JSON binds
+the expected state, oracle stdout SHA-256, observed states, and exact validated
+process counts in `timed_main_validation`; the autotuner validates this exact
+record shape and includes it in canonical evidence hashing.  Focused tests in
+[`test_benchmark_02_permutation.py`](test_benchmark_02_permutation.py) cover
+duplicate/missing records, the known 10,000-call state, rejection of negative
+and zero oracle iteration counts, and rejection of the half-loop source at
+preflight.
+
+The eleventh inline-assembly allocation variant then changed only operand order
+for commutative `VPOR`, `VPXOR`, and `VPADDQ`.  Keeping the changing low-numbered
+`value` operand in ModRM r/m and placing the scratch or constant in VEX.vvvv
+removes one encoding byte from each of the 20 `VPOR` instructions.  Exact GCC
+13.3 therefore reduces the prior 569-byte stream to **549 bytes** while keeping
+122 instructions, zero hot memory operands, and the same Alder/Zen proxy
+estimates of `100.03/180.03` cycles.  For this six-instruction dataflow each
+transform needs `5+5+4+5+4+4 = 27` bytes, so the observed default loop reaches
+the scoped encoding bound `20*27 + 3-byte SUB + 6-byte JNE = 549` bytes.  This
+is an encoding bound for the retained dataflow, not a global algorithmic lower
+bound.  `-mtune-ctrl=use_incdec` changes only the harness counter to a two-byte
+`DEC` and reaches 548 bytes, so it remains a target-only compiler-control
+candidate.  The field-level interpretation follows the official
+[Intel® 64 and IA-32 Architectures Software Developer Manuals](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html),
+while the compiler-control caveat follows the
+[GCC 13.3 x86 options](https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/x86-Options.html).
+
+[`screen_avx2_commutative_layout_02.py`](screen_avx2_commutative_layout_02.py)
+compiled 34 exact-GCC13 flag/layout cases.  All 34 passed the complete-binary
+audit, official vectors, and 100,000-case random-state/random-constant gate.
+They collapse to five normalized streams and nine `(stream, start mod 64)`
+classes, all with the same static cycle signature; frontend placement must
+therefore be decided on the real target.  Exact encodings, hashes, class
+members, the scoped bound, and the target-only 548-byte control are in
+[`avx2_commutative_layout_results_02.json`](avx2_commutative_layout_results_02.json).
+
+A complementary frontend experiment retained a partially unrolled two-block
+loop.  [`contest_simd_avx2_pair_block2.c`](contest_simd_avx2_pair_block2.c)
+executes two vector transforms per inner iteration and produces a 136-byte,
+30-static-instruction loop, 133 modeled non-padding instructions per outer
+call (134 including one emitted alignment NOP), and zero hot memory operands.
+Its `100.03/180.03` proxy estimates are unchanged.  One-block unrolling executes
+143 modeled non-padding instructions (144 with its NOP); the five-block
+opaque-count control lowers that count to 131 (132 with its NOP) and Alder proxy
+throughput from 22.2 to 21.8 cycles, but expands the static region to 321
+bytes/69 instructions.  That slight proxy gain does not justify the much larger
+footprint before target measurement.  A separate scalar stage-major
+search compiled all `24*24 = 576` first/second-stage source orders; every
+Alder+IRA estimate was at or above the existing 120.06-cycle scalar stream.
+The complete generator, CFG-expanded dynamic counts, correctness evidence, and
+negative records are
+[`screen_avx2_pair_blocks_02.py`](screen_avx2_pair_blocks_02.py) and
+[`avx2_pair_block_results_02.json`](avx2_pair_block_results_02.json).
+
+Fresh schema-5 AMD/GCC12 campaigns compared the new candidates against the old
+569-byte `-fira-region=one` stream.  Each affinity used 3,000,000 calls, six discarded
+warm-ups, 32 balanced samples, and 100,000 random differential cases.  The
+number is `old569 / candidate`, so values above one favor the candidate:
+
+| affinity | candidate | paired median | bootstrap 95% CI |
+|---:|---|---:|---:|
+| CPU 1 | commutative 549 B | **1.000451x** | 0.999294--1.001894x |
+| CPU 3 | commutative 549 B | **1.000466x** | 0.998164--1.002395x |
+| CPU 1 | `DEC` 548 B | 0.999555x | 0.997869--1.000627x |
+| CPU 3 | `DEC` 548 B | 1.001880x | 0.997620--1.004207x |
+| CPU 1 | 549 B, align 32 | 0.998679x | 0.994845--1.002219x |
+| CPU 3 | 549 B, align 32 | 1.000329x | 0.995564--1.003437x |
+| CPU 1 | block 2 | 0.999263x | 0.997061--1.001998x |
+| CPU 3 | block 2 | 0.999278x | 0.997635--1.002321x |
+
+Every interval includes one.  The result is a static/code-size improvement and
+a host timing tie, not a 255H promotion.  The complete schema-5 records are
+[`ninth_wave_timing_02_cpu1.json`](ninth_wave_timing_02_cpu1.json) and
+[`ninth_wave_timing_02_cpu3.json`](ninth_wave_timing_02_cpu3.json).  Schema
+2--4 JSON remains useful historical codegen/timing evidence, but it lacks this
+repeated-call integrity proof and cannot satisfy the current decision gate.
+The scalar submission remains the incumbent; the commutative 549-byte source,
+548-byte `DEC` control, and block-2 loop are all 255H-only candidates.
 
 ## Core-aware 255H decision tool
 
@@ -611,7 +716,7 @@ a fresh 128-bit campaign id in both index and benchmark JSON. Canonical evidence
 and paired-sample hashes catch a copied result even if its JSON whitespace,
 filename, or nonce is changed.
 
-Each index and schema-4 benchmark now carries one canonical measurement-protocol
+Each index and schema-5 benchmark now carries one canonical measurement-protocol
 fingerprint: the autotuner and benchmark drivers, timed-loop audit, independent
 oracle and candidate verifier, official problem archive, Python executable, and
 the actual `objdump`/`size` binaries are all SHA-256 pinned. `confirm` refuses a stale `screen`, and `decide` refuses
@@ -639,13 +744,16 @@ undersized confirmation sessions on AMD/GCC 12 also left `inline_2000` selected
 and enumerated every missing 255H/GCC13/sample/warm-up/random-case gate.
 After the partial-unroll controls and lane-wise AVX2 candidate were added, a
 balanced 19-case smoke passed 19/19 direct verifications and measured-binary
-audits.  Adding the distinct `-fira-region=one` and single-scratch 569-byte
+audits.  Adding the distinct `-fira-region=one` and then-current single-scratch 569-byte
 streams produced a 21-case smoke that passed 21/21 checks and audits.  The
 seven nonbaseline stream/alignment representatives then expanded the current
-manifest to **28 cases**; a fresh balanced smoke passed 28/28 direct checks and
-28/28 audits, with source-local `-iquote` context recorded for all 28.  This
-provisional AMD/GCC12 run used 1,000 calls only and is integration evidence,
-not performance evidence.
+manifest to 28 cases; a balanced smoke passed 28/28 direct checks and audits,
+with source-local `-iquote` context recorded for all 28.  The commutative
+operand-order refinement replaces the old assembly entry, while its `DEC`
+control and the block-2 frontend candidate add two target-only entries.  The
+current manifest therefore contains **30 cases**.  Short smoke timings are
+integration evidence, not performance evidence; schema 5 confirmation also
+requires the independent repeated-call final-state record.
 
 The same fast flags were also applied to full unroll, pair loop, and
 `unroll5_bmi2`; medians were 37.279, 38.618, and 38.727 ns, respectively. Full
@@ -675,30 +783,31 @@ python3 solutions/benchmark_02_permutation.py \
   --random-cases 100000 --json /tmp/challenge02-inline.json
 ```
 
-The eighth-wave three-way campaign uses the same driver with six discarded
-warm-ups and 32 balanced samples. Change `--cpu 1` to `--cpu 3` for the second
-stored affinity:
+The current ninth-wave schema-5 campaign uses the same driver with six
+discarded warm-ups and 32 balanced samples. Change `--cpu 1` to `--cpu 3` for
+the second stored affinity:
 
 ```bash
 python3 solutions/benchmark_02_permutation.py \
-  --case current=solutions/02_optimization/contest_simd_avx2_lanewise.c \
-  --case inline_asm=solutions/02_optimization/contest_simd_avx2_inline_asm.c \
-  --case phase=solutions/02_optimization/contest_simd_avx2_phase_staggered.c \
-  --baseline current \
-  --case-cflag current=-mavx2 \
-  --case-cflag current=-DCH2_SIMD_INLINE \
-  --case-cflag current=-finline-limit=2000 \
-  --case-cflag inline_asm=-mavx2 \
-  --case-cflag inline_asm=-DCH2_SIMD_INLINE \
-  --case-cflag inline_asm=-finline-limit=2000 \
-  --case-cflag phase=-mavx2 --case-cflag phase=-mbmi2 \
-  --case-cflag phase=-DCH2_SIMD_INLINE \
-  --case-cflag phase=-finline-limit=2000 \
-  --audit-mode current=avx2-inline-lanewise \
-  --audit-mode inline_asm=avx2-inline-lanewise \
-  --audit-mode phase=report-only \
+  --case old569=solutions/02_optimization/contest_simd_avx2_lanewise.c \
+  --case current579=solutions/02_optimization/contest_simd_avx2_lanewise.c \
+  --case comm549=solutions/02_optimization/contest_simd_avx2_inline_asm.c \
+  --case comm548_incdec=solutions/02_optimization/contest_simd_avx2_inline_asm.c \
+  --case comm549_align32=solutions/02_optimization/contest_simd_avx2_inline_asm.c \
+  --case block2=solutions/02_optimization/contest_simd_avx2_pair_block2.c \
+  --baseline old569 --extra-cflag=-mavx2 \
+  --extra-cflag=-DCH2_SIMD_INLINE --extra-cflag=-finline-limit=2000 \
+  --case-cflag old569=-fira-region=one \
+  --case-cflag comm548_incdec=-mtune-ctrl=use_incdec \
+  --case-cflag comm549_align32=-falign-loops=32 \
+  --audit-mode old569=avx2-inline-lanewise \
+  --audit-mode current579=avx2-inline-lanewise \
+  --audit-mode comm549=avx2-inline-lanewise \
+  --audit-mode comm548_incdec=avx2-inline-lanewise \
+  --audit-mode comm549_align32=avx2-inline-lanewise \
+  --audit-mode block2=avx2-inline-pair-block2 \
   --cpu 1 --iterations 3000000 --warmups 6 --samples 32 \
-  --random-cases 100000 --json /tmp/challenge02-eighth-cpu1.json
+  --random-cases 100000 --json /tmp/challenge02-ninth-cpu1.json
 ```
 
 ## Recommendation and constraint compliance
@@ -716,14 +825,16 @@ The exact GCC 13.3 call-removal and 700/2000 equality are already established;
 what remains unknown is the performance ordering on Core Ultra 7 255H. Use the
 core-aware tool to A/B `-mtune=alderlake`, its IRA-priority combination,
 source order `2,1,0,3`, the selective/no-post-reload scheduler streams, and the
-two distinct 569-byte AVX2 streams and seven nonbaseline stream/alignment
-representatives, plus the diagnostic native tune. Keep a
+`-fira-region=one` 569-byte AVX2 stream, commutative 549-byte source, target-only
+548-byte `DEC` control, block-2 frontend loop, and relevant nonbaseline
+stream/alignment representatives, plus the diagnostic native tune. Keep a
 source/flag only if it passes two independent sessions
 and every required P/E/LP-E gate. Until then, the simpler
-`-mbmi2 -finline-limit=2000` build remains the score recommendation. The direct
+`-mbmi2 -finline-limit=2000` scalar build remains both the incumbent and score
+recommendation. The direct
 one-state and conjugate SIMD implementations should not be used because their
 longer dependent paths were consistently slower.  The new four-lane two-round
 AVX2 implementation is different and belongs in the 255H head-to-head, but the
 contradictory CPU-1/2/3 ordering prevents promotion from this VM alone.  The
-single-scratch source also remains target-only because both new AMD campaigns
-were statistical ties.
+549-byte, 548-byte, and block-2 candidates also remain target-only because the
+schema-5 AMD campaigns were statistical ties.

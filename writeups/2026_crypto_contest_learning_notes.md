@@ -11,7 +11,7 @@
 | 번호 | 주제 | 상태 | 최종 결과 | 상세 writeup |
 |---:|---|---|---|---|
 | 1 | 고전 암호와 분류 | 완료 | Caesar shift `6`, Vigenère key `KLVOJ`, 재현 가능한 분류 모델과 식별 불가능성 분석 | [01_암호분석](01_암호분석.md) |
-| 2 | 256비트 permutation 구현 | scalar incumbent 완료·8차 SIMD/배치/측정 진단 완료·255H 실측 미정 | `rot={43,7,29,14}`, 2-round scalar full-unroll, 122-insn AVX2와 569B 두 stream | [02_암호구현](02_암호구현.md) |
+| 2 | 256비트 permutation 구현 | scalar incumbent 완료·9차 SIMD/compact block/측정 무결성 진단 완료·255H 실측 미정 | `rot={43,7,29,14}`, 2-round scalar full-unroll, 122-insn/549B AVX2와 136B block2 | [02_암호구현](02_암호구현.md) |
 | 3 | TLS 1.2 AES-GCM 위조 | 완료 | nonce 재사용으로 `H`와 `E_K(J0)`를 복원하고 유효한 급여 변경 record 생성 | [03_네트워크보안](03_네트워크보안.md) |
 | 4 | LLM weight steganography | 완료 | `CRYPTO{G00D_J0B!_y0u_f0und_7h3_h1dd3n_s3cr37_1n_LLM}` 추출 | [04_디지털포렌식](04_디지털포렌식.md) |
 | 5 | textbook-BGV | 완료 | ternary secret 64계수, 날짜 `20260410→20260411`, 고정 `State` 복원 | [05_동형암호](05_동형암호.md) |
@@ -50,10 +50,13 @@
 - full-unroll은 같은 fast flag 아래 pair loop와 `unroll5_bmi2`보다 각각
   약 2.6%, 3.5% 빨랐다. 켤레 SIMD, table, BSWAP/XOR 재배열과 수동 scheduling은
   검증된 실패 전략으로 상세 writeup에 기록했다.
-- schema-4 측정 도구는 후보를 직접 링크해 무작위 상태·ADD/XOR 상수 100,000건의
+- 현재 schema-5 측정 도구는 후보를 직접 링크해 무작위 상태·ADD/XOR 상수 100,000건의
   1/20라운드를 먼저 검증하고, warm-up 직전 실제 측정 binary 자체를 감사한다.
   score loop의 320개 core 연산과 call/stack/memory 부재, codegen hash와 정렬을
-  같은 JSON에 남긴다.
+  같은 JSON에 남긴다. 독립 oracle가 계산한 반복 후 256-bit state와 선언한
+  반복 횟수를 semantic preflight, 모든 warm-up·sample process에서도 맞춰야 한다.
+  schema 2--4 raw JSON은 당시 정확성·성능 기록이지만 이 반복 의미 보증은 없는
+  역사 자료로 구분한다.
 - 292-byte 작은 portable ROL은 `0.985x (0.958--1.002)`였고, XOR/ADD 저비트
   완전탐색과 120개 GCC/link 조합에서도 채택할 승자가 없었다.
   GCC 13.3에서 `-mtune=alderlake`는 실제 hot-loop schedule을 바꿨고 근사
@@ -61,7 +64,7 @@
   합친 변형은 1,210-byte loop와 약 1.021x 추가 정적 예측을 얻었지만 AMD의 두
   확인 캠페인은 `1.011x (1.001--1.015)`와 `1.008x (0.998--1.025)`로 엇갈렸다.
   둘 다 실제 255H에서만 판정할 A/B 후보다.
-- XOR을 BSWAP 뒤 또는 rotate 앞으로 옮긴 정확한 두 표현은 schema 4의 두
+- XOR을 BSWAP 뒤 또는 rotate 앞으로 옮긴 정확한 두 표현은 당시 schema 4의 두
   affinity 재측정에서 각각 `0.959--0.963x`, `0.960--0.965x`였고 네 CI가 모두
   1 아래였다. 상수를 memory operand로 강제하면 hot loop에 160개 memory
   operand가 생기며 두 재측정은 `0.979x`, `0.988x`로 개선되지 않았다.
@@ -114,6 +117,25 @@
   Lion Cove 표도 없다. Arrow Lake PerfMon은 LP-E를 Crestmont로, 255H 전용 ECI는
   두 LP-E를 추가 Skymont core로 불러 서로 충돌하므로 공식 자료만으로 winner를
   선택하지 않았다.
+- 9차에서는 timing loop만 반복을 절반으로 줄인 악의적 후보가 공개
+  함수 검증과 assembly audit를 통과하면서 거짓 `2.253x`를 내는 회귀를
+  구성했다. schema 5가 모든 timing process의 최종 상태를 검증하면서 이
+  공백을 닫았다.
+- `VPOR`/`VPXOR`/`VPADDQ`의 교환 피연산자 순서를 VEX encoding에
+  맞춰 배치해 AVX2 loop를 122 instructions/0 hot memory 그대로
+  **569B에서 549B**로 줄였다. 34개 exact-GCC13.3 flag/link case가 공식
+  vector와 무작위 상태·상수 100,000건을 통과했고 5 stream/9
+  stream-alignment class로 수렴했다. `use_incdec`는 548B target-only 대조군이다.
+- 완전 언롤과 작은 loop 사이의 block1/2/5를 비교했다. block2는 정적
+  timing region을 **136B/30 instructions**로 줄이면서 hot memory 0과
+  `100.03/180.03` Alder/Zen 2 critical-path proxy를 유지했지만 padding 제외
+  modeled 명령은 122에서 133으로(정렬 NOP 포함 134) 늘었다. scalar
+  stage-major chain 순서 576개는 tuned
+  120.06-cycle proxy보다 엄격히 낮은 경우가 없었다.
+- old 569B stream 대비 549B, 548B, align32, block2를 CPU 1/3에서 각
+  3,000,000회·6 warm-up·32 samples로 schema-5 재측정했다. 새 후보의
+  모든 paired bootstrap CI가 1을 포함해, code footprint 감소는 확인했지만
+  현 AMD host의 처리량 승자로는 선택하지 않았다. scalar incumbent는 유지한다.
 - `autotune_02_255h.py`는 pinned CPUID와 Linux topology로 P/E/LP-E를 보수적으로
   분류하고 `probe → screen → confirm → decide`를 실행한다. 두 session·core type별
   두 physical core·correctness/assembly gate가 갖춰지지 않으면 winner 대신
@@ -127,9 +149,12 @@
   portable control의 누락된 inline flag를 찾아 고쳤고, 확장된 15-case
   screen은 15개 직접 검증과 15개 assembly audit를 모두 통과했다.
   부분 언롤과 AVX2를 더한 19-case screen은 19/19 직접 검증과 audit를
-  통과했다. 서로 다른 두 569-byte 후보를 더한 21-case screen 뒤 배치 대표
-  7개까지 포함한 최신 **28-case** screen도 직접 검증 28/28과 assembly audit
+  통과했다. 당시 서로 다른 두 569-byte 후보를 더한 21-case screen 뒤 배치 대표
+  7개까지 포함한 28-case screen도 직접 검증 28/28과 assembly audit
   28/28을 통과했으며, 짧은 smoke timing은 성능 근거로 쓰지 않았다.
+  9차의 549-byte commutative source가 기존 assembly entry를 대체하고 548-byte
+  `DEC` 대조군과 compact block2 두 entry가 추가된 최신 manifest는
+  **30-case**이며, 새 두 entry는 각각 별도 exact audit·random gate를 통과했다.
 - 측정 도구와 raw 기록은 [02 optimization README](../solutions/02_optimization/README.md),
   [deep review](../solutions/02_optimization/deep_review_02.md),
   [inline raw samples](../solutions/02_optimization/inline_results_02.json),
@@ -145,6 +170,10 @@
   [255H instruction model](../solutions/02_optimization/instruction_model_255h_02.json),
   [8차 CPU 1 timing](../solutions/02_optimization/eighth_wave_timing_02_cpu1.json),
   [8차 CPU 3 timing](../solutions/02_optimization/eighth_wave_timing_02_cpu3.json),
+  [9차 commutative layout](../solutions/02_optimization/avx2_commutative_layout_results_02.json),
+  [9차 compact block screen](../solutions/02_optimization/avx2_pair_block_results_02.json),
+  [9차 CPU 1 schema-5 timing](../solutions/02_optimization/ninth_wave_timing_02_cpu1.json),
+  [9차 CPU 3 schema-5 timing](../solutions/02_optimization/ninth_wave_timing_02_cpu3.json),
   [timing stability 진단](../solutions/02_optimization/timing_stability_results_02.json),
   [schedule CPU 0 raw](../solutions/02_optimization/gcc133_schedule_results_02_cpu0.json),
   [schedule CPU 4 raw](../solutions/02_optimization/gcc133_schedule_results_02_cpu4.json),

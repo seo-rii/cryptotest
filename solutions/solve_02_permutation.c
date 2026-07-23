@@ -403,7 +403,19 @@ static int run_benchmark(uint64_t iterations, size_t repeats) {
 
 static uint64_t parse_u64(const char *text, const char *name) {
     char *end = NULL;
+    const char *cursor;
     unsigned long long value;
+
+    if (*text == '\0') {
+        fprintf(stderr, "invalid %s: %s\n", name, text);
+        exit(EXIT_FAILURE);
+    }
+    for (cursor = text; *cursor != '\0'; ++cursor) {
+        if (*cursor < '0' || *cursor > '9') {
+            fprintf(stderr, "invalid %s: %s\n", name, text);
+            exit(EXIT_FAILURE);
+        }
+    }
     errno = 0;
     value = strtoull(text, &end, 10);
     if (errno != 0 || end == text || *end != '\0') {
@@ -417,8 +429,9 @@ static void usage(const char *program) {
     fprintf(stderr,
             "usage:\n"
             "  %s --selftest TESTVECTOR TESTVECTOR_20ROUND [RANDOM_CASES]\n"
+            "  %s --final-state ITERATIONS\n"
             "  %s --benchmark ITERATIONS REPEATS\n",
-            program, program);
+            program, program, program);
 }
 
 int main(int argc, char **argv) {
@@ -438,6 +451,29 @@ int main(int argc, char **argv) {
         printf("random_differential_cases=%zu\n", random_cases);
         printf("selftest=%s\n", ok ? "PASS" : "FAIL");
         return ok ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    if (argc == 3 && strcmp(argv[1], "--final-state") == 0) {
+        const uint64_t iterations = parse_u64(argv[2], "iterations");
+        state256_t state = {{
+            UINT64_C(0x0123456789abcdef),
+            UINT64_C(0xfedcba9876543210),
+            UINT64_C(0x0f1e2d3c4b5a6978),
+            UINT64_C(0x8877665544332211),
+        }};
+        uint64_t index;
+        if (iterations == 0U) {
+            fprintf(stderr, "iterations must be positive\n");
+            return EXIT_FAILURE;
+        }
+        for (index = 0; index < iterations; ++index) {
+            reference_20_rounds(
+                &state, ROTATIONS, REVERSE_BYTES, CONSTANTS2, CONSTANTS1);
+        }
+        printf("oracle_final_state_iterations=%" PRIu64 "\n", iterations);
+        printf("oracle_final_state=%016" PRIx64 " %016" PRIx64
+               " %016" PRIx64 " %016" PRIx64 "\n",
+               state.w[0], state.w[1], state.w[2], state.w[3]);
+        return EXIT_SUCCESS;
     }
     if (argc == 4 && strcmp(argv[1], "--benchmark") == 0) {
         const uint64_t iterations = parse_u64(argv[2], "iterations");

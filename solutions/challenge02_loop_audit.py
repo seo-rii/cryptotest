@@ -20,6 +20,7 @@ AUDIT_MODES = {
     "bmi2-inline-pair-unroll2",
     "bmi2-inline-pair-unroll5",
     "avx2-inline-lanewise",
+    "avx2-inline-pair-block2",
 }
 
 CORE_COUNTS_BY_MODE = {
@@ -195,18 +196,19 @@ def validate_loop_audit(report: dict[str, Any], mode: str) -> list[str]:
         return []
 
     errors: list[str] = []
-    if mode == "avx2-inline-lanewise":
+    if mode in {"avx2-inline-lanewise", "avx2-inline-pair-block2"}:
         for key in ("calls", "push_pop", "memory_operands_excluding_lea"):
             actual = report.get(key)
             if actual != 0:
                 errors.append(f"{key}: expected 0, got {actual}")
+        vector_count = 20 if mode == "avx2-inline-lanewise" else 4
         expected_mnemonics = {
-            "vpsllvq": 20,
-            "vpsrlvq": 20,
-            "vpor": 20,
-            "vpxor": 20,
-            "vpshufb": 20,
-            "vpaddq": 20,
+            "vpsllvq": vector_count,
+            "vpsrlvq": vector_count,
+            "vpor": vector_count,
+            "vpxor": vector_count,
+            "vpshufb": vector_count,
+            "vpaddq": vector_count,
         }
         mnemonics = report.get("mnemonics", {})
         for mnemonic, expected in expected_mnemonics.items():
@@ -215,7 +217,21 @@ def validate_loop_audit(report: dict[str, Any], mode: str) -> list[str]:
                 errors.append(
                     f"mnemonics.{mnemonic}: expected {expected}, got {actual}"
                 )
-        expected_instructions = sum(expected_mnemonics.values()) + 2
+        if mode == "avx2-inline-lanewise":
+            expected_instructions = sum(expected_mnemonics.values()) + 2
+        else:
+            for mnemonic, expected in {
+                "sub": 2,
+                "jne": 2,
+                "mov": 1,
+                "nopl": 1,
+            }.items():
+                actual = mnemonics.get(mnemonic, 0)
+                if actual != expected:
+                    errors.append(
+                        f"mnemonics.{mnemonic}: expected {expected}, got {actual}"
+                    )
+            expected_instructions = sum(expected_mnemonics.values()) + 6
         actual_instructions = report.get("loop_instructions")
         if actual_instructions != expected_instructions:
             errors.append(

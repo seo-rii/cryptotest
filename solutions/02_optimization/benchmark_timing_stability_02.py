@@ -411,6 +411,111 @@ def main() -> None:
         if isolated.stderr:
             print(isolated.stderr, file=sys.stderr, end="")
         process_report = json.loads(process_json.read_text())
+        if process_report.get("schema_version") != 5:
+            raise RuntimeError(
+                "process-isolated benchmark schema is not 5: "
+                f"{process_report.get('schema_version')!r}"
+            )
+        process_config = process_report.get("config", {})
+        if not (
+            process_config.get("iterations") == args.iterations
+            and process_config.get("warmups") == args.warmups
+            and process_config.get("samples_per_case") == args.samples
+            and process_config.get("timed_main_repeated_call_validation") is True
+        ):
+            raise RuntimeError("process-isolated benchmark process counts changed")
+        timed_validation = process_report.get("timed_main_validation")
+        if not isinstance(timed_validation, dict):
+            raise RuntimeError(
+                "process-isolated benchmark omitted timed_main_validation"
+            )
+        if set(timed_validation) != {"oracle", "cases"}:
+            raise RuntimeError("process-isolated timed-main validation shape changed")
+        timed_oracle = timed_validation.get("oracle")
+        timed_cases = timed_validation.get("cases")
+        if not isinstance(timed_oracle, dict) or not isinstance(timed_cases, dict):
+            raise RuntimeError("process-isolated timed-main validation is malformed")
+        if set(timed_oracle) != {
+            "mode",
+            "iterations",
+            "expected_final_state",
+            "stdout_sha256",
+            "status",
+        }:
+            raise RuntimeError("process-isolated timed-main oracle shape changed")
+        if set(timed_cases) != {"scalar", "avx2"}:
+            raise RuntimeError(
+                "process-isolated timed-main case set changed: "
+                f"{sorted(timed_cases)!r}"
+            )
+        expected_state = timed_oracle.get("expected_final_state")
+        valid_state = (
+            isinstance(expected_state, list)
+            and len(expected_state) == 4
+            and all(
+                isinstance(word, str) and re.fullmatch(r"[0-9a-f]{16}", word)
+                for word in expected_state
+            )
+        )
+        canonical_oracle_hash = (
+            hashlib.sha256(
+                (
+                    f"oracle_final_state_iterations={args.iterations}\n"
+                    f"oracle_final_state={' '.join(expected_state)}\n"
+                ).encode()
+            ).hexdigest()
+            if valid_state
+            else None
+        )
+        if not (
+            timed_oracle.get("mode")
+            == "independent-reference-repeated-20-rounds"
+            and type(timed_oracle.get("iterations")) is int
+            and timed_oracle.get("iterations") == args.iterations
+            and args.iterations > 0
+            and valid_state
+            and isinstance(timed_oracle.get("stdout_sha256"), str)
+            and re.fullmatch(r"[0-9a-f]{64}", timed_oracle["stdout_sha256"])
+            and timed_oracle.get("stdout_sha256") == canonical_oracle_hash
+            and timed_oracle.get("status") == "PASS"
+        ):
+            raise RuntimeError("process-isolated timed-main oracle did not pass")
+        validated_processes = 1 + args.warmups + args.samples
+        for candidate, timed_case in timed_cases.items():
+            if isinstance(timed_case, dict) and set(timed_case) != {
+                "iterations",
+                "observed_final_state",
+                "preflight_processes",
+                "warmup_processes",
+                "measured_processes",
+                "validated_processes",
+                "status",
+            }:
+                raise RuntimeError(
+                    f"{candidate}: process-isolated timed-main case shape changed"
+                )
+            if not isinstance(timed_case, dict) or not (
+                all(
+                    type(timed_case.get(field)) is int
+                    for field in (
+                        "iterations",
+                        "preflight_processes",
+                        "warmup_processes",
+                        "measured_processes",
+                        "validated_processes",
+                    )
+                )
+                and timed_case.get("iterations") == args.iterations
+                and timed_case.get("observed_final_state") == expected_state
+                and timed_case.get("preflight_processes") == 1
+                and timed_case.get("warmup_processes") == args.warmups
+                and timed_case.get("measured_processes") == args.samples
+                and timed_case.get("validated_processes") == validated_processes
+                and timed_case.get("status") == "PASS"
+            ):
+                raise RuntimeError(
+                    f"{candidate}: process-isolated timed-main validation failed"
+                )
 
         helper_executable = temporary / "timing_stability"
         compiler_command = [
@@ -594,6 +699,13 @@ def main() -> None:
                     and item["random_cases"] == args.random_cases
                     and item["round_counts"] == [1, 20]
                     for item in process_report["candidate_verification"].values()
+                ),
+                "exact_timed_main_validation": (
+                    timed_oracle["status"] == "PASS"
+                    and all(
+                        item["status"] == "PASS"
+                        for item in timed_cases.values()
+                    )
                 ),
                 "exact_binary_audits": all(
                     item["status"] == "PASS"

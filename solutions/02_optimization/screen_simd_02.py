@@ -513,7 +513,115 @@ def benchmark_command(
     return command
 
 
+def validate_timed_main_validation(
+    report: dict[str, Any],
+    expected_names: set[str],
+    iterations: int,
+    warmups: int,
+    samples: int,
+    label: str,
+) -> None:
+    if report.get("schema_version") != 5:
+        raise RuntimeError(
+            f"{label} report schema is not 5: {report.get('schema_version')!r}"
+        )
+    if report.get("config", {}).get("timed_main_repeated_call_validation") is not True:
+        raise RuntimeError(f"{label} timed-main config gate is not true")
+    validation = report.get("timed_main_validation")
+    if not isinstance(validation, dict):
+        raise RuntimeError(f"{label} report omitted timed_main_validation")
+    if set(validation) != {"oracle", "cases"}:
+        raise RuntimeError(f"{label} timed-main validation shape changed")
+    oracle = validation.get("oracle")
+    cases = validation.get("cases")
+    if not isinstance(oracle, dict) or not isinstance(cases, dict):
+        raise RuntimeError(f"{label} timed-main validation is malformed")
+    if set(oracle) != {
+        "mode",
+        "iterations",
+        "expected_final_state",
+        "stdout_sha256",
+        "status",
+    }:
+        raise RuntimeError(f"{label} timed-main oracle shape changed")
+    if set(cases) != expected_names:
+        raise RuntimeError(
+            f"{label} timed-main case set changed: {sorted(cases)!r}"
+        )
+    expected_state = oracle.get("expected_final_state")
+    valid_state = (
+        isinstance(expected_state, list)
+        and len(expected_state) == 4
+        and all(
+            isinstance(word, str) and re.fullmatch(r"[0-9a-f]{16}", word)
+            for word in expected_state
+        )
+    )
+    canonical_oracle_hash = (
+        hashlib.sha256(
+            (
+                f"oracle_final_state_iterations={iterations}\n"
+                f"oracle_final_state={' '.join(expected_state)}\n"
+            ).encode()
+        ).hexdigest()
+        if valid_state
+        else None
+    )
+    if not (
+        oracle.get("mode") == "independent-reference-repeated-20-rounds"
+        and type(oracle.get("iterations")) is int
+        and oracle.get("iterations") == iterations
+        and iterations > 0
+        and valid_state
+        and isinstance(oracle.get("stdout_sha256"), str)
+        and re.fullmatch(r"[0-9a-f]{64}", oracle["stdout_sha256"])
+        and oracle.get("stdout_sha256") == canonical_oracle_hash
+        and oracle.get("status") == "PASS"
+    ):
+        raise RuntimeError(f"{label} timed-main oracle did not pass")
+    validated_processes = 1 + warmups + samples
+    for name, case in cases.items():
+        if isinstance(case, dict) and set(case) != {
+            "iterations",
+            "observed_final_state",
+            "preflight_processes",
+            "warmup_processes",
+            "measured_processes",
+            "validated_processes",
+            "status",
+        }:
+            raise RuntimeError(f"{label} {name}: timed-main case shape changed")
+        if not isinstance(case, dict) or not (
+            all(
+                type(case.get(field)) is int
+                for field in (
+                    "iterations",
+                    "preflight_processes",
+                    "warmup_processes",
+                    "measured_processes",
+                    "validated_processes",
+                )
+            )
+            and case.get("iterations") == iterations
+            and case.get("observed_final_state") == expected_state
+            and case.get("preflight_processes") == 1
+            and case.get("warmup_processes") == warmups
+            and case.get("measured_processes") == samples
+            and case.get("validated_processes") == validated_processes
+            and case.get("status") == "PASS"
+        ):
+            raise RuntimeError(f"{label} {name}: timed-main validation failed")
+
+
 def validate_host_report(report: dict[str, Any], args: argparse.Namespace) -> None:
+    validate_timed_main_validation(
+        report,
+        set(CASES),
+        args.iterations,
+        args.warmups,
+        args.samples,
+        "host",
+    )
     expected_config = {
         "iterations": args.iterations,
         "warmups": args.warmups,
@@ -563,6 +671,7 @@ def compact_host_report(
 ) -> dict[str, Any]:
     compact = {
         "artifact_sha256": artifact_sha256,
+        "schema_version": report["schema_version"],
         "campaign_id": report["campaign_id"],
         "measurement_protocol_fingerprint_sha256": report[
             "measurement_protocol"
@@ -571,6 +680,7 @@ def compact_host_report(
         "config": report["config"],
         "sources": report["sources"],
         "candidate_verification": report["candidate_verification"],
+        "timed_main_validation": report["timed_main_validation"],
         "assembly_audits": report["assembly_audits"],
         "summaries": report["summaries"],
         "comparisons": report["comparisons"],
@@ -641,6 +751,19 @@ def hoist_benchmark_command(
 def validate_hoist_report(
     report: dict[str, Any], args: argparse.Namespace, cpu: int
 ) -> None:
+    expected_hashes = {
+        "scalar": EXPECTED_SOURCE_HASHES["scalar"],
+        "avx2_current": PRE_HOIST_AVX2_SHA256,
+        "avx2_hoisted": EXPECTED_SOURCE_HASHES["avx2"],
+    }
+    validate_timed_main_validation(
+        report,
+        set(expected_hashes),
+        args.iterations,
+        args.warmups,
+        args.samples,
+        "hoist",
+    )
     expected_config = {
         "iterations": args.iterations,
         "warmups": args.warmups,
@@ -652,11 +775,6 @@ def validate_hoist_report(
             raise RuntimeError(f"hoist report config {key} does not equal {expected}")
     if report.get("environment", {}).get("affinity") != [cpu]:
         raise RuntimeError("hoist report did not run only on its requested CPU")
-    expected_hashes = {
-        "scalar": EXPECTED_SOURCE_HASHES["scalar"],
-        "avx2_current": PRE_HOIST_AVX2_SHA256,
-        "avx2_hoisted": EXPECTED_SOURCE_HASHES["avx2"],
-    }
     for name, expected_hash in expected_hashes.items():
         if report.get("sources", {}).get(name, {}).get("sha256") != expected_hash:
             raise RuntimeError(f"{name}: hoist report source hash changed")
@@ -716,6 +834,7 @@ def compact_hoist_report(
 ) -> dict[str, Any]:
     return {
         "artifact_sha256": artifact_sha256,
+        "schema_version": report["schema_version"],
         "campaign_id": report["campaign_id"],
         "measurement_protocol_fingerprint_sha256": report[
             "measurement_protocol"
@@ -724,6 +843,7 @@ def compact_hoist_report(
         "config": report["config"],
         "sources": report["sources"],
         "candidate_verification": report["candidate_verification"],
+        "timed_main_validation": report["timed_main_validation"],
         "assembly_audits": report["assembly_audits"],
         "summaries": report["summaries"],
         "comparisons_against_scalar": report["comparisons"],
@@ -1242,6 +1362,15 @@ def run_experiment(args: argparse.Namespace) -> dict[str, Any]:
             for host in host_reports
             for verification in host["candidate_verification"].values()
         ),
+        "host_timed_main_validations_passed": all(
+            host["schema_version"] == 5
+            and host["timed_main_validation"]["oracle"]["status"] == "PASS"
+            and all(
+                validation["status"] == "PASS"
+                for validation in host["timed_main_validation"]["cases"].values()
+            )
+            for host in host_reports
+        ),
         "host_measured_binary_audits_passed": all(
             audit["status"] == "PASS"
             for host in host_reports
@@ -1286,6 +1415,17 @@ def run_experiment(args: argparse.Namespace) -> dict[str, Any]:
             for verification in hoist_confirmation[
                 "candidate_verification"
             ].values()
+        ),
+        "hoist_confirmation_timed_main_validations_passed": (
+            hoist_confirmation["schema_version"] == 5
+            and hoist_confirmation["timed_main_validation"]["oracle"]["status"]
+            == "PASS"
+            and all(
+                validation["status"] == "PASS"
+                for validation in hoist_confirmation["timed_main_validation"][
+                    "cases"
+                ].values()
+            )
         ),
         "hoisted_vs_current_runtime_ci_includes_tie": (
             hoist_confirmation["direct_hoisted_vs_current"][
