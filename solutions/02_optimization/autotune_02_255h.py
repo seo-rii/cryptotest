@@ -50,6 +50,11 @@ BENCHMARK_SCHEMA_VERSION = 5
 MIN_CHILD_CPU_COVERAGE_ITERATIONS = 1_000_000
 MIN_MEDIAN_CHILD_CPU_COVERAGE = 0.65
 MAX_MEDIAN_CHILD_CPU_COVERAGE = 1.05
+STATIONARITY_MIN_SAMPLES = 16
+STATIONARITY_BLOCK_COUNT = 4
+STATIONARITY_MAX_ABSOLUTE_SPREAD = 0.05
+STATIONARITY_MAX_EFFECT_SPREAD = 0.02
+STATIONARITY_EFFECT_SIGN_MARGIN = 0.005
 P_MEDIAN_THRESHOLD = 1.010
 P_LOWER_THRESHOLD = 1.005
 SAFE_MEDIAN_THRESHOLD = 0.995
@@ -1498,6 +1503,7 @@ def run_one_campaign(
     timed_main_errors = timed_main_validation_errors(
         benchmark,
         expected_case_names=[candidate["name"] for candidate in selected],
+        expected_baseline=baseline,
         expected_iterations=iterations,
         expected_warmups=warmups,
         expected_samples=samples,
@@ -1565,6 +1571,16 @@ def run_one_campaign(
             raise AutotuneError(f"{stem}: assembly gate did not pass for {name}")
         if audit.get("mode") != candidate["audit_mode"]:
             raise AutotuneError(f"{stem}: assembly mode changed for {name}")
+    stationarity = benchmark["timing_stationarity"]
+    assert isinstance(stationarity, dict)
+    stationarity_eligibility = stationarity["campaign_eligibility"]
+    if candidate_name is not None:
+        stationarity_comparisons = stationarity["comparisons"]
+        assert isinstance(stationarity_comparisons, dict)
+        comparison_record = stationarity_comparisons[candidate_name]
+        assert isinstance(comparison_record, dict)
+        stationarity_eligibility = comparison_record["eligibility"]
+    campaign["timing_stationarity_eligibility"] = stationarity_eligibility
     os.replace(partial_json, final_json)
     campaign["benchmark_sha256"] = sha256_file(final_json)
     campaign["status"] = (
@@ -1715,15 +1731,23 @@ def command_screen(args: argparse.Namespace) -> None:
     warmups = resolve_auto_count(
         args.warmups, candidate_count, "--warmups"
     )
-    samples = resolve_auto_count(
-        args.samples, candidate_count * 4, "--samples"
+    stationarity_period = STATIONARITY_BLOCK_COUNT * candidate_count
+    automatic_samples = stationarity_period * max(
+        1, math.ceil(STATIONARITY_MIN_SAMPLES / stationarity_period)
     )
-    if samples < 5:
-        raise AutotuneError("--samples must be at least 5")
-    period = 2 * candidate_count
-    if samples % period:
+    samples = resolve_auto_count(
+        args.samples, automatic_samples, "--samples"
+    )
+    if samples < STATIONARITY_MIN_SAMPLES:
         raise AutotuneError(
-            f"screen samples must be a multiple of balanced-order period {period}"
+            f"--samples must be at least {STATIONARITY_MIN_SAMPLES} for "
+            "stationarity validation"
+        )
+    period = 2 * candidate_count
+    if samples % stationarity_period:
+        raise AutotuneError(
+            "screen samples must be a multiple of four times the candidate "
+            f"count ({stationarity_period}) so fixed blocks preserve balanced order"
         )
     index_path, partial_index = ensure_new_index(args.out_dir)
     config = {
@@ -1850,11 +1874,38 @@ def rank_screen_candidates(
         report = read_json(result_path, "screen benchmark")
         if report.get("baseline") != baseline:
             raise AutotuneError(f"screen baseline mismatch in {result_path}")
+        screen_config = screen.get("config")
+        expected_samples = (
+            screen_config.get("samples")
+            if isinstance(screen_config, dict)
+            else None
+        )
+        stationarity_errors = timing_stationarity_validation_errors(
+            report,
+            expected_case_names=list(candidates),
+            expected_baseline=baseline,
+            expected_samples=expected_samples,
+        )
+        if stationarity_errors:
+            raise AutotuneError(
+                f"screen stationarity evidence failed in {result_path}: "
+                + "; ".join(stationarity_errors)
+            )
+        stationarity = report["timing_stationarity"]
+        assert isinstance(stationarity, dict)
+        stationarity_comparisons = stationarity["comparisons"]
+        assert isinstance(stationarity_comparisons, dict)
         comparisons = report.get("comparisons", {})
         if not isinstance(comparisons, dict):
             continue
         for name, comparison in comparisons.items():
             if name not in candidates or not isinstance(comparison, dict):
+                continue
+            stability = stationarity_comparisons.get(name)
+            if (
+                not isinstance(stability, dict)
+                or stability.get("eligibility") != "eligible"
+            ):
                 continue
             try:
                 lower_bounds[name].append(
@@ -1960,8 +2011,17 @@ def command_confirm(args: argparse.Namespace) -> None:
         cores_per_type=args.cores_per_type,
         allow_provisional=args.allow_provisional or args.dry_run,
     )
-    if args.samples < 5 or args.samples % 4:
-        raise AutotuneError("confirm --samples must be at least 5 and a multiple of 4")
+    confirmation_stationarity_period = STATIONARITY_BLOCK_COUNT * 2
+    if (
+        args.samples < MIN_CONFIRM_SAMPLES
+        or args.samples % confirmation_stationarity_period
+    ):
+        raise AutotuneError(
+            "confirm --samples must be at least "
+            f"{MIN_CONFIRM_SAMPLES} and a multiple of "
+            f"{confirmation_stationarity_period} so fixed blocks preserve "
+            "balanced order"
+        )
     index_path, partial_index = ensure_new_index(args.out_dir)
     selected_for_index = [candidates[incumbent], *[candidates[n] for n in selected_names]]
     config = {
@@ -2062,10 +2122,228 @@ def integer_or_zero(value: object) -> int:
         return 0
 
 
+def expected_timing_stationarity_evidence(
+    samples: dict[str, list[float]], baseline: str
+) -> dict[str, object]:
+    """Recompute the benchmark's fixed-design stationarity evidence.
+
+    Keep this deliberately simple and predeclared: four chronological blocks,
+    practical effect-size limits, and no data-selected split or p-value.  This
+    is duplicated at the trust boundary so the autotuner validates raw samples
+    instead of trusting candidate-supplied summary fields.
+    """
+
+    names = sorted(samples)
+    if baseline not in samples:
+        raise ValueError("stationarity baseline is absent from raw samples")
+    if not names:
+        raise ValueError("stationarity analysis requires at least one case")
+    lengths = {len(samples[name]) for name in names}
+    if len(lengths) != 1:
+        raise ValueError("stationarity raw sample lengths differ")
+    sample_count = lengths.pop()
+    if sample_count == 0:
+        raise ValueError("stationarity raw samples are empty")
+    for name in names:
+        if any(
+            not isinstance(value, (int, float))
+            or isinstance(value, bool)
+            or not math.isfinite(float(value))
+            or float(value) <= 0.0
+            for value in samples[name]
+        ):
+            raise ValueError(
+                f"stationarity raw samples for {name} must be finite and positive"
+            )
+
+    block_ranges = [
+        {
+            "start": block * sample_count // STATIONARITY_BLOCK_COUNT,
+            "stop": (block + 1) * sample_count // STATIONARITY_BLOCK_COUNT,
+        }
+        for block in range(STATIONARITY_BLOCK_COUNT)
+    ]
+    enough_samples = sample_count >= STATIONARITY_MIN_SAMPLES
+    order_balanced = (
+        sample_count % (STATIONARITY_BLOCK_COUNT * len(names)) == 0
+    )
+    preconditions_pass = enough_samples and order_balanced
+    precondition_reasons: list[str] = []
+    if not enough_samples:
+        precondition_reasons.append(
+            f"at least {STATIONARITY_MIN_SAMPLES} samples per case are required"
+        )
+    if not order_balanced:
+        precondition_reasons.append(
+            "sample count must be a multiple of four times the case count so "
+            "each fixed block balances case positions"
+        )
+
+    cases: dict[str, dict[str, object]] = {}
+    for name in names:
+        values = [float(value) for value in samples[name]]
+        block_medians = [
+            statistics.median(values[block["start"] : block["stop"]])
+            for block in block_ranges
+        ]
+        spread = max(block_medians) / min(block_medians) - 1.0
+        reasons: list[str] = []
+        if preconditions_pass and spread > STATIONARITY_MAX_ABSOLUTE_SPREAD:
+            reasons.append(
+                "absolute block-median spread exceeds the fixed 5% limit"
+            )
+        status = (
+            "NOT_ENFORCED"
+            if not preconditions_pass
+            else ("PASS" if not reasons else "FAIL")
+        )
+        cases[name] = {
+            "block_median_ns": block_medians,
+            "max_to_min_ratio_minus_one": spread,
+            "status": status,
+            "reasons": reasons,
+        }
+
+    comparisons: dict[str, dict[str, object]] = {}
+    baseline_values = [float(value) for value in samples[baseline]]
+    for name in names:
+        if name == baseline:
+            continue
+        candidate_values = [float(value) for value in samples[name]]
+        ratios = [
+            baseline_value / candidate_value
+            for baseline_value, candidate_value in zip(
+                baseline_values, candidate_values
+            )
+        ]
+        block_medians = [
+            statistics.median(ratios[block["start"] : block["stop"]])
+            for block in block_ranges
+        ]
+        spread = max(block_medians) / min(block_medians) - 1.0
+        sign_instability = (
+            min(block_medians) < 1.0 - STATIONARITY_EFFECT_SIGN_MARGIN
+            and max(block_medians) > 1.0 + STATIONARITY_EFFECT_SIGN_MARGIN
+        )
+        reasons: list[str] = []
+        if preconditions_pass:
+            if cases[baseline]["status"] != "PASS":
+                reasons.append("baseline absolute timing is nonstationary")
+            if cases[name]["status"] != "PASS":
+                reasons.append("candidate absolute timing is nonstationary")
+            if spread > STATIONARITY_MAX_EFFECT_SPREAD:
+                reasons.append(
+                    "paired-effect block-median spread exceeds the fixed 2% limit"
+                )
+            if sign_instability:
+                reasons.append(
+                    "paired effect crosses both sides of parity by more than 0.5%"
+                )
+        status = (
+            "NOT_ENFORCED"
+            if not preconditions_pass
+            else ("PASS" if not reasons else "FAIL")
+        )
+        comparisons[name] = {
+            "block_paired_median_ratio": block_medians,
+            "max_to_min_ratio_minus_one": spread,
+            "material_sign_instability": sign_instability,
+            "status": status,
+            "eligibility": "eligible" if status == "PASS" else "diagnostic-only",
+            "reasons": reasons,
+        }
+
+    campaign_reasons = list(precondition_reasons)
+    if preconditions_pass and cases[baseline]["status"] != "PASS":
+        campaign_reasons.append("baseline absolute timing is nonstationary")
+    campaign_status = (
+        "NOT_ENFORCED"
+        if not preconditions_pass
+        else ("PASS" if not campaign_reasons else "FAIL")
+    )
+    return {
+        "schema_version": 1,
+        "method": "four-fixed-contiguous-block-medians",
+        "baseline": baseline,
+        "case_names": names,
+        "sample_count_per_case": sample_count,
+        "block_ranges": block_ranges,
+        "order_period_samples": 2 * len(names),
+        "preconditions": {
+            "minimum_samples": STATIONARITY_MIN_SAMPLES,
+            "sample_count_multiple_of_four_case_count": order_balanced,
+            "status": "PASS" if preconditions_pass else "FAIL",
+            "reasons": precondition_reasons,
+        },
+        "thresholds": {
+            "max_absolute_block_median_spread": (
+                STATIONARITY_MAX_ABSOLUTE_SPREAD
+            ),
+            "max_paired_effect_block_median_spread": (
+                STATIONARITY_MAX_EFFECT_SPREAD
+            ),
+            "paired_effect_sign_margin": STATIONARITY_EFFECT_SIGN_MARGIN,
+        },
+        "cases": cases,
+        "comparisons": comparisons,
+        "status": campaign_status,
+        "campaign_eligibility": (
+            "eligible" if campaign_status == "PASS" else "diagnostic-only"
+        ),
+        "reasons": campaign_reasons,
+    }
+
+
+def timing_stationarity_validation_errors(
+    report: dict[str, Any],
+    *,
+    expected_case_names: Sequence[str],
+    expected_baseline: str,
+    expected_samples: int,
+) -> list[str]:
+    """Fail closed unless stationarity evidence exactly matches raw samples."""
+
+    names = list(expected_case_names)
+    if (
+        len(names) != len(set(names))
+        or expected_baseline not in names
+        or any(not isinstance(name, str) or not name for name in names)
+        or not isinstance(expected_samples, int)
+        or isinstance(expected_samples, bool)
+        or expected_samples <= 0
+    ):
+        return ["timing stationarity expectations are malformed"]
+    raw = report.get("internal_ns_per_20round")
+    if not isinstance(raw, dict) or set(raw) != set(names):
+        return ["timing stationarity raw case set is missing or malformed"]
+    samples: dict[str, list[float]] = {}
+    for name in names:
+        values = raw.get(name)
+        if not isinstance(values, list) or len(values) != expected_samples:
+            return [
+                f"timing stationarity raw sample count for {name} is not "
+                f"{expected_samples}"
+            ]
+        samples[name] = values
+    try:
+        expected = expected_timing_stationarity_evidence(
+            samples, expected_baseline
+        )
+    except ValueError as error:
+        return [f"timing stationarity raw samples are invalid: {error}"]
+    if report.get("timing_stationarity") != expected:
+        return [
+            "timing stationarity evidence does not match raw samples and the "
+            "fixed analysis contract"
+        ]
+    return []
+
+
 def timed_main_validation_errors(
     report: dict[str, Any],
     *,
     expected_case_names: Sequence[str],
+    expected_baseline: str | None = None,
     expected_iterations: int,
     expected_warmups: int,
     expected_samples: int,
@@ -2078,6 +2356,11 @@ def timed_main_validation_errors(
     errors: list[str] = []
     expected_names = list(expected_case_names)
     expected_name_set = set(expected_names)
+    stationarity_baseline = (
+        expected_baseline
+        if expected_baseline is not None
+        else report.get("baseline")
+    )
     if len(expected_names) != len(expected_name_set) or any(
         not isinstance(name, str) or not name for name in expected_names
     ):
@@ -2175,6 +2458,10 @@ def timed_main_validation_errors(
             if config.get("timed_workload_child_cpu_validation") is not True:
                 errors.append(
                     "timed-main child-CPU coverage config gate is not true"
+                )
+            if config.get("timing_stationarity_validation") is not True:
+                errors.append(
+                    "timed-main stationarity validation config gate is not true"
                 )
             if (
                 config.get("internal_ns_source")
@@ -2502,6 +2789,23 @@ def timed_main_validation_errors(
         elif not expected_name_set.issubset(cpu_coverage_cases):
             errors.append(
                 "one or more timed-main child-CPU coverage cases are missing"
+            )
+        if (
+            not isinstance(stationarity_baseline, str)
+            or stationarity_baseline not in expected_name_set
+        ):
+            errors.append(
+                "timing stationarity baseline is missing or differs from the "
+                "measured campaign"
+            )
+        else:
+            errors.extend(
+                timing_stationarity_validation_errors(
+                    report,
+                    expected_case_names=expected_names,
+                    expected_baseline=stationarity_baseline,
+                    expected_samples=expected_samples,
+                )
             )
 
     if not check_cases:
@@ -2977,6 +3281,7 @@ def analyze_confirmation_campaign(
     evidence["timed_workload_cpu_coverage"] = report.get(
         "timed_workload_cpu_coverage"
     )
+    evidence["timing_stationarity"] = report.get("timing_stationarity")
     result["evidence_fingerprint_sha256"] = canonical_hash(evidence)
     semantic_challenge = report.get("timed_main_semantic_challenge")
     semantic_derivation = (
@@ -3015,12 +3320,33 @@ def analyze_confirmation_campaign(
         timed_main_validation_errors(
             report,
             expected_case_names=[str(incumbent_name), str(candidate_name)],
+            expected_baseline=str(incumbent_name),
             expected_iterations=index_config.get("iterations"),
             expected_warmups=index_config.get("warmups"),
             expected_samples=index_config.get("samples"),
             check_cases=False,
         )
     )
+    stationarity = report.get("timing_stationarity")
+    stationarity_comparisons = (
+        stationarity.get("comparisons")
+        if isinstance(stationarity, dict)
+        else None
+    )
+    stationarity_comparison = (
+        stationarity_comparisons.get(str(candidate_name))
+        if isinstance(stationarity_comparisons, dict)
+        else None
+    )
+    result["timing_stationarity"] = stationarity_comparison
+    if not isinstance(stationarity_comparison, dict):
+        result["missing"].append(
+            "candidate timing stationarity comparison is missing or malformed"
+        )
+    elif stationarity_comparison.get("eligibility") != "eligible":
+        result["failures"].append(
+            "candidate timing stationarity comparison is diagnostic-only"
+        )
     if report_config.get("order") != "balanced-cyclic-reversed":
         result["failures"].append(
             "benchmark did not use balanced cyclic/reversed case order"
@@ -3320,10 +3646,13 @@ def command_decide(args: argparse.Namespace) -> None:
                 f"session {index.get('session')} used fewer than "
                 f"{MIN_CONFIRM_WARMUPS} warmups"
             )
-        if samples < MIN_CONFIRM_SAMPLES or samples % 4:
+        if (
+            samples < MIN_CONFIRM_SAMPLES
+            or samples % (STATIONARITY_BLOCK_COUNT * 2)
+        ):
             global_blockers.append(
                 f"session {index.get('session')} did not use at least "
-                f"{MIN_CONFIRM_SAMPLES} samples in complete four-run blocks"
+                f"{MIN_CONFIRM_SAMPLES} samples in four fixed, balanced blocks"
             )
         if random_cases < MIN_RANDOM_CASES:
             global_blockers.append(

@@ -22,7 +22,7 @@
 | 번호 | 문제 | 최종 결과 | 재현 코드 |
 |---:|---|---|---|
 | 1 | [암호분석](writeups/01_암호분석.md) | Caesar `6`, Vigenère `KLVOJ`, held-out `58/58`; 숨은 label 식별 불가능성 증명 | [`solve_01_classical.py`](solutions/solve_01_classical.py) |
-| 2 | [암호구현](writeups/02_암호구현.md) | `rot={43,7,29,14}`, 검증된 scalar incumbent, 122-instruction/549-byte AVX2·122-byte/29-static counted block 후보, 보강된 schema-5 33-case 255H autotune | [`solve_02_permutation.c`](solutions/solve_02_permutation.c) |
+| 2 | [암호구현](writeups/02_암호구현.md) | `rot={43,7,29,14}`, 검증된 scalar incumbent, 122-instruction/549-byte AVX2·122-byte/29-static counted block 후보, raw-recomputed 정상성 gate와 범위 제한 ISA 합성까지 로컬 탐색 종료; 실제 255H 판정만 미완 | [`solve_02_permutation.c`](solutions/solve_02_permutation.c) |
 | 3 | [네트워크보안](writeups/03_네트워크보안.md) | 유효한 TLS-GCM 위조 record | [`solve_03_tls_gcm_nonce_reuse.py`](solutions/solve_03_tls_gcm_nonce_reuse.py) |
 | 4 | [디지털포렌식](writeups/04_디지털포렌식.md) | `CRYPTO{...}` 모델 은닉 payload | [`solve_04_digital_forensics.py`](solutions/solve_04_digital_forensics.py) |
 | 5 | [동형암호](writeups/05_동형암호.md) | BGV secret 64계수와 State 56계수 | [`solve_05_bgv.py`](solutions/solve_05_bgv.py) |

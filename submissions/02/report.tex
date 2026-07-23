@@ -69,7 +69,13 @@ counted-assembly front ends: block2, block3+tail1, and block5 now occupy
 Register placement, boundary placement, scalar destructive-rotate, and SHLD
 screens produced no static target winner.  The timing schema now also binds the
 reported average to total elapsed time, checks timed-work child-CPU coverage,
-and challenges each source at a nonce-derived alternate iteration count.
+and challenges each source at a nonce-derived alternate iteration count.  An
+eleventh pass adds a raw-sample stationarity promotion gate: CPU 1's AVX2 pairs
+remain eligible but tied, its scalar comparison is diagnostic-only, and the
+entire CPU 3 campaign is diagnostic-only.  A grammar-scoped three-instruction
+AVX2 synthesis search and exact split-shuffle controls found no smaller
+transform, while LLVM 19's tested target labels all selected the same scheduling
+metrics and do not supply Core Ultra 7 255H evidence.
 
 \section{Recovering the structure}
 
@@ -726,10 +732,86 @@ incumbent.  The smaller block2, block3+tail1, and block5 frontends remain
 target-only alternatives that may matter on the real Core Ultra 7 255H, but
 neither AMD timing nor a static scheduling proxy can select among them.
 
-The remaining target experiment is encoded as a guarded
+\subsection{Eleventh-wave stationarity gate and bounded ISA synthesis}
+
+The phase change in the preceding CPU 1 run motivated a fixed promotion gate,
+not a post-hoc favorable split.  Each case now needs at least 16 samples, and
+the count must be a multiple of four times the number of cases so four
+predeclared contiguous blocks each preserve the complete balanced order.
+Absolute block-median drift may not exceed 5\%; a baseline/candidate pair's
+block-median ratio spread may not exceed 2\%; and a pair is quarantined if one
+block is below $0.995$ while another is above $1.005$.  A failed candidate
+quarantines only that pair unless the baseline itself fails.  The autotuner
+independently recomputes the complete record from raw samples and rejects
+changed summaries or thresholds.  This is a conservative promotion guard,
+not a proof of stationarity: it can miss short excursions within a block.
+Barrett et al.'s changepoint study and Kalibera and Jones's repetition/effect
+size methodology motivate treating phase behavior and uncertainty as first-class
+evidence rather than assuming warm-up created a steady state.  The fixed-block
+gate is not a reproduction of Barrett et al.'s changepoint/PELT analysis.
+
+Fresh CPU 1 and CPU 3 campaigns used six discarded warm-ups, 24 balanced
+samples, and 3,000,000 calls per sample.  CPU 1's full AVX2 baseline and all
+four AVX2 alternatives pass the absolute and pairwise gate:
+
+\begin{center}
+\small
+\begin{tabular}{lrr}
+\toprule
+CPU 1 candidate & Full549/candidate (95\% CI) & Gate \\
+\midrule
+Old intrinsic block2 & 0.999624 (0.997787--1.002890) & eligible \\
+Counted block2 & 1.000750 (0.997649--1.006677) & eligible \\
+Block3 + tail1 & 1.002591 (0.998829--1.006870) & eligible \\
+Counted block5 & 1.002347 (0.999722--1.004974) & eligible \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Every interval includes one and no eligible median reaches the 1.010 promotion
+threshold.  CPU 1's scalar absolute block medians drift by 9.06\% and its
+paired effect by 7.13\%, so that comparison is diagnostic-only even though its
+aggregate ratio is large.  On CPU 3 the full baseline drifts by 8.28\%; every
+case exceeds the 5\% absolute limit and several AVX2 pairs reverse by more than
+$\pm0.5\%$.  The entire CPU 3 campaign is therefore diagnostic-only.  These
+outcomes are stored with the raw samples in the two
+\texttt{stationarity\_gate\_timing} JSON files.
+
+The algorithmic pass next asked whether
+$\mathrm{BSWAP64}(\mathrm{ROL}_r(x))$ could use only three AVX2
+instructions for any contest rotation.  Exhaustive enumeration plus structural
+exclusion established UNSAT for a bounded grammar of qword logical shifts,
+arbitrary fixed word-local byte selections, and XOR/OR (including carry-free
+ADD on disjoint fields), across all three-instruction single-input DAG shapes.
+More precisely, the
+parallel-two-unary-plus-combine shape was exhaustively enumerated, while
+bijectivity and projection arguments structurally exclude the other shapes.
+This enumeration-plus-structural exclusion is only a lower bound for that
+grammar, not for every x86 opcode or machine program.  Three exact
+split-shuffle controls passed all vectors, 100,000 arbitrary-state/constant
+cases, and binary audits, but require \textbf{142 instructions and 669--689
+bytes}, versus the incumbent's 122 instructions and 549 bytes.  Moving shuffles
+across XOR is possible after transforming the constant; moving them across the
+intervening modular ADD is not, because cross-byte carries provide explicit
+counterexamples.  Thus the two round-boundary shuffles cannot be cancelled by
+that reassociation.
+
+LLVM 19 does not close the hardware gap.  For every tested stream,
+\texttt{alderlake}, \texttt{arrowlake}, \texttt{arrowlake-s},
+\texttt{lunarlake}, \texttt{meteorlake}, and \texttt{sierraforest} reported
+identical cycles, uops, and reciprocal throughput.  The release's official
+\texttt{X86.td} maps the exposed \texttt{arrowlake} processor to
+\texttt{AlderlakePModel}; the different labels are therefore not independent
+255H microarchitecture evidence.  As the \texttt{llvm-mca} guide also warns,
+these are static scheduling-model estimates rather than measurements.
+
+The only remaining promotion path is the guarded
 \texttt{probe--screen--confirm--decide} workflow.  It pins a CPUID probe to every
-allowed logical CPU, combines core type with Linux topology signals, and leaves
-ambiguous LP-E classification provisional.  A replacement requires two sessions,
+allowed logical CPU on an actual Core Ultra 7 255H, combines core type with
+Linux topology signals, and leaves
+ambiguous LP-E classification provisional.  The screen must be followed by two
+independent confirmation sessions before \texttt{decide} can promote.  A
+replacement requires two sessions,
 two physical representatives of each requested core type, matching
 compiler/source/manifest hashes, direct correctness, and exact measured-binary
 SHA-256/assembly gates; reused artifact paths or hashes cannot count as another
@@ -927,6 +1009,8 @@ python3 solutions/02_optimization/\
 screen_tenth_codegen_02.py --check
 python3 solutions/02_optimization/\
 screen_tenth_codegen_scalar_rotate_02.py --check
+python3 solutions/02_optimization/\
+screen_eleventh_isa_synthesis_02.py --check
 python3 solutions/02_optimization/screen_gcc133_avx_flags_02.py \
   --json /tmp/challenge02-gcc133-avx-flags.json
 python3 solutions/02_optimization/analyze_255h_instruction_model_02.py \
@@ -970,6 +1054,11 @@ coverage records.  Because timing and the fresh nonce are intentionally
 volatile, these files are measured evidence rather than byte-reproducible
 \texttt{--check} products.  The exact six-case timing invocation is recorded
 in \path{submissions/02/README.md}.
+The eleventh-wave \texttt{--check} similarly verifies
+\path{eleventh_isa_synthesis_results_02.json}.  Its two stationarity campaigns
+are preserved as \path{stationarity_gate_timing_02_cpu1.json} and
+\path{stationarity_gate_timing_02_cpu3.json}; the raw samples, rather than only
+the gate summaries, are the decision evidence.
 
 For the longer candidate matrix:
 
@@ -1031,8 +1120,13 @@ gcc -O3 -Wall -Wextra -o /tmp/challenge02-default \
   \item LLVM,
     \href{https://llvm.org/docs/CommandGuide/llvm-mca.html}
     {llvm-mca Machine Code Analyzer}: scheduling-model throughput and resource
-    analysis for the Alder Lake, Meteor Lake, and Zen-2 proxy screens, including
-    the model-accuracy limitation of static estimates.
+    analysis for the LLVM 16/19 proxy screens, including the model-accuracy
+    limitation of static estimates.
+  \item LLVM,
+    \href{https://github.com/llvm/llvm-project/blob/llvmorg-19.1.7/llvm/lib/Target/X86/X86.td}
+    {LLVM 19.1.7 X86 processor-model definitions}: the official source mapping
+    the exposed \texttt{arrowlake} processor name to
+    \texttt{AlderlakePModel}.
   \item Abel and Reineke,
     \href{https://arxiv.org/abs/1810.04610}
     {uops.info: Characterizing Latency, Throughput, and Port Usage of
@@ -1043,6 +1137,16 @@ gcc -O3 -Wall -Wextra -o /tmp/challenge02-default \
     {nanoBench: A Low-Overhead Tool for Running Microbenchmarks on x86
     Systems}: warm-up, serialization, repetition, and counter-aware low-level
     measurement design.  Required counters were unavailable on this VM.
+  \item Barrett, Bolz-Tereick, Killick, Mount, and Tratt,
+    \href{https://arxiv.org/abs/1602.00602}
+    {Virtual Machine Warmup Blows Hot and Cold}, OOPSLA 2017: changepoint
+    evidence that discarded warm-up alone does not guarantee a steady state.
+    The present native-code gate uses this as methodological motivation, not as
+    a claim that its VM/JIT model applies directly.
+  \item Kalibera and Jones,
+    \href{https://doi.org/10.1145/2464157.2464160}
+    {Rigorous Benchmarking in Reasonable Time}, ISMM 2013: planned repetition,
+    uncertainty attribution, and effect-size confidence intervals.
   \item Intel,
     \href{https://www.intel.com/content/www/us/en/developer/articles/technical/intel64-and-ia32-architectures-optimization.html}
     {Intel 64 and IA-32 Optimization Reference Manual}, and the

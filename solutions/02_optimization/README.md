@@ -9,7 +9,9 @@ repeated timing workload in an independent reference implementation and checks
 that exact state after every preflight, warm-up, and measured process.  It
 additionally derives timing from the printed total duration, cross-checks the
 printed average, measures child-process CPU coverage, and runs a fresh
-nonce-derived alternate-iteration semantic challenge.  These are
+nonce-derived alternate-iteration semantic challenge. It also recomputes
+four-fixed-block stationarity and candidate-pair effect stability from raw
+samples before promotion. These are
 defence-in-depth regression checks for the concrete bypasses described below,
 not cryptographic attestation of arbitrary C.  The
 benchmark drivers are designed to avoid common sources of
@@ -608,8 +610,8 @@ duplicate/missing records, the known 10,000-call state, rejection of negative
 and zero oracle iteration counts, and rejection of the half-loop source at
 preflight.
 
-The eleventh inline-assembly allocation variant then changed only operand order
-for commutative `VPOR`, `VPXOR`, and `VPADDQ`.  Keeping the changing low-numbered
+The eleventh candidate in the inline-assembly allocation screen then changed only
+operand order for commutative `VPOR`, `VPXOR`, and `VPADDQ`.  Keeping the changing low-numbered
 `value` operand in ModRM r/m and placing the scratch or constant in VEX.vvvv
 removes one encoding byte from each of the 20 `VPOR` instructions.  Exact GCC
 13.3 therefore reduces the prior 569-byte stream to **549 bytes** while keeping
@@ -767,6 +769,78 @@ derivation and source binding.  This closes those demonstrated bypasses and
 fails closed when POSIX child CPU accounting is unavailable; it is deliberately
 not described as proving every potentially malicious C program.
 
+## Eleventh-wave stationarity gate and bounded ISA synthesis
+
+The current schema-5 protocol now makes temporal stability a promotion
+condition rather than a manual note. It partitions every chronological sample
+series into four fixed blocks chosen before inspecting the data. There must be
+at least 16 samples, and a screen with `N` cases must use a multiple of `4*N`
+samples so every block contains a complete balanced-order rotation. A
+confirmation pair requires at least 40 samples and a multiple of eight. A case
+is diagnostic-only when its maximum/minimum block-median spread exceeds 5%;
+an incumbent/candidate pair is also diagnostic-only when its paired-effect
+block medians span more than 2%, or when they cross both below `0.995` and above
+`1.005`. These are predeclared practical effect limits, not a data-selected
+change point or a reproduction of Barrett et al.'s
+[*Virtual Machine Warmup Blows Hot and Cold*](https://arxiv.org/abs/1602.00602)
+PELT analysis. The separation of warm-ups, repeated processes, raw samples, and
+effect-size intervals follows the experimental-design motivation of Kalibera
+and Jones,
+[*Rigorous Benchmarking in Reasonable Time*](https://doi.org/10.1145/2464157.2464160),
+without claiming their full hierarchical variance model.
+
+The autotuner independently recomputes the complete record from raw samples.
+Missing fields, altered thresholds, or summaries not bound to those samples
+fail closed. Screening excludes only the unstable candidate pair instead of
+discarding unrelated stable pairs; confirmation and `decide` apply the same
+pair-specific eligibility. The additive field leaves the JSON version at
+schema 5, but changes the canonical protocol hash. Earlier schema-5 files are
+therefore historical evidence and cannot be mixed with a current decision.
+
+Two 24-sample, 3,000,000-call AMD/GCC 12 reruns exercise that gate:
+
+| affinity | stationarity result | performance result |
+|---:|---|---|
+| CPU 1 | full549 absolute spread 2.3157%; all four AVX pairs eligible; scalar control diagnostic-only at 9.0577% absolute spread | AVX paired medians 0.999624--1.002591x; every 95% CI includes one and every gain is below 1% |
+| CPU 3 | campaign diagnostic-only; full549 absolute spread 8.2770%; pair-effect spreads 2.2451--7.2305% for the AVX cases | no pair can be promoted; most pairs also have material sign instability |
+
+The exact records are
+[`stationarity_gate_timing_02_cpu1.json`](stationarity_gate_timing_02_cpu1.json)
+and
+[`stationarity_gate_timing_02_cpu3.json`](stationarity_gate_timing_02_cpu3.json).
+They validate the rejection path on this AMD host, not performance on the
+target. The scalar submission remains the incumbent.
+
+The final local algorithmic pass,
+[`screen_eleventh_isa_synthesis_02.py`](screen_eleventh_isa_synthesis_02.py),
+combined exhaustive enumeration of the one-instruction and parallel
+two-unary-plus-combine shapes with structural bit-loss/bijectivity/projection
+exclusions for the other three-operation DAG topologies. The scoped grammar
+uses qword logical shifts, arbitrary fixed word-local byte selections, and an
+XOR/OR (or carry-free ADD) combine. No network implementing
+`BSWAP64` followed by a non-byte rotate exists in that grammar. This is an
+UNSAT result only for the stated grammar, not a lower bound over all x86
+instructions.
+
+Three exact split-shuffle controls confirm the construction boundary, but add
+one `VPSHUFB` per round: the retained loop grows from 122 instructions/549
+bytes to 142 instructions and 669, 669, or 689 bytes. A byte shuffle can
+commute through XOR after transforming its constant, but modular ADD carries
+prevent the round-boundary shuffles from cancelling. All four builds passed
+the official vectors, complete-loop audits, and 100,000 arbitrary-state and
+arbitrary-constant differential cases at one and twenty rounds. The full
+formal scope, counterexamples, hashes, and static controls are in
+[`eleventh_isa_synthesis_results_02.json`](eleventh_isa_synthesis_results_02.json).
+
+LLVM 19.1.7 accepts `arrowlake`, but its
+[X86 processor definition](https://github.com/llvm/llvm-project/blob/llvmorg-19.1.7/llvm/lib/Target/X86/X86.td)
+maps that name to `AlderlakePModel`. Moreover, the six tested LLVM 19 labels
+(`alderlake`, `arrowlake`, `arrowlake-s`, `lunarlake`, `meteorlake`, and
+`sierraforest`) report identical metrics for each of the four streams.
+Consequently these
+[llvm-mca](https://llvm.org/docs/CommandGuide/llvm-mca.html) numbers are static
+proxies, not Core Ultra 7 255H model evidence.
+
 ## Core-aware 255H decision tool
 
 [`autotune_02_255h.py`](autotune_02_255h.py) and
@@ -855,7 +929,7 @@ The three tenth-wave counted Pareto points expand the current manifest to
 **33 cases**.  Short smoke timings are integration evidence, not performance
 evidence; current schema-5 confirmation also requires the repeated-call state,
 alternate-iteration challenge, total-derived timing, and child-CPU coverage
-records.
+records, plus raw-recomputed four-block stationarity evidence.
 
 The same fast flags were also applied to full unroll, pair loop, and
 `unroll5_bmi2`; medians were 37.279, 38.618, and 38.727 ns, respectively. Full
@@ -925,7 +999,9 @@ inline build.
 
 Do not choose the final submission solely from AMD measurements or LLVM-MCA.
 The exact GCC 13.3 call-removal and 700/2000 equality are already established;
-what remains unknown is the performance ordering on Core Ultra 7 255H. Use the
+the documented local algorithmic, code-generation, cache/frontend, and
+micro-optimization scopes are now closed without a new promotable candidate.
+What remains is the performance ordering on Core Ultra 7 255H. Use the
 core-aware tool to A/B `-mtune=alderlake`, its IRA-priority combination,
 source order `2,1,0,3`, the selective/no-post-reload scheduler streams, and the
 `-fira-region=one` 569-byte AVX2 stream, commutative 549-byte source, target-only
@@ -943,5 +1019,6 @@ contradictory CPU-1/2/3 ordering prevents promotion from this VM alone.  The
 549-byte, 548-byte, and all compact-block candidates also remain target-only.
 The tenth-wave CPU 1 block-3 signal was nonstationary, below the promotion
 threshold, and absent on CPU 3; the remaining intervals included one.  The
-ninth-wave files are protocol-predecessor historical records; only freshly
-generated current-fingerprint evidence is eligible for a new 255H decision.
+ninth- and tenth-wave files are protocol-predecessor historical records; only
+freshly generated current-fingerprint evidence is eligible for a new 255H
+decision.

@@ -327,11 +327,56 @@ using 3,000,000 calls, six warm-ups, and 32 balanced samples.  The
 signal was `1.005x (1.001--1.014)`, but that campaign was nonstationary, the
 signal was not reproduced on CPU 3 (`1.001x, 0.997--1.004`), and it is below
 the 1% promotion threshold.  Every other counted candidate interval included
-one.  The scalar incumbent is unchanged; all three are target-only.  Raw
-current-protocol records are
+one.  The scalar incumbent is unchanged; all three are target-only. The
+tenth-pass raw records are
 [`tenth_wave_timing_02_cpu1.json`](../../solutions/02_optimization/tenth_wave_timing_02_cpu1.json)
 and
 [`tenth_wave_timing_02_cpu3.json`](../../solutions/02_optimization/tenth_wave_timing_02_cpu3.json).
+They predate the stationarity field and its protocol hash and are now
+historical schema-5 records.
+
+The current schema-5 protocol adds a raw-recomputed, four-fixed-block
+stationarity gate. It requires at least 16 samples; an `N`-case screen uses a
+multiple of `4*N`, while a two-case confirmation uses at least 40 and a
+multiple of eight. Absolute block-median spread above 5%, paired-effect spread
+above 2%, or a paired effect crossing both `0.995` and `1.005` makes that pair
+diagnostic-only. The block boundaries and practical thresholds are fixed
+before observing the data. This is motivated by
+[Barrett et al.](https://arxiv.org/abs/1602.00602) and
+[Kalibera/Jones](https://doi.org/10.1145/2464157.2464160), but is neither a
+PELT reproduction nor their full hierarchical model. The autotuner recomputes
+the record independently from raw samples and excludes only the affected pair.
+
+Fresh 24-sample AMD/GCC 12 records are
+[`stationarity_gate_timing_02_cpu1.json`](../../solutions/02_optimization/stationarity_gate_timing_02_cpu1.json)
+and
+[`stationarity_gate_timing_02_cpu3.json`](../../solutions/02_optimization/stationarity_gate_timing_02_cpu3.json).
+CPU 1's full549 absolute spread is 2.3157%, and all four AVX pairs are
+eligible, but their paired medians are only `0.999624--1.002591x` and every
+95% interval includes one. The scalar control alone is diagnostic-only at
+9.0577% absolute spread. CPU 3 is wholly diagnostic-only: full549 drifts
+8.2770%, every AVX pair-effect spread is at least 2.2451%, and all but old
+block2 also show material sign instability. Neither affinity promotes
+anything, so the scalar score command above is unchanged.
+
+The last local ISA pass also produced no submission replacement.
+[`screen_eleventh_isa_synthesis_02.py`](../../solutions/02_optimization/screen_eleventh_isa_synthesis_02.py)
+found no three-instruction solution for `BSWAP64` plus the four non-byte
+rotates in its scoped AVX2 shift/shuffle/bitwise grammar. This is not a global
+x86 lower bound: the script exhaustively enumerates the one-instruction and
+parallel two-unary-plus-combine shapes, then structurally excludes the other
+three-operation DAG topologies. Three exact split-shuffle controls pass the official vectors,
+complete audits, and 100,000 arbitrary-state/constant cases at one and twenty
+rounds, but grow the loop from 122 instructions/549 bytes to 142 instructions
+and 669--689 bytes. Modular ADD carry blocks cross-round shuffle cancellation.
+The exact scope and controls are in
+[`eleventh_isa_synthesis_results_02.json`](../../solutions/02_optimization/eleventh_isa_synthesis_results_02.json).
+LLVM 19.1.7 accepts `arrowlake`, but its
+[`X86.td`](https://github.com/llvm/llvm-project/blob/llvmorg-19.1.7/llvm/lib/Target/X86/X86.td)
+maps it to `AlderlakePModel`; all six tested LLVM 19 labels give identical
+metrics per stream. These
+[llvm-mca](https://llvm.org/docs/CommandGuide/llvm-mca.html) results are not
+255H model evidence.
 
 From the repository root, the six-case campaign shape is:
 
@@ -369,9 +414,9 @@ python3 solutions/benchmark_02_permutation.py \
   --audit-mode block2_counted=avx2-inline-pair-block2-counted \
   --audit-mode block3_tail1=avx2-inline-pair-block3-tail1 \
   --audit-mode block5_counted=avx2-inline-pair-block5-counted \
-  --cpu 1 --iterations 3000000 --warmups 6 --samples 32 \
-  --random-cases 100000 --campaign-id ch2-tenth-cpu1-rerun-a \
-  --json /tmp/challenge02-tenth-cpu1.json
+  --cpu 1 --iterations 3000000 --warmups 6 --samples 24 \
+  --random-cases 100000 --campaign-id ch2-stationarity-cpu1-rerun-a \
+  --json /tmp/challenge02-stationarity-cpu1.json
 ```
 
 Use a fresh campaign id and output path for every run; change `--cpu 1` to
@@ -407,4 +452,8 @@ audits, with source-local `-iquote` context recorded for every case. Its
 30-case state.  The three counted block-2/3/5 Pareto points expand the current
 schema-5 manifest to **33 cases**.  Current confirmation additionally requires
 the repeated state, alternate challenge, total-derived timing, and child-CPU
-coverage records.
+coverage records, plus the independently recomputed stationarity record.
+The documented local algorithmic/ISA, code-generation, cache/frontend, and
+micro-optimization scopes are now closed. The only unresolved performance task
+is an actual Core Ultra 7 255H `probe -> screen ->` two independent
+`confirm` sessions `-> decide`; no global ISA-optimality claim is made.

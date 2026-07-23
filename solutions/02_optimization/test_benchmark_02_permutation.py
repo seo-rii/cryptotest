@@ -24,12 +24,14 @@ sys.path.insert(0, str(ROOT / "solutions" / "02_optimization"))
 from autotune_02_255h import (
     AutotuneError,
     run_one_campaign,
+    timing_stationarity_validation_errors,
     timed_main_validation_errors,
 )
 import solutions.benchmark_02_permutation as benchmark_module
 from solutions.benchmark_02_permutation import (
     parse_contest_timing_output,
     parse_oracle_final_state,
+    timing_stationarity_evidence,
 )
 
 
@@ -190,6 +192,112 @@ class OracleOutputTests(unittest.TestCase):
             parse_oracle_final_state(output + output)
 
 
+class TimingStationarityTests(unittest.TestCase):
+    def test_stable_noise_is_promotion_eligible(self) -> None:
+        baseline = [
+            100.0 + (((index * 7) % 5) - 2) * 0.1
+            for index in range(32)
+        ]
+        candidate = [
+            value / 1.01 * (1.0 + (((index * 3) % 3) - 1) * 0.0005)
+            for index, value in enumerate(baseline)
+        ]
+        evidence = timing_stationarity_evidence(
+            {"baseline": baseline, "candidate": candidate}, "baseline"
+        )
+        self.assertEqual(evidence["status"], "PASS")
+        self.assertEqual(evidence["campaign_eligibility"], "eligible")
+        comparisons = evidence["comparisons"]
+        assert isinstance(comparisons, dict)
+        self.assertEqual(comparisons["candidate"]["status"], "PASS")
+        self.assertEqual(comparisons["candidate"]["eligibility"], "eligible")
+
+    def test_clear_common_level_shift_is_diagnostic_only(self) -> None:
+        baseline = [100.0] * 16 + [125.0] * 16
+        candidate = [99.0] * 16 + [123.75] * 16
+        evidence = timing_stationarity_evidence(
+            {"baseline": baseline, "candidate": candidate}, "baseline"
+        )
+        self.assertEqual(evidence["status"], "FAIL")
+        self.assertEqual(evidence["campaign_eligibility"], "diagnostic-only")
+        cases = evidence["cases"]
+        comparisons = evidence["comparisons"]
+        assert isinstance(cases, dict)
+        assert isinstance(comparisons, dict)
+        self.assertEqual(cases["baseline"]["status"], "FAIL")
+        self.assertEqual(comparisons["candidate"]["status"], "FAIL")
+
+    def test_material_effect_sign_instability_is_diagnostic_only(self) -> None:
+        baseline = [100.0] * 32
+        candidate = [98.0] * 16 + [102.0] * 16
+        evidence = timing_stationarity_evidence(
+            {"baseline": baseline, "candidate": candidate}, "baseline"
+        )
+        cases = evidence["cases"]
+        comparisons = evidence["comparisons"]
+        assert isinstance(cases, dict)
+        assert isinstance(comparisons, dict)
+        self.assertEqual(cases["baseline"]["status"], "PASS")
+        self.assertEqual(cases["candidate"]["status"], "PASS")
+        comparison = comparisons["candidate"]
+        self.assertIs(comparison["material_sign_instability"], True)
+        self.assertEqual(comparison["status"], "FAIL")
+        self.assertEqual(comparison["eligibility"], "diagnostic-only")
+
+    def test_incomplete_balanced_order_blocks_are_not_promotable(self) -> None:
+        evidence = timing_stationarity_evidence(
+            {
+                "baseline": [100.0] * 18,
+                "candidate": [99.0] * 18,
+            },
+            "baseline",
+        )
+        self.assertEqual(evidence["status"], "NOT_ENFORCED")
+        self.assertEqual(evidence["campaign_eligibility"], "diagnostic-only")
+        preconditions = evidence["preconditions"]
+        assert isinstance(preconditions, dict)
+        self.assertIs(
+            preconditions["sample_count_multiple_of_four_case_count"],
+            False,
+        )
+
+    def test_autotuner_rejects_malformed_or_unbound_evidence(self) -> None:
+        samples = {
+            "baseline": [100.0] * 32,
+            "candidate": [99.0] * 32,
+        }
+        report: dict[str, object] = {
+            "internal_ns_per_20round": samples,
+            "timing_stationarity": timing_stationarity_evidence(
+                samples, "baseline"
+            ),
+        }
+        self.assertEqual(
+            timing_stationarity_validation_errors(
+                report,
+                expected_case_names=["baseline", "candidate"],
+                expected_baseline="baseline",
+                expected_samples=32,
+            ),
+            [],
+        )
+        evidence = report["timing_stationarity"]
+        assert isinstance(evidence, dict)
+        thresholds = evidence["thresholds"]
+        assert isinstance(thresholds, dict)
+        thresholds["max_absolute_block_median_spread"] = 0.50
+        errors = timing_stationarity_validation_errors(
+            report,
+            expected_case_names=["baseline", "candidate"],
+            expected_baseline="baseline",
+            expected_samples=32,
+        )
+        self.assertTrue(
+            any("does not match raw samples" in error for error in errors),
+            errors,
+        )
+
+
 class TimedMainEvidenceTests(unittest.TestCase):
     @staticmethod
     def _valid_report() -> dict[str, object]:
@@ -233,16 +341,18 @@ class TimedMainEvidenceTests(unittest.TestCase):
             f"oracle_final_state_iterations={challenge_iterations}\n"
             f"oracle_final_state={' '.join(challenge_state)}\n"
         )
-        return {
+        report: dict[str, object] = {
             "schema_version": 5,
             "campaign_id": campaign_id,
+            "baseline": "candidate",
             "config": {
                 "iterations": 10,
                 "warmups": 1,
-                "samples_per_case": 2,
+                "samples_per_case": 4,
                 "timed_main_repeated_call_validation": True,
                 "timed_main_alternate_iteration_challenge": True,
                 "timed_workload_child_cpu_validation": True,
+                "timing_stationarity_validation": True,
                 "internal_ns_source": (
                     "printed-total-elapsed-seconds-divided-by-iterations"
                 ),
@@ -263,26 +373,31 @@ class TimedMainEvidenceTests(unittest.TestCase):
                         "observed_final_state": state,
                         "preflight_processes": 1,
                         "warmup_processes": 1,
-                        "measured_processes": 2,
-                        "validated_processes": 4,
+                        "measured_processes": 4,
+                        "validated_processes": 6,
                         "status": "PASS",
                     }
                 },
             },
             "internal_ns_per_20round": {
-                "candidate": [10.0, 10.0],
+                "candidate": [10.0, 10.0, 10.0, 10.0],
             },
             "inner_elapsed_seconds": {
-                "candidate": [0.0000001, 0.0000001],
+                "candidate": [0.0000001, 0.0000001, 0.0000001, 0.0000001],
             },
             "printed_average_us_per_20round": {
-                "candidate": [0.01, 0.01],
+                "candidate": [0.01, 0.01, 0.01, 0.01],
             },
             "outer_wall_seconds": {
-                "candidate": [0.0000002, 0.0000002],
+                "candidate": [0.0000002, 0.0000002, 0.0000002, 0.0000002],
             },
             "child_cpu_seconds": {
-                "candidate": [0.00000011, 0.00000011],
+                "candidate": [
+                    0.00000011,
+                    0.00000011,
+                    0.00000011,
+                    0.00000011,
+                ],
             },
             "timed_workload_cpu_coverage": {
                 "minimum_iterations": 1_000_000,
@@ -332,6 +447,10 @@ class TimedMainEvidenceTests(unittest.TestCase):
                 }
             },
         }
+        report["timing_stationarity"] = timing_stationarity_evidence(
+            {"candidate": [10.0, 10.0, 10.0, 10.0]}, "candidate"
+        )
+        return report
 
     def test_accepts_exact_schema5_timed_main_evidence(self) -> None:
         self.assertEqual(
@@ -340,7 +459,7 @@ class TimedMainEvidenceTests(unittest.TestCase):
                 expected_case_names=["candidate"],
                 expected_iterations=10,
                 expected_warmups=1,
-                expected_samples=2,
+                expected_samples=4,
             ),
             [],
         )
@@ -357,7 +476,7 @@ class TimedMainEvidenceTests(unittest.TestCase):
             expected_case_names=["candidate"],
             expected_iterations=10,
             expected_warmups=1,
-            expected_samples=2,
+            expected_samples=4,
         )
         self.assertIn(
             "timed-main oracle stdout SHA-256 does not bind its state",
@@ -376,7 +495,7 @@ class TimedMainEvidenceTests(unittest.TestCase):
             expected_case_names=["candidate"],
             expected_iterations=10,
             expected_warmups=1,
-            expected_samples=2,
+            expected_samples=4,
         )
         self.assertTrue(
             any("case set differs" in error for error in errors),
@@ -391,7 +510,7 @@ class TimedMainEvidenceTests(unittest.TestCase):
             expected_case_names=["candidate"],
             expected_iterations=10,
             expected_warmups=1,
-            expected_samples=2,
+            expected_samples=4,
         )
         self.assertTrue(
             any("alternate-iteration challenge is missing" in error for error in errors),
@@ -410,10 +529,10 @@ class TimedMainEvidenceTests(unittest.TestCase):
             expected_case_names=["candidate"],
             expected_iterations=10,
             expected_warmups=1,
-            expected_samples=2,
+            expected_samples=4,
         )
         self.assertIn(
-            "timed-main case candidate: internal timing sample count is not 2",
+            "timed-main case candidate: internal timing sample count is not 4",
             errors,
         )
 
@@ -425,7 +544,7 @@ class TimedMainEvidenceTests(unittest.TestCase):
             expected_case_names=["candidate"],
             expected_iterations=10,
             expected_warmups=1,
-            expected_samples=2,
+            expected_samples=4,
         )
         self.assertIn(
             "timed-main alternate-iteration derivation campaign id differs",
@@ -442,7 +561,7 @@ class TimedMainEvidenceTests(unittest.TestCase):
             expected_case_names=["candidate"],
             expected_iterations=10,
             expected_warmups=1,
-            expected_samples=2,
+            expected_samples=4,
         )
         self.assertIn(
             "timed-main child-CPU coverage reason is inconsistent",

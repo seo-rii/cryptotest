@@ -44,13 +44,16 @@ code-generation 경로를 연다.
    다시 추측하는 것이 아니라 scalar source/scheduler 변형, 122-instruction
    lane-wise AVX2의 569/549/548-byte stream, 기존 block-2와 새 counted
    block-2/3/5 loop, 그리고 재현 가능한 stream/alignment 배치 클래스의 실제
-   순위를 판정하는 것이다.
+   순위를 `probe -> screen ->` 독립 `confirm` 두 번 `-> decide`로 판정하는
+   것이다. 문서화한 로컬 탐색 범위는 새 승격 후보 없이 닫혔다.
 4. current schema 5는 독립 reference로 timing loop 전체의 최종 상태를 계산하고
    preflight, warm-up, 모든 sample에서 iteration 수와 상태를 검증한다. 여기에
    total/average 일치, child CPU coverage와 nonce 기반 alternate-iteration
-   challenge를 더했다. 이는 재현한 세 우회를 막는 방어선이지 임의의 악성 C에
-   대한 암호학적 증명은 아니다. 9차 schema-5 파일은 이 protocol hash 변경 전
-   역사 자료이며 schema 2--4는 repeated-call integrity도 없는 더 오래된 자료다.
+   challenge, raw에서 재계산한 four-block stationarity를 더했다. 이는 재현한
+   우회와 phase shift를 막는 방어선이지 임의의 악성 C나 정상성에 대한
+   암호학적·통계적 증명은 아니다. 9·10차 schema-5 파일은 이 protocol hash
+   변경 전 역사 자료이며 schema 2--4는 repeated-call integrity도 없는 더
+   오래된 자료다.
 5. one-state SIMD, partial unroll, table, 수동 재스케줄링은 target에서 두
    독립 세션 모두 유의한 차이를 보이지 않는 한 채택하지 않는다. compact
    block 계열은 frontend 민감도 대조군이지 현 제출안이 아니다.
@@ -1069,6 +1072,84 @@ frontend Pareto 점으로 255H manifest에는 남지만 full549나 scalar incumb
 [`tenth_wave_timing_02_cpu3.json`](tenth_wave_timing_02_cpu3.json)에 있으며,
 실제 Core Ultra 7 255H는 아직 측정하지 못했다.
 
+#### 11차: 정상성 승격 gate와 현 protocol 재측정
+
+10차 CPU 1처럼 실행 중 성능 단계가 이동한 campaign을 수동 메모로만 남기지
+않도록 schema 5에 additive `timing_stationarity` record를 넣었다. chronological
+sample을 데이터를 보기 전에 정한 네 연속 block으로 나누며 최소 16 samples를
+요구한다. `N`-case screen은 sample 수가 `4*N`의 배수여야 각 block이 case
+position을 한 번씩 균형 있게 덮고, 2-case confirmation은 최소 40 samples이면서
+8의 배수여야 한다. 네 block median의 최대/최소 차이가 한 case에서 5%를
+넘으면 absolute drift, incumbent/candidate paired-ratio에서 2%를 넘으면 effect
+instability로 판정한다. block 효과가 `0.995` 미만과 `1.005` 초과 양쪽에
+걸치면 0.5%보다 큰 material sign reversal도 별도로 기록한다.
+
+이 경계와 block은 관측 뒤 고른 changepoint나 p-value가 아니다. steady-state와
+changepoint 검사의 필요성은 Barrett et al.의
+[*Virtual Machine Warmup Blows Hot and Cold*](https://arxiv.org/abs/1602.00602),
+반복 계층과 effect-size interval은 Kalibera/Jones의
+[*Rigorous Benchmarking in Reasonable Time*](https://doi.org/10.1145/2464157.2464160)를
+참고했지만, 현재 gate는 작은 24--40 sample에 맞춘 고정 effect-size 검사이며
+논문의 PELT나 전체 hierarchical variance model을 재현한 것이 아니다. block
+안의 짧은 변화는 놓칠 수 있으므로 PASS도 정상성의 통계적 증명이 아니라 승격을
+위한 보수적 방어선이다.
+
+autotuner는 candidate가 기록한 요약을 신뢰하지 않고 raw sample에서 전체
+stationarity record를 독립 재계산한다. threshold·field·raw binding이 다르면
+fail-closed하고, screen에서는 불안정한 해당 candidate pair만 제외한다.
+confirmation과 `decide`도 실제 incumbent/candidate pair의 eligibility를
+검사하므로 unrelated candidate 하나가 전체 screen을 오염시키지 않는다.
+JSON의 큰 version은 schema 5를 유지하지만 protocol field와 canonical hash가
+바뀌었으므로 이전 schema-5 timing 파일은 역사 자료이며 새 판정에 섞지 않는다.
+
+현 protocol로 CPU 1/3에서 3,000,000 calls, warm-up 6, balanced samples 24,
+random differential 100,000건을 다시 실행했다.
+
+| affinity | 정상성 | `full549/candidate` 결과 |
+|---:|---|---|
+| CPU 1 | full549 absolute spread **2.3157%**로 PASS, 네 AVX pair 모두 eligible; scalar만 absolute **9.0577%**로 diagnostic-only | block2 counted `1.000750 (0.997649--1.006677)`, block3 `1.002591 (0.998829--1.006870)`, block5 `1.002347 (0.999722--1.004974)`, old block2 `0.999624 (0.997787--1.002890)` |
+| CPU 3 | full549 absolute spread **8.2770%**로 campaign diagnostic-only; AVX pair effect spread도 최소 **2.2451%** | 어떤 pair도 승격 불가; old block2를 제외한 AVX pair에는 material sign reversal도 있음 |
+
+CPU 1의 AVX interval은 모두 1을 포함하고 가장 큰 paired median도
+`1.002591x`라 1% 승격선에 못 미친다. CPU 3은 성능 수치를 비교하기 전에
+정상성 gate에서 탈락한다. raw와 block별 median은
+[`stationarity_gate_timing_02_cpu1.json`](stationarity_gate_timing_02_cpu1.json),
+[`stationarity_gate_timing_02_cpu3.json`](stationarity_gate_timing_02_cpu3.json)에
+있으며 scalar incumbent는 그대로다.
+
+#### 11차: 범위를 고정한 세 명령 AVX2 합성
+
+마지막 로컬 알고리즘 축은
+[`screen_eleventh_isa_synthesis_02.py`](screen_eleventh_isa_synthesis_02.py)로
+`BSWAP64` 뒤 non-byte rotate를 세 AVX2 명령으로 만들 수 있는지 전수와 구조
+논증을 결합해 검사했다.
+grammar는 qword logical shift, 각 출력 byte가 같은 word의 임의 byte 또는 0을
+고르는 고정 shuffle, 마지막 XOR/OR 또는 disjoint bit field의 carry-free ADD다.
+네 rotation `43,7,29,14` 모두 한 명령 해와
+`두 unary + combine` 세 명령 해가 0개였고, 나머지 세 명령 DAG 배치도
+bit-loss/projection 논증으로 닫혀 이 **제한된 grammar 안에서만 UNSAT**다.
+모든 x86 opcode나 더 긴 network에 대한 전역 하한이라고 주장하지 않는다.
+
+정확한 constructive control 세 개는 두 shift branch를 각각 shuffle한 뒤
+합친다. 모두 공식 vector와 임의 state·ADD/XOR 상수 100,000건의 1/20-round,
+complete-loop audit를 통과했지만, round당 `VPSHUFB`가 하나 늘어 baseline
+`122 instructions/549B`가 `142 instructions/669B`, `142/669B`,
+`142/689B`로 커졌다. shuffle은 상수를 같이 바꾸면 XOR과 commute하지만,
+modular ADD의 carry 때문에 `BSWAP64(z+A)=BSWAP64(z)+BSWAP64(A)`가 성립하지
+않아 round 경계의 두 shuffle을 상쇄할 수 없다. 따라서 새 후보는 없다.
+정확한 scope, counterexample와 결과는
+[`eleventh_isa_synthesis_results_02.json`](eleventh_isa_synthesis_results_02.json)에
+고정했다.
+
+LLVM 19.1.7은 `-mcpu=arrowlake`를 받지만
+[동 버전 `X86.td`](https://github.com/llvm/llvm-project/blob/llvmorg-19.1.7/llvm/lib/Target/X86/X86.td)는
+이를 `AlderlakePModel`에 연결한다. 또한 테스트한
+`alderlake/arrowlake/arrowlake-s/lunarlake/meteorlake/sierraforest` 여섯
+label은 네 stream 각각에서 cycles, instructions, µops, block RThroughput이
+완전히 같았다. 이는
+[llvm-mca guide](https://llvm.org/docs/CommandGuide/llvm-mca.html)가 설명하는
+정적 scheduling proxy이며 255H P/E/LP-E 모델의 증거가 아니다.
+
 ### 255H용 보수적 판정 절차
 
 [`autotune_02_255h.py`](autotune_02_255h.py)는 `probe -> screen -> confirm ->
@@ -1114,7 +1195,8 @@ binary audit 19/19를 통과했다. 여기에 당시 서로 다른 569-byte stre
 추가됐다. 10차의 counted block-2/3/5 세 Pareto point까지 더한 현재 manifest는
 **33 cases**다. 짧은 timing 값은 성능 근거가 아니라 통합 회귀 검사이며, 현재
 confirmation에는 repeated-call record뿐 아니라 alternate challenge,
-total-derived timing과 child-CPU coverage도 필수다.
+total-derived timing, child-CPU coverage와 raw-recomputed four-block
+stationarity record도 필수다.
 P-core 모든 campaign에서 paired median `>= 1.010`, 보정된 lower bound
 `> 1.005`이고 E/LP-E 안전성도 지킨 후보만 통과시킨다. 여러 후보가 동시에 통과하면
 자동으로 임의의 하나를 고르지 않고 별도 head-to-head를 요구한다. 따라서 현재
@@ -1169,10 +1251,12 @@ schema 5는 여기에 독립 repeated-call oracle을 더한다. 모든 case의 p
 warm-up, sample output에서 iteration과 final state를 파싱해 oracle과 비교하고,
 정확한 process 수와 stdout hash를 JSON에 남긴다. current protocol은 total과
 average의 일치 및 total-derived ns, child-CPU coverage, nonce-derived alternate
-iteration record까지 요구한다. autotuner screen/confirm/decide는 이 record가
+iteration record와 raw에서 재계산한 four-block stationarity까지 요구한다.
+autotuner screen/confirm/decide는 이 record가
 없거나 값·형식·hash binding이 맞지 않으면 fail-closed한다. 9차 schema-5 JSON은
 repeated-call 검증은 했지만 이 protocol fingerprint 변경 전 생성됐으므로 새
-confirmation에는 current protocol로 재측정한 파일만 사용한다.
+confirmation에는 current protocol로 재측정한 파일만 사용한다. 10차 timing
+파일도 stationarity field/hash 추가 전 기록이므로 같은 역사 자료 범주다.
 
 schema 2의 과거 stages/alignment/codegen JSON에 있던 `random_differential_cases`는
 oracle self-test 횟수였으므로 그 파일들은 공식-vector gate가 있는 성능
@@ -1237,8 +1321,11 @@ python3 solutions/02_optimization/autotune_02_255h.py screen \
 각 performance binary의 `main` timing loop가 선언한 assembly contract를
 통과해야 하고, 서로 다른 session과 physical core representative의 결과가
 모두 있어야 한다. 현재 증거로는 full-unroll + cross-call inline이 기본
-score안이며, 실제 255H 결과 없이 AVX2 source나 source 순서,
-tune/IRA/scheduler flag를 더하지 않는다.
+score안이다. 문서에 정의한 algorithmic/ISA, codegen, cache/frontend와 micro
+탐색 범위는 새 승격 후보 없이 닫혔다. 이제 남은 일은 실제 255H에서
+`probe -> screen ->` 서로 다른 시간대의 `confirm` 두 번 `-> decide`를 끝내는
+것뿐이며, 그 결과 없이 AVX2 source나 source 순서, tune/IRA/scheduler flag를
+더하지 않는다.
 
 ## 참고 자료
 
@@ -1248,7 +1335,10 @@ tune/IRA/scheduler flag를 더하지 않는다.
 - [GCC 13.3, x86 Options](https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/x86-Options.html) — `-mtune`은 ISA를 넓히지 않는다는 의미와 `alderlake` target의 존재, `arrowlake` 전용 target 부재를 확인했다.
 - [de Moura and Bjørner, *Z3: An Efficient SMT Solver*, TACAS 2008](https://doi.org/10.1007/978-3-540-78800-3_24)와 [Z3 공식 publication 목록](https://www.microsoft.com/en-us/research/project/z3-3/publications/) — 64-bit bit-vector 동치와 연산 삭제 후보의 SAT/UNSAT 판정 근거다.
 - [Solar-Lezama et al., *Combinatorial Sketching for Finite Programs*, ASPLOS 2006](https://people.csail.mit.edu/asolar/papers/asplos06-final.pdf) — 연산 template의 빈칸을 반례로 반복 보강하는 CEGIS식 합성 절차의 배경이다.
+- [Barrett et al., *Virtual Machine Warmup Blows Hot and Cold*, OOPSLA 2017](https://arxiv.org/abs/1602.00602) — warm-up 뒤에도 steady state가 보장되지 않으며 changepoint를 검사해야 한다는 동기다. 현재 네 고정 block effect gate는 이 논문의 PELT 재현이 아니다.
+- [Kalibera and Jones, *Rigorous Benchmarking in Reasonable Time*, ISMM 2013](https://doi.org/10.1145/2464157.2464160) — 여러 반복 계층, 실험 예산과 effect-size confidence interval을 설계하는 배경이다.
 - [LLVM, *llvm-mca Machine Code Analyzer*](https://llvm.org/docs/CommandGuide/llvm-mca.html) — scheduling model 기반 throughput/resource-pressure 분석의 용도와 모델 정확도 한계를 확인했다.
+- [LLVM 19.1.7, `llvm/lib/Target/X86/X86.td`](https://github.com/llvm/llvm-project/blob/llvmorg-19.1.7/llvm/lib/Target/X86/X86.td) — `arrowlake` 이름이 이 release에서 `AlderlakePModel`에 매핑됨을 확인한 1차 자료다.
 - [Abel and Reineke, *uops.info: Characterizing Latency, Throughput, and Port Usage of Instructions on Intel Microarchitectures*, ASPLOS 2019](https://arxiv.org/abs/1810.04610) — instruction count만으로 성능을 단정하지 않고 latency, reciprocal throughput과 execution port를 분리해서 해석하는 근거다.
 - [Abel and Reineke, *nanoBench: A Low-Overhead Tool for Running Microbenchmarks on x86 Systems*, 2019](https://arxiv.org/abs/1911.03282) — warm-up, serialization, counter overhead와 반복 가능한 low-level 측정 설계의 참고 자료다. 이 VM에서는 필요한 performance counter가 없어 동일 수준의 port/frequency 판정을 주장하지 않았다.
 - [Intel, Intrinsics Guide](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html) — AVX2 variable shift, byte shuffle와 packed addition 후보의 ISA 형태를 확인했다.

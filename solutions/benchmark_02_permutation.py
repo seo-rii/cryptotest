@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import platform
 import random
@@ -72,6 +73,189 @@ ITERATIONS_PATTERN = re.compile(r"const int iterations = [0-9]+;")
 MIN_CHILD_CPU_COVERAGE_ITERATIONS = 1_000_000
 MIN_MEDIAN_CHILD_CPU_COVERAGE = 0.65
 MAX_MEDIAN_CHILD_CPU_COVERAGE = 1.05
+STATIONARITY_MIN_SAMPLES = 16
+STATIONARITY_BLOCK_COUNT = 4
+STATIONARITY_MAX_ABSOLUTE_SPREAD = 0.05
+STATIONARITY_MAX_EFFECT_SPREAD = 0.02
+STATIONARITY_EFFECT_SIGN_MARGIN = 0.005
+
+
+def timing_stationarity_evidence(
+    samples: dict[str, list[float]], baseline: str
+) -> dict[str, object]:
+    """Build a conservative, fixed-design stationarity promotion gate.
+
+    Four chronological blocks and all thresholds are fixed before looking at
+    the observations.  This deliberately avoids selecting a favorable change
+    point or significance level after seeing the data.  Absolute block medians
+    catch sustained clock/load phase changes; paired-ratio block medians catch
+    a candidate whose apparent effect changes over time.
+
+    This is a promotion guard, not a statistical proof of stationarity.  It can
+    miss short excursions or changes hidden inside a block, and process-order
+    or thermal interactions may remain even when every block contains complete
+    balanced-order rotations.
+    """
+
+    names = sorted(samples)
+    if baseline not in samples:
+        raise ValueError("stationarity baseline is absent from raw samples")
+    if not names:
+        raise ValueError("stationarity analysis requires at least one case")
+    lengths = {len(samples[name]) for name in names}
+    if len(lengths) != 1:
+        raise ValueError("stationarity raw sample lengths differ")
+    sample_count = lengths.pop()
+    if sample_count == 0:
+        raise ValueError("stationarity raw samples are empty")
+    for name in names:
+        if any(
+            not isinstance(value, (int, float))
+            or isinstance(value, bool)
+            or not math.isfinite(float(value))
+            or float(value) <= 0.0
+            for value in samples[name]
+        ):
+            raise ValueError(
+                f"stationarity raw samples for {name} must be finite and positive"
+            )
+
+    block_ranges = [
+        {
+            "start": block * sample_count // STATIONARITY_BLOCK_COUNT,
+            "stop": (block + 1) * sample_count // STATIONARITY_BLOCK_COUNT,
+        }
+        for block in range(STATIONARITY_BLOCK_COUNT)
+    ]
+    enough_samples = sample_count >= STATIONARITY_MIN_SAMPLES
+    order_balanced = (
+        sample_count % (STATIONARITY_BLOCK_COUNT * len(names)) == 0
+    )
+    preconditions_pass = enough_samples and order_balanced
+    precondition_reasons: list[str] = []
+    if not enough_samples:
+        precondition_reasons.append(
+            f"at least {STATIONARITY_MIN_SAMPLES} samples per case are required"
+        )
+    if not order_balanced:
+        precondition_reasons.append(
+            "sample count must be a multiple of four times the case count so "
+            "each fixed block balances case positions"
+        )
+
+    cases: dict[str, dict[str, object]] = {}
+    for name in names:
+        values = [float(value) for value in samples[name]]
+        block_medians = [
+            statistics.median(values[block["start"] : block["stop"]])
+            for block in block_ranges
+        ]
+        spread = max(block_medians) / min(block_medians) - 1.0
+        reasons: list[str] = []
+        if preconditions_pass and spread > STATIONARITY_MAX_ABSOLUTE_SPREAD:
+            reasons.append(
+                "absolute block-median spread exceeds the fixed 5% limit"
+            )
+        status = (
+            "NOT_ENFORCED"
+            if not preconditions_pass
+            else ("PASS" if not reasons else "FAIL")
+        )
+        cases[name] = {
+            "block_median_ns": block_medians,
+            "max_to_min_ratio_minus_one": spread,
+            "status": status,
+            "reasons": reasons,
+        }
+
+    comparisons: dict[str, dict[str, object]] = {}
+    baseline_values = [float(value) for value in samples[baseline]]
+    for name in names:
+        if name == baseline:
+            continue
+        candidate_values = [float(value) for value in samples[name]]
+        ratios = [
+            baseline_value / candidate_value
+            for baseline_value, candidate_value in zip(
+                baseline_values, candidate_values
+            )
+        ]
+        block_medians = [
+            statistics.median(ratios[block["start"] : block["stop"]])
+            for block in block_ranges
+        ]
+        spread = max(block_medians) / min(block_medians) - 1.0
+        sign_instability = (
+            min(block_medians) < 1.0 - STATIONARITY_EFFECT_SIGN_MARGIN
+            and max(block_medians) > 1.0 + STATIONARITY_EFFECT_SIGN_MARGIN
+        )
+        reasons: list[str] = []
+        if preconditions_pass:
+            if cases[baseline]["status"] != "PASS":
+                reasons.append("baseline absolute timing is nonstationary")
+            if cases[name]["status"] != "PASS":
+                reasons.append("candidate absolute timing is nonstationary")
+            if spread > STATIONARITY_MAX_EFFECT_SPREAD:
+                reasons.append(
+                    "paired-effect block-median spread exceeds the fixed 2% limit"
+                )
+            if sign_instability:
+                reasons.append(
+                    "paired effect crosses both sides of parity by more than 0.5%"
+                )
+        status = (
+            "NOT_ENFORCED"
+            if not preconditions_pass
+            else ("PASS" if not reasons else "FAIL")
+        )
+        comparisons[name] = {
+            "block_paired_median_ratio": block_medians,
+            "max_to_min_ratio_minus_one": spread,
+            "material_sign_instability": sign_instability,
+            "status": status,
+            "eligibility": "eligible" if status == "PASS" else "diagnostic-only",
+            "reasons": reasons,
+        }
+
+    campaign_reasons = list(precondition_reasons)
+    if preconditions_pass and cases[baseline]["status"] != "PASS":
+        campaign_reasons.append("baseline absolute timing is nonstationary")
+    campaign_status = (
+        "NOT_ENFORCED"
+        if not preconditions_pass
+        else ("PASS" if not campaign_reasons else "FAIL")
+    )
+    return {
+        "schema_version": 1,
+        "method": "four-fixed-contiguous-block-medians",
+        "baseline": baseline,
+        "case_names": names,
+        "sample_count_per_case": sample_count,
+        "block_ranges": block_ranges,
+        "order_period_samples": 2 * len(names),
+        "preconditions": {
+            "minimum_samples": STATIONARITY_MIN_SAMPLES,
+            "sample_count_multiple_of_four_case_count": order_balanced,
+            "status": "PASS" if preconditions_pass else "FAIL",
+            "reasons": precondition_reasons,
+        },
+        "thresholds": {
+            "max_absolute_block_median_spread": (
+                STATIONARITY_MAX_ABSOLUTE_SPREAD
+            ),
+            "max_paired_effect_block_median_spread": (
+                STATIONARITY_MAX_EFFECT_SPREAD
+            ),
+            "paired_effect_sign_margin": STATIONARITY_EFFECT_SIGN_MARGIN,
+        },
+        "cases": cases,
+        "comparisons": comparisons,
+        "status": campaign_status,
+        "campaign_eligibility": (
+            "eligible" if campaign_status == "PASS" else "diagnostic-only"
+        ),
+        "reasons": campaign_reasons,
+    }
 
 
 def parse_contest_timing_output(stdout: str) -> dict[str, object]:
@@ -1078,6 +1262,35 @@ def main() -> None:
             f"{comparison['paired_bootstrap_ci95_high']:.3f}"
         )
 
+    timing_stationarity = timing_stationarity_evidence(
+        internal_samples, baseline
+    )
+    print(
+        "stationarity "
+        f"status={timing_stationarity['status']} "
+        f"campaign_eligibility={timing_stationarity['campaign_eligibility']} "
+        "method=four-fixed-contiguous-block-medians"
+    )
+    stationarity_cases = timing_stationarity["cases"]
+    assert isinstance(stationarity_cases, dict)
+    for name, _ in cases:
+        record = stationarity_cases[name]
+        assert isinstance(record, dict)
+        print(
+            f"stationarity_case={name} status={record['status']} "
+            f"absolute_spread={record['max_to_min_ratio_minus_one']:.6f}"
+        )
+    stationarity_comparisons = timing_stationarity["comparisons"]
+    assert isinstance(stationarity_comparisons, dict)
+    for name, record in stationarity_comparisons.items():
+        assert isinstance(record, dict)
+        print(
+            f"stationarity_comparison={name} status={record['status']} "
+            f"eligibility={record['eligibility']} "
+            f"effect_spread={record['max_to_min_ratio_minus_one']:.6f} "
+            f"material_sign_instability={record['material_sign_instability']}"
+        )
+
     if args.json:
         assert resolved_objdump is not None and resolved_size_tool is not None
         source_paths: dict[str, str] = {}
@@ -1159,6 +1372,7 @@ def main() -> None:
                 "timed_main_repeated_call_validation": True,
                 "timed_main_alternate_iteration_challenge": True,
                 "timed_workload_child_cpu_validation": True,
+                "timing_stationarity_validation": True,
                 "internal_ns_source": (
                     "printed-total-elapsed-seconds-divided-by-iterations"
                 ),
@@ -1225,6 +1439,7 @@ def main() -> None:
                 ),
                 "cases": timed_workload_cpu_coverage,
             },
+            "timing_stationarity": timing_stationarity,
             "summaries": summaries,
             "comparisons": comparisons,
         }

@@ -11,7 +11,7 @@
 | 번호 | 주제 | 상태 | 최종 결과 | 상세 writeup |
 |---:|---|---|---|---|
 | 1 | 고전 암호와 분류 | 완료 | Caesar shift `6`, Vigenère key `KLVOJ`, 재현 가능한 분류 모델과 식별 불가능성 분석 | [01_암호분석](01_암호분석.md) |
-| 2 | 256비트 permutation 구현 | scalar incumbent 완료·10차 counted frontend/codegen/측정 계약 진단 완료·255H 실측 미정 | `rot={43,7,29,14}`, 2-round scalar full-unroll, 122-insn/549B AVX2와 122B/29-static counted block2 | [02_암호구현](02_암호구현.md) |
+| 2 | 256비트 permutation 구현 | scalar incumbent 완료·11차 정상성 gate/범위 제한 ISA 합성까지 로컬 탐색 종료·255H 실측 미정 | `rot={43,7,29,14}`, 2-round scalar full-unroll, 122-insn/549B AVX2와 122B/29-static counted block2 | [02_암호구현](02_암호구현.md) |
 | 3 | TLS 1.2 AES-GCM 위조 | 완료 | nonce 재사용으로 `H`와 `E_K(J0)`를 복원하고 유효한 급여 변경 record 생성 | [03_네트워크보안](03_네트워크보안.md) |
 | 4 | LLM weight steganography | 완료 | `CRYPTO{G00D_J0B!_y0u_f0und_7h3_h1dd3n_s3cr37_1n_LLM}` 추출 | [04_디지털포렌식](04_디지털포렌식.md) |
 | 5 | textbook-BGV | 완료 | ternary secret 64계수, 날짜 `20260410→20260411`, 고정 `State` 복원 | [05_동형암호](05_동형암호.md) |
@@ -58,8 +58,9 @@
   한다. current protocol은 total/average 일치와 total-derived ns, child-CPU
   coverage, fresh nonce에서 유도한 alternate iteration challenge까지 요구한다.
   이는 재현한 우회에 대한 방어선이지 모든 악성 C에 대한 암호학적 증명은 아니다.
-  9차 schema-5 JSON은 이 protocol hash 변경 전 역사 자료이고, schema 2--4 raw
-  JSON은 repeated-call 의미 보증도 없는 더 오래된 기록으로 구분한다.
+  9·10차 schema-5 JSON은 현재 stationarity field/protocol hash 변경 전 역사
+  자료이고, schema 2--4 raw JSON은 repeated-call 의미 보증도 없는 더 오래된
+  기록으로 구분한다.
 - 292-byte 작은 portable ROL은 `0.985x (0.958--1.002)`였고, XOR/ADD 저비트
   완전탐색과 120개 GCC/link 조합에서도 채택할 승자가 없었다.
   GCC 13.3에서 `-mtune=alderlake`는 실제 hot-loop schedule을 바꿨고 근사
@@ -162,6 +163,36 @@
   도중 host 부하가 크게 변했고, CPU 3의 `1.001x (0.997--1.004)`에서
   재현되지 않았으며 1% 승격 기준에도 못 미쳤다. 나머지 새 후보 interval은
   1을 포함했다. scalar incumbent를 유지하고 세 후보는 255H target-only로 둔다.
+- 현 schema 5는 chronological sample을 사전에 정한 네 block으로 나눈다. 최소
+  16 samples, `N`-case screen의 `4*N` 배수와 2-case confirmation의 최소 40·
+  8의 배수를 요구한다. absolute block-median spread 5%, paired-effect spread
+  2%, `0.995` 미만과 `1.005` 초과의 material sign reversal을 넘으면 해당
+  pair만 diagnostic-only다. autotuner가 raw에서 record를 독립 재계산한다.
+  [Barrett et al.](https://arxiv.org/abs/1602.00602)의 changepoint 동기와
+  [Kalibera/Jones](https://doi.org/10.1145/2464157.2464160)의 반복·effect-size
+  설계를 참고했지만 PELT나 전체 hierarchical model의 재현은 아니다.
+- 새 24-sample CPU 1 record는 full549 absolute spread `2.3157%`와 네 AVX
+  pair를 eligible로 판정했지만 AVX paired median은
+  `0.999624--1.002591x`이고 모든 CI가 1을 포함했다. scalar control만 absolute
+  `9.0577%`로 diagnostic-only였다. CPU 3은 full549 absolute `8.2770%`,
+  AVX pair-effect spread 최소 `2.2451%`로 campaign 전체가 diagnostic-only다.
+  승격은 없고 scalar incumbent를 유지한다.
+- 11차 ISA 합성은 qword shift, arbitrary word-local byte shuffle와
+  XOR/OR/carry-free ADD로 이뤄진 세 명령 grammar에서 one-instruction와
+  parallel `two unary + combine`을 전수하고, 나머지 DAG topology는
+  bit-loss/bijectivity/projection 구조 논증으로 제외했다. 이는 범위 제한
+  UNSAT이지 전역 x86 하한이 아니다. exact split-shuffle 세 대조군은 공식·100,000
+  random 1/20-round 검증을 통과했지만 122 instructions/549B를
+  142 instructions/669--689B로 키웠고, modular ADD carry가 round-boundary
+  shuffle cancellation을 막았다.
+- LLVM 19.1.7의 `arrowlake`는
+  [`X86.td`](https://github.com/llvm/llvm-project/blob/llvmorg-19.1.7/llvm/lib/Target/X86/X86.td)에서
+  `AlderlakePModel`을 쓰며 테스트한
+  여섯 LLVM 19 label은 각 stream에서 같은 metric을 냈다. 이는 255H 모델
+  증거가 아니다. [`llvm-mca` guide](https://llvm.org/docs/CommandGuide/llvm-mca.html)의
+  정적 모델 범위로만 해석한다. 문서화한 로컬 algorithmic/ISA, codegen, cache/frontend,
+  micro 탐색 범위는 닫혔고 남은 것은 실제 255H의
+  `probe -> screen ->` 독립 `confirm` 두 번 `-> decide`뿐이다.
 - `autotune_02_255h.py`는 pinned CPUID와 Linux topology로 P/E/LP-E를 보수적으로
   분류하고 `probe → screen → confirm → decide`를 실행한다. 두 session·core type별
   두 physical core·correctness/assembly gate가 갖춰지지 않으면 winner 대신
@@ -206,6 +237,10 @@
   [10차 scalar rotate screen](../solutions/02_optimization/tenth_codegen_scalar_rotate_results_02.json),
   [10차 CPU 1 current-schema-5 timing](../solutions/02_optimization/tenth_wave_timing_02_cpu1.json),
   [10차 CPU 3 current-schema-5 timing](../solutions/02_optimization/tenth_wave_timing_02_cpu3.json),
+  [11차 CPU 1 stationarity-gated timing](../solutions/02_optimization/stationarity_gate_timing_02_cpu1.json),
+  [11차 CPU 3 stationarity-gated timing](../solutions/02_optimization/stationarity_gate_timing_02_cpu3.json),
+  [11차 범위 제한 ISA 합성](../solutions/02_optimization/eleventh_isa_synthesis_results_02.json),
+  [11차 ISA 합성 재현 script](../solutions/02_optimization/screen_eleventh_isa_synthesis_02.py),
   [timing stability 진단](../solutions/02_optimization/timing_stability_results_02.json),
   [schedule CPU 0 raw](../solutions/02_optimization/gcc133_schedule_results_02_cpu0.json),
   [schedule CPU 4 raw](../solutions/02_optimization/gcc133_schedule_results_02_cpu4.json),
