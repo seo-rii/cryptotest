@@ -26,7 +26,7 @@
 | 3 | [네트워크보안](writeups/03_네트워크보안.md) | 유효한 TLS-GCM 위조 record | [`solve_03_tls_gcm_nonce_reuse.py`](solutions/solve_03_tls_gcm_nonce_reuse.py) |
 | 4 | [디지털포렌식](writeups/04_디지털포렌식.md) | `CRYPTO{...}` 모델 은닉 payload | [`solve_04_digital_forensics.py`](solutions/solve_04_digital_forensics.py) |
 | 5 | [동형암호](writeups/05_동형암호.md) | BGV secret 64계수와 State 56계수 | [`solve_05_bgv.py`](solutions/solve_05_bgv.py) |
-| 6 | [PRNG](writeups/06_PRNG.md) | `r3=0x2443c8daf1a9d52b09`, analytic telemetry와 native 기준 약 165x 가속 | [`Python`](solutions/solve_06_prng.py), [`native C++`](solutions/06_optimization/deep_native_06.cpp) |
+| 6 | [PRNG](writeups/06_PRNG.md) | `r3=0x2443c8daf1a9d52b09`; analytic telemetry, shifted `s3` scan, BMI2/ADX와 Hamburg native 경로 | [`Python`](solutions/solve_06_prng.py), [`native C++`](solutions/06_optimization/deep_native_06.cpp) |
 | 7 | [소인수분해](writeups/07_소인수분해.md) | RSA 인수와 `FLAG{...}` | [`solve_07_final.py`](solutions/solve_07_final.py) |
 | 8 | [블록암호](writeups/08_블록암호.md) | AES key `2923be84e16cd6ae529049f1f1bbe9eb` | [`solve_08_aes_key.py`](solutions/solve_08_aes_key.py) |
 

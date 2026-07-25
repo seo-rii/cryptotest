@@ -1,145 +1,161 @@
 # Problem 6 optimization experiments
 
-This directory preserves the original Python solver, alternative optimized
-implementations, and the repeated benchmark used to select the final approach.
-Every measured process must reproduce `d`, state `s2`, and `r3`; build time is
-excluded, but process startup, input loading, precomputation, and the complete
-attack are included.
+This directory contains the maintained native attack, historical Python/GMP
+controls, rejected algorithm candidates, and two levels of repeated benchmark.
+Every timed process must reproduce `d`, `r3`, `P=dQ`, and the state and lift bits
+for its declared scan window:
+
+| scan | state | lift low | lift/filter outputs |
+|---|---|---:|---|
+| legacy | `s2=0x638d9d631ab436da51e640` | `0x5338` | `r0/r1` |
+| shifted default | `s3=0x948173253ad6d120a3f562` | `0x3cea` | `r1/r2` |
+
+Both paths predict the same required
+`r3=0x2443c8daf1a9d52b09`.
 
 ## Implementations
 
-- `solve_06_baseline.py`: the original right-to-left Jacobian Python solver.
-- `solve_06_optimized.py`: the optimized Python implementation retained as an
-  experiment snapshot. The final maintained copy is
-  `../solve_06_prng.py`.
-- `solve_06_gmp.cpp`: GMP field arithmetic plus OpenMP low-16-bit sharding.
-- `deep_native_06.cpp`: fixed two-limb Montgomery arithmetic, POD Jacobian
-  points, an affine fixed-`Q` comb table, and adaptive OpenMP scheduling. This
-  is the fastest verified implementation on the measured host.
-- `benchmark_06.py`: one or more discarded warm-ups, at least five interleaved
-  samples, known-answer validation, median/MAD/percentiles, paired speedups,
-  per-stage statistics, and optional JSON output across Python, GMP, and native
-  implementations.
-- `benchmark_deep_native_06.py`: native/GMP ablations, same-thread paired
-  comparisons, optional original-Python timing, and native self-test preflight.
+- `solve_06_baseline.py`: original right-to-left Jacobian Python solver.
+- `solve_06_optimized.py`: optimized Python experiment; the maintained
+  dependency-free solver is `../solve_06_prng.py`.
+- `solve_06_gmp.cpp`: GMP/OpenMP control using the legacy scan.
+- `solve_06_algorithm_candidates.cpp`: Brier--Joye, batch inversion, finite
+  difference, Legendre, and wNAF experiments.
+- `deep_native_06.cpp`: fastest maintained native implementation.
+- `benchmark_06.py`: broad language/backend screening, exposed at
+  `../benchmark_06_prng.py`.
+- `benchmark_deep_native_06.py`: broad GMP/native/thread/scheduler screening.
+- `benchmark_06_promotion.py`: frozen-source, CPU-pinned adjacent AB/BA
+  promotion test for exactly two native variants.
 
-The main algorithmic changes are:
+## Final native stack
 
-1. Convert the second telemetry row to a modular interval and use Euclidean
-   `floor_sum` counts to locate the unique missing low value. This changes the
-   instance's telemetry work from a `2^20` scan to
-   `O(log(2^20) log n)` integer operations.
-2. Evaluate only one of `(x,+y)` and `(x,-y)`: multiplication by `d` negates the
-   points but leaves their affine x-coordinate equal.
-3. Use width-5 wNAF for the fixed scalar `d` on arbitrary lifted points.
-4. Precompute an 11-by-256 byte-comb table for the repeatedly used fixed base
-   `Q`; one multiplication then needs at most 11 table additions.
-5. In C++, split the remaining low-16-bit search into dynamic 64-candidate
-   OpenMP chunks while sharing the read-only comb table.
+The default `deep_native_06.cpp` combines:
+
+1. analytic `floor_sum` telemetry recovery instead of a `2^20` scan;
+2. a shifted `r1` lift and `r2` filter, reducing this instance's sequential
+   prefix from 21,305 to 15,595 candidates (26.8%);
+3. one lift sign because `X([d]R)=X([d](-R))`;
+4. BMI2/ADX 2-by-2 Montgomery REDC and branchless carry/borrow arithmetic on
+   supported x86-64 CPUs;
+5. an unrolled `unsigned __int128` fallback on other targets;
+6. an isomorphic `a=-3` curve for the arbitrary-point scan;
+7. Hamburg's co-Z short-Weierstrass ladder for the recovered fixed `d`, with a
+   complete width-2 NAF fallback for exceptional inputs;
+8. a width-8 fixed-`Q` affine comb table and mixed Jacobian addition;
+9. monotone OpenMP blocks, with batch normalization at one thread and a scalar
+   pipeline at multiple threads.
+
+The fixed field element is 16 bytes, a Jacobian point is 48 bytes, and the
+default read-only fixed table is 90,112 bytes.
+
+## Correctness preflight
+
+Before timing, the native self-test checks:
+
+- 2,000 deterministic random field pairs;
+- 64 boundary pairs around zero, `p`, and the 64-bit limb boundary;
+- 256 point/scalar/table vectors against an affine reference;
+- 128 real curve lifts comparing Hamburg and NAF affine x-coordinates.
+
+Every timed JSON result also reports the selected field backend, curve model,
+`d` multiplication, table width, scan label and output indices, threads,
+schedule, inverse, and square-root method. The benchmark rejects a mismatch
+instead of timing an accidentally inactive macro.
 
 ## Reproduce
 
-The dependency-free final Python implementation is:
+The dependency-free answer path is:
 
 ```bash
 python3 solutions/solve_06_prng.py --backend int --telemetry analytic
 ```
 
-Run the full repeated matrix from the repository root:
+Build and run the native path:
 
 ```bash
-python3 solutions/benchmark_06_prng.py \
-  --warmup 1 --repetitions 5 \
-  --output /tmp/challenge06-benchmark.json
+g++ -O3 -DNDEBUG -march=native -std=c++20 -fopenmp \
+  solutions/06_optimization/deep_native_06.cpp \
+  -o /tmp/deep_native_06
+/tmp/deep_native_06 --self-test --json
+/tmp/deep_native_06 --threads 1 --json
+/tmp/deep_native_06 --threads 8 --json
 ```
 
-The benchmark builds C++ into a temporary directory. It requires GMP, a C++20
-compiler, and OpenMP for the C++ cases; the final Python `int` case has no
-third-party dependency.
+The portable path does not require BMI2/ADX:
 
-## Deep algorithm review
+```bash
+g++ -O3 -DNDEBUG -std=c++20 -fopenmp \
+  -DCH6_PORTABLE_ARITHMETIC \
+  solutions/06_optimization/deep_native_06.cpp \
+  -o /tmp/deep_native_06_portable
+/tmp/deep_native_06_portable --self-test --json
+```
 
-[`deep_review_06_algorithm.md`](deep_review_06_algorithm.md) records an
-orthogonal review of the remaining state-recovery work.  Its candidate solver
-and repeated runner are [`solve_06_algorithm_candidates.cpp`](solve_06_algorithm_candidates.cpp)
-and [`benchmark_06_algorithm_candidates.py`](benchmark_06_algorithm_candidates.py).
-They cover Brier--Joye X/Z-only ladders, Montgomery batch inversion, consecutive
-cubic finite differences, a Legendre prefilter, wNAF widths 2--6, and block
-sizes/scheduling.
+Use the broad matrix to screen large effects:
 
-On the 8-thread host, the GMP baseline measured 0.486286 s.  The best nominal
-batch result was 0.475473 s (1.023x), but its 0.044612 s standard deviation was
-larger than the difference.  X-only with deferred residue testing took
-1.003282 s, while a Legendre-prefiltered X-only path still took 0.516119 s.
-No candidate produced a repeatable algorithmic win, so the verified GMP path
-remains the algorithmic control. The fixed-width native implementation below
-keeps the same attack but removes the general-purpose arithmetic and object
-layout costs.
+```bash
+python3 solutions/06_optimization/benchmark_deep_native_06.py \
+  --warmup 1 --repetitions 7 --threads 1,8 \
+  --native-schedules adaptive \
+  --output /tmp/ch6-broad.json
+```
 
-## Deep native arithmetic and cache review
+Use the promotion runner for a small candidate. This example compares the NAF
+fallback with the default Hamburg path:
 
-[`deep_review_06_micro.md`](deep_review_06_micro.md) documents the implementation,
-ablation data, failure cases, and sources. The native path uses a 16-byte
-two-limb Montgomery field element and a 48-byte allocation-free Jacobian point.
-It batch-normalizes the fixed-`Q` byte-comb table to an aligned, shared affine
-layout: `11 * 256 * 32 = 90,112` bytes, one third smaller than the equivalent
-native Jacobian layout. Fixed-base multiplication then uses mixed additions,
-while arbitrary lifted points use width-2 NAF without per-candidate tables.
+```bash
+python3 solutions/06_optimization/benchmark_06_promotion.py \
+  --baseline-label naf --candidate-label hamburg \
+  --baseline-define CH6_NAF_D_MULTIPLICATION \
+  --threads 1 --warmup-pairs 2 --pairs 40 \
+  --output /tmp/ch6-hamburg.json
+```
 
-The scheduler hands out monotone 64-candidate blocks so workers stop before
-unassigned work beyond the best low bits. `adaptive` uses block batch inversion
-with one thread, but uses a scalar per-candidate pipeline with two or more
-threads; the latter avoids thread-local batch traffic once binary-GCD inversion
-is cheap. AVX2 was reviewed but not implemented because it has no packed
-64x64-to-128 integer product, and radix conversion plus lane compaction would
-work against this branchy 88-bit workload.
+The promotion protocol uses four chronological blocks, each with five AB and
+five BA pairs, 5,000 deterministic bootstrap resamples, both order strata, and
+an absolute/effect stationarity gate. It preserves the measured source beside
+the report as `/tmp/ch6-hamburg.json.source.cpp`.
 
-Before timing, the runner checks 2,000 field vectors against independent
-canonical arithmetic and 256 point/scalar vectors against an affine reference.
-Every timed process also verifies `P=dQ`, `d`, `s2`, `r3`, and the recovered low
-bits.
+## Selection results
 
-## Results on the available host
+The two stationarity-gated 1-thread wins were:
 
-### Language/backend matrix
+| candidate | paired median | bootstrap 95% CI | decision |
+|---|---:|---:|---|
+| shifted scan vs legacy scan | 1.3428x | 1.3336..1.3510 | adopted |
+| Hamburg co-Z vs width-2 NAF | 1.1716x | 1.1682..1.1764 | adopted |
 
-AMD EPYC 7B12 VM, 8 logical CPUs, Python 3.11.2, GCC/G++ 12.2.0; one discarded
-warm-up followed by five complete measured runs:
+After ten warm-up pairs, a final current-source comparison of the complete
+legacy stack (generic carry, legacy scan, original curve, NAF) against the
+default stack measured `0.283205 s` versus `0.076114 s`. Its paired median was
+`3.7126x` (CI `3.7106..3.7251`); both order strata and all four stationarity
+blocks passed.
 
-| Implementation | Median | Ratio of medians | Paired median |
-|---|---:|---:|---:|
-| original Python | 14.298741 s | 1.00x | 1.00x |
-| optimized Python `int` | 3.272242 s | 4.37x | 4.41x |
-| optimized Python `gmpy2` | 3.000356 s | 4.77x | 4.61x |
-| C++/GMP, 1 thread | 1.873220 s | 7.63x | 7.44x |
-| C++/GMP/OpenMP, 8 threads | 0.447919 s | 31.92x | 30.75x |
+A w4 fixed table lost to w8 (`0.9483x`, CI `0.9243..0.9737`), and block 128
+did not beat block 64 (`0.9948x`, CI `0.9093..1.0473`). Specialized square,
+direct U128 add, a straight-line sqrt chain, w9, field-multiply `noinline`,
+Hamburg inline, PRAC, and GLV/endomorphism variants were also rejected or kept
+diagnostic-only.
 
-An independent warm repeated microbenchmark measured telemetry alone at
-1,453.475 ms for the original enumeration and 0.750 ms for analytic
-`floor_sum`, a 1,938x stage-level improvement. Absolute times vary with shared
-VM load, so the JSON keeps every raw sample rather than only this table.
-An earlier independent full matrix measured the 8-thread solver at 0.445551 s,
-which is consistent with the final repeated result.
+A saved generic-carry/BMI2 holdout showed a large `2.9808x` paired median and
+all pairs favored BMI2/ADX, but the shared host's chronological block spread
+failed the stationarity gate. It is therefore evidence of direction, not a
+portable absolute-speed claim.
 
-### Native same-run comparison
+The isomorphic `a=-3` scan similarly measured `1.1022x` with bootstrap CI
+`1.0320..1.1274`, but failed stationarity after a VM phase change. It remains
+the verified default with an original-curve compile-time fallback, while that
+timing is explicitly diagnostic-only rather than a promotion-grade PASS.
 
-The final native claim comes from a separate campaign that placed original
-Python, GMP, and native processes in the same cyclic/reversed sequence. It used
-one discarded warm-up and five verified samples per implementation.
+## Detailed records
 
-| Implementation | Median | MAD | Ratio of medians |
-|---|---:|---:|---:|
-| original Python | 14.073190 s | 0.295610 s | 1.00x |
-| C++/GMP, 1 thread | 1.971840 s | 0.048047 s | 7.14x vs Python |
-| native adaptive, 1 thread | 0.362651 s | 0.009200 s | 38.81x vs Python; 5.44x vs GMP |
-| C++/GMP, 8 threads | 0.436403 s | 0.007239 s | 32.25x vs Python |
-| native adaptive, 8 threads | 0.085076 s | 0.006915 s | 165.42x vs Python; 5.13x vs GMP |
+- [`deep_review_06_algorithm.md`](deep_review_06_algorithm.md): shifted scan,
+  Hamburg, and the earlier rejected GMP algorithm candidates.
+- [`deep_review_06_micro.md`](deep_review_06_micro.md): arithmetic, cache,
+  scheduler, ablations, measurement limits, and references.
+- [`../../writeups/06_PRNG.md`](../../writeups/06_PRNG.md): complete attack and
+  contest-facing explanation.
 
-The same-round paired medians were 5.31x and 5.34x against the matching
-one- and eight-thread GMP runs. The 8-thread native MAD was 8.13%, so absolute
-times remain host-load sensitive; nevertheless its slowest sample was more
-than four times faster than the fastest GMP sample in that campaign.
-
-The value formerly printed as `s1` is correctly labeled `s2`: the point lifted
-from `r0` is `s1 Q`, and multiplying it by `d` produces `s1 P`, whose affine
-x-coordinate is the next state `s2`.
+Generated binaries, JSON reports, and frozen source snapshots belong under
+`/tmp`; they are deliberately not committed.

@@ -538,6 +538,8 @@ int main(int argc, char** argv) {
                       << hex(prediction.state_s2)
                       << "\",\"state_label\":\"s2\",\"r3\":\""
                       << hex(prediction.r3) << "\",\"lift_low_bits\":" << prediction.low_bits
+                      << ",\"p_equals_dq\":true,\"threads\":" << threads
+                      << ",\"telemetry_strategy\":\"" << telemetry_strategy << '"'
                       << ",\"telemetry_seconds\":" << std::setprecision(12)
                       << telemetry_time.count() << ",\"state_seconds\":"
                       << state_time.count() << ",\"total_seconds\":" << total_time.count()

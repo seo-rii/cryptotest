@@ -14,14 +14,17 @@ r_i     = TMSB(X(s_{i+1} Q))
 함숫값에서 하위 20비트를 버린 결과다. 복원 결과는 다음과 같다.
 
 ```text
-d  = 0x1c3cdd6b221806db0a7b28
-s2 = 0x638d9d631ab436da51e640
-r3 = 0x2443c8daf1a9d52b09
+d                 = 0x1c3cdd6b221806db0a7b28
+legacy scan s2    = 0x638d9d631ab436da51e640
+shifted scan s3   = 0x948173253ad6d120a3f562
+r3                = 0x2443c8daf1a9d52b09
 ```
 
 기존 문서와 코드가 `0x638d...`를 `s1`이라고 쓴 것은 한 칸 어긋난
 표기였다. `r0`에서 lift한 점은 `s1 Q`이고, 여기에 `d`를 곱한 점의
-x좌표는 `X(s1 P)=s2`다. 최종 구현과 제출 문서에서는 `s2`로 바로잡았다.
+x좌표는 `X(s1 P)=s2`다. 의존성 없는 Python/GMP 경로는 이 `s2`를
+복원하고, 최종 native 경로는 관측 window를 한 칸 옮겨 `s3`를 직접
+복원한다. 둘 다 같은 목표 `r3`를 예측한다.
 
 ## 1. telemetry에서 `d` 복원
 
@@ -105,7 +108,7 @@ end-to-end 개선폭은 이보다 작다.
 P = dQ
 ```
 
-`r0`의 가능한 하위 16비트를 붙여 x좌표 후보를 만든다.
+기본 공격은 `r0`의 가능한 하위 16비트를 붙여 x좌표 후보를 만든다.
 
 ```text
 x = (r0 << 16) | low16
@@ -138,6 +141,30 @@ r3  = TMSB(X(s4 Q))
 낮다. 실제로 `r1`, `r2`를 모두 재생하는 후보가 위의 `s2` 하나이고,
 거기서 예측한 `r3`가 정답과 일치한다.
 
+### 최종 native의 shifted scan
+
+출력 정의를 한 칸 뒤에서 똑같이 적용할 수 있다. `r1`에 low 16비트를
+붙여 lift한 점을 `T`라 하면 올바른 후보는 부호를 제외하고 `s2 Q`다.
+
+```text
+T       = +/-s2 Q
+X(dT)   = X(s2 P) = s3
+r2   ?= TMSB(X(s3 Q))
+s4      = X(s3 P)
+r3      = TMSB(X(s4 Q))
+```
+
+이미 알려진 `r2`가 72비트 filter이므로 후보 유일성과 예측 절차는
+`r0/r1` 경로와 같다. 단순히 정답 위치를 먼저 검사하는 hardcode가 아니라
+공개 관측 쌍을 `(r0,r1)`에서 `(r1,r2)`로 옮긴 것이다.
+
+이 인스턴스의 full `r0` x low는 `0x5338`, full `r1` x low는
+`0x3cea`다. 따라서 정답을 포함한 순차 prefix가 21,305개에서 15,595개로
+26.8% 줄었다. 40개 adjacent balanced AB/BA pair의 1-thread 측정은
+paired median `1.3428x`, bootstrap 95% CI `1.3336..1.3510`이었고
+stationarity gate를 통과했다. 최종 native JSON은 이를 `state_label=s3`,
+`lift_output_index=1`, `filter_output_index=2`로 명시한다.
+
 ## 3. 타원곡선 구현 최적화
 
 ### `+y/-y` 중복 제거
@@ -153,7 +180,7 @@ X(-(dR)) = X(dR)
 필요가 없다. 원래 코드는 각 유효 x마다 같은 상태와 `r1`을 두 번
 계산했으며, 이 관찰만으로 해당 작업을 절반으로 줄인다.
 
-### width-5 wNAF와 폭 재검토
+### GMP 기준의 width-5 wNAF와 폭 재검토
 
 원래 right-to-left double-and-add는 매 비트 doubling과 binary 1마다
 generic Jacobian addition을 했다. 최적화 구현은 signed digit width-5
@@ -162,7 +189,7 @@ NAF를 사용한다. 점의 음수는 y좌표의 부호만 바꾸면 되므로 �
 `P,3P,...,15P` 여덟 개를 준비한다.
 
 실제 `d`는 85비트이고 binary popcount는 40이다. plain width-2 NAF의
-nonzero digit은 27개지만, 현재 width-5 wNAF는 14개다. 다만 후보마다
+nonzero digit은 27개지만, GMP width-5 wNAF는 14개다. 다만 후보마다
 `P,3P,...,15P`를 만드는 7회 addition도 필요하므로 합계는 21회다.
 width-4는 nonzero 16개와 precompute 3개, 합계 19회로 이론상 더 작았다.
 그러나 8-thread GMP 반복 측정에서는 width-5 0.483517초, width-4
@@ -172,7 +199,7 @@ GMP 경로는 width-5를 유지한다.
 
 ### 고정-base byte comb
 
-후보마다 `s2 Q`를 계산하지만 `Q`는 항상 같다. 88비트 scalar를 11개
+후보마다 `state * Q`를 계산하지만 `Q`는 항상 같다. 88비트 scalar를 11개
 byte로 분해하고 다음 테이블을 한 번 만든다.
 
 ```text
@@ -194,10 +221,38 @@ C++ 병렬 worker가 함께 사용한다.
 전체 공격 시간은 포함한다.
 
 GMP 경로는 알고리즘 후보를 비교하는 신뢰 가능한 기준으로 남겼다. 최고
-성능 경로는 같은 수학적 공격을 유지하되 88비트 체를 고정 2-limb
-Montgomery 표현으로 옮긴 `deep_native_06.cpp`다. 이 구분 덕분에
-알고리즘 변화와 arithmetic/object-layout 변화의 효과를 섞지 않고 비교할
-수 있다.
+성능 경로인 `deep_native_06.cpp`는 88비트 체를 고정 2-limb Montgomery
+표현으로 옮겼다. x86-64 BMI2/ADX가 있으면 `_mulx_u64`,
+`_addcarryx_u64`, `_subborrow_u64`로 2x2 REDC와 branchless add/subtract를
+실행하고, 그 밖의 target에서는 고정식 `unsigned __int128` 구현으로
+자동 fallback한다. `-march=native` 없는 portable, assertion-enabled
+debug와 기본 BMI2/ADX 빌드가 모두 같은 self-test를 통과했다.
+
+임의 lift의 `d` 곱은 원곡선과 동형인 `a=-3` 모델에서 수행한다.
+
+```text
+y'^2 = x'^3 - 3*x' + 0x5e7dc2bc27aea7935c6b6
+x    = 0x9b4427ecf55d466c0bbf44 * x' mod p
+```
+
+EFD `a=-3` doubling으로 square 수를 줄였다. 원곡선과의 40-pair 직교
+비교는 paired `1.1022x`, bootstrap CI `1.0320..1.1274`였지만 VM phase
+변화로 stationarity가 실패해 이 수치는 diagnostic-only다. 구현은
+원곡선 compile-time fallback과 교차 검증을 유지한 채 기본으로 선택했다.
+
+복원된 고정 `d`에는 Hamburg 2020 Figure 3의 co-Z x-only ladder를
+적용했다. 최종 분수를 개별 invert하지 않고 Jacobian `X/Z^2`로 넘겨
+block batch normalization과 합친다. 알 수 없는 scalar나 exceptional
+denominator에서는 width-2 NAF로 되돌아간다.
+NAF 대 Hamburg 1-thread 40-pair 결과는 `1.1716x`, bootstrap 95% CI
+`1.1682..1.1764`, stationarity PASS였다. inline Hamburg는 code가 약
+10KB로 팽창하고 spill이 생겨 느렸으므로 큰 ladder만 `noinline`으로 뒀다.
+
+고정 `Q` table은 width 4--11을 compile-time으로 비교했고 w8을 유지했다.
+w4는 최신 40-pair에서 `0.9483x`(CI `0.9243..0.9737`)였고, w9의 작은
+명목상 이득은 CI가 parity를 포함했다. scheduler는 64-candidate monotone
+block을 사용한다. 1 thread에서는 두 affine-x 단계를 batch normalize하고,
+여러 thread에서는 stack traffic이 적은 scalar pipeline을 쓴다.
 
 ## 4. 알고리즘 심층 재검토와 실패한 방법
 
@@ -250,8 +305,11 @@ Z(2P) = 4*Z1*(X1^3+a*X1*Z1^2+b*Z1^3)
 확인했다. 그러나 원 식은 scalar bit마다 대략 `14M`과 constant multiply
 5회가 들고, residue 검사를 미루면 비잔여까지 21,305개 x에 전체 ladder를
 실행한다. 그 결과 기준보다 약 2.06배 느렸다. Legendre 선필터도 0.516119초로
-기준을 넘지 못했다. Hamburg의 후속 `8M+3S+7A` 식은 exceptional-point
-처리를 포함하는 별도 formula set이 필요해 후속 연구 후보로만 남겼다.
+기준을 넘지 못했다. 첫 GMP 검토에서는 Hamburg의 후속 `8M+3S+7A` 식을
+exceptional-point 처리 때문에 보류했지만, 후속 native 검토에서
+denominator 예외를 NAF fallback으로 처리해 채택했다. 따라서 실패한 것은
+x-only 발상 전체가 아니라 이 Brier--Joye `14M` ladder와 residue 처리
+순서다.
 
 ### Batch inversion과 연속 cubic
 
@@ -295,11 +353,13 @@ addition 수는 다음과 같다.
 | 6 | 12 | 15 | 27 |
 
 연산 수로는 width-4가 최소지만 실제 GMP 반복에서는 width-5보다 느렸다.
-`r1`을 유일한 강한 early filter로 사용하고 `r2/r3` 계산은 hit 뒤로 미뤘다.
-low 16비트 탐색을 정답 `0x5338` 주변부터 시작하는 것은 답 hardcode라
-제외했다. telemetry recurrence는 곱셈을 덧셈으로 바꿔도 `2^20`회 순회가
-남았고, `gmpy2`만 적용한 Python과 병렬화만 적용한 경로도 interpreter 또는
-중복 scalar multiplication 병목이 남아 최종안이 되지 못했다.
+`r0/r1` 기준에서는 `r1`을 강한 early filter로 사용하고 `r2/r3` 계산을 hit
+뒤로 미뤘다. low 16비트 탐색을 정답 `0x5338` 주변부터 시작하는 것은 답
+hardcode라 제외했다. 반면 공개 window를 `(r1,r2)`로 옮기는 shifted scan은
+같은 72비트 filter를 보존하며 prefix를 실제로 줄이므로 채택했다. telemetry
+recurrence는 곱셈을 덧셈으로 바꿔도 `2^20`회 순회가 남았고, `gmpy2`만
+적용한 Python과 병렬화만 적용한 경로도 interpreter 또는 중복 scalar
+multiplication 병목이 남아 최종안이 되지 못했다.
 
 ## 5. native arithmetic와 캐시/micro 최적화
 
@@ -327,6 +387,12 @@ canonical 값의 binary extended GCD가 Fermat `a^(p-2)`보다 빨랐고,
 `p=3 mod 4` 제곱근은 고정 지수 `(p+1)/4`의 width-4 sliding window를
 사용했다.
 
+BMI2/ADX target에서는 2x2 product와 REDC를 `_mulx_u64`와 carry
+intrinsic으로 직선화하고 add/subtract도 borrow mask로 분기 없이
+보정한다. hot multiply의 compiler output은 약 206 instruction/688 byte,
+분기 6개와 spill에서 약 74 instruction/256 byte, 분기 1개와 spill 없음으로
+줄었다. 지원하지 않는 CPU는 portable U128 unrolled 경로를 쓴다.
+
 Barrett reduction도 검토했지만 88x88→176비트 product의 상위 word와
 quotient 근사를 다시 처리해야 했다. 이 크기에서는 두 word REDC가 더 짧고
 검증하기 쉬웠다. 제곱근 지수는 86비트, popcount 49다. binary 방식의 약
@@ -340,17 +406,18 @@ limb 관리, point 객체 할당까지 동시에 사라지기 때문이다. 반�
 
 ### affine comb table과 mixed addition
 
-11x256 고정-`Q` table을 한 번 batch-normalize한 뒤 affine `(x,y)`로
-저장했다. native 기준 Jacobian table은 135,168바이트지만 affine table은
-90,112바이트여서 정확히 1/3 작다. 각 row를 64바이트 경계에 맞추고 모든
-thread가 read-only로 공유한다. query에서는 generic Jacobian addition
+11x256 고정-`Q` table을 구축 과정에서 batch-normalize한 뒤 affine
+`(x,y)`로 저장했다. native 기준 Jacobian table은 135,168바이트지만
+affine table은 90,112바이트여서 정확히 1/3 작다. 각 row를 64바이트
+경계에 맞추고 모든 thread가 read-only로 공유한다. query에서는 generic
+Jacobian addition
 대신 EFD의 `madd-2007-bl` mixed addition을 사용해 공개 operation count를
 `11M+5S`에서 `7M+4S`로 줄였다.
 
-임의 lift에 대한 `dR`은 per-candidate odd-multiple table을 만들지 않는
-width-2 NAF와 mixed addition을 쓴다. 넓은 wNAF는 digit 수는 줄지만 매
-후보의 table 구축·정규화 비용이 더 컸다. 고정점과 임의점에 서로 다른
-전략을 쓰는 것이 핵심이다.
+임의 lift에 대한 `dR`의 기본은 Hamburg co-Z ladder이고 width-2 NAF와
+mixed addition은 exceptional fallback이다. 넓은 wNAF는 digit 수는
+줄지만 매 후보의 table 구축·정규화 비용이 더 컸다. 고정점 `Q`, 일반
+fallback과 고정 `d` hot path에 서로 다른 전략을 쓰는 것이 핵심이다.
 
 ### 스케줄링, batch inversion과 SIMD 검토
 
@@ -392,12 +459,41 @@ multiply와 thread-local stack traffic이 추가된다. Binary GCD가 싸진 뒤
 
 **넓은 arbitrary-point wNAF.** Width-4/5는 digit 수를 줄이지만 lift마다
 odd-multiple table을 만들고 affine 정규화 또는 generic addition을 해야 한다.
-따라서 임의점에는 width-2 mixed NAF, 한 번만 구축하는 고정점 `Q`에는 큰
-byte-comb를 서로 다르게 적용했다.
+따라서 임의점의 완전한 fallback에는 width-2 mixed NAF, hot 고정 `d`에는
+Hamburg, 한 번만 구축하는 고정점 `Q`에는 큰 byte-comb를 서로 다르게
+적용했다.
 
 **Native Legendre 선필터.** 별도 exponentiation으로 residue를 확인하면 바로
 sqrt를 계산하는 것보다 작업이 중복된다. GMP에서는 후보로 측정했지만 native
 기본 경로에는 넣지 않았다.
+
+**전용 square와 direct U128 add.** 대칭 cross term을 한 번만 계산하는
+portable square는 약 `1.0179x`였지만 2% 승격 문턱과 stationarity를
+통과하지 못했다. BMI2 square는 `0.9982x`, CI `0.9919..1.0034`로
+동률이었다. GCC가 generic multiply의 동일 operand를 보고 이미 cross
+term을 합쳤기 때문이다. direct U128 add도 carry intrinsic보다 빠르지
+않았다.
+
+**고정 sqrt chain.** `addchain`으로 `(p+1)/4` straight-line chain을
+탐색했지만 최선이 약 107회 square/multiply로 현재 sliding-window 약
+108회와 사실상 같았다. code와 table 준비를 늘릴 end-to-end 근거가 없어
+채택하지 않았다.
+
+**inline/noinline.** field multiply를 `noinline`으로 만들면 약
+`0.9754x`로 악화됐다. 반대로 Hamburg를 inline하면 약 10KB code와
+spill이 생겼다. 작은 field primitive는 inline하고 큰 Hamburg 함수만
+`noinline`으로 뒀다.
+
+**table 폭과 block 크기.** w4--w7은 작은 table 대신 addition이 늘었고,
+w9의 작은 명목상 이득은 CI가 parity를 포함했다. 최신 w8/w4 결과도
+`0.9483x`로 w4가 느렸다. block 8/64와 128/64 비교도 CI가 parity를
+포함해 w8, block 64를 유지했다.
+
+**PRAC과 GLV/endomorphism.** 고정 `d`에는 Hamburg가 이미 규칙적인
+x-only 경로를 제공하며, 이 generic-j 곡선에는 효율적인 GLV
+endomorphism과 필요한 subgroup 구조가 주어지지 않았다. 넓은 fixed
+addition chain까지 포함해 이론적 operation 절약이 precomputation과
+exception 처리를 상쇄하지 못했다.
 
 AVX2도 검토했지만 현재 REDC가 요구하는 packed 64x64→128 정수 곱이 없다.
 32비트 radix로 바꾸면 cross-term, shuffle, lane carry가 늘고 residue 분기
@@ -411,14 +507,17 @@ multi-buffer 구현을 다시 비교할 수 있다.
 검증 범위는 runner별로 명시했다.
 
 - 알고리즘 후보 runner는 측정 전에 x-only 실제 lift 8개와 finite-difference
-  256개를 reference와 대조하고, 매 sample의 `d`, `s2`, `state_label`, `r3`를
-  검사한다.
-- 공용 runner는 모든 구현의 `d`, `s2`, `r3`를 검사하며 solver가 제공하면
-  `P == dQ`도 확인한다.
-- deep-native runner는 GMP/native에서 정답 lift low bits까지 검사한다. 원본
-  Python은 low bits를 출력하지 않으므로 `P == dQ`, `d`, `s2`, `r3`를 검사한다.
-- native preflight는 독립 canonical U128 연산과 affine reference를 사용해
-  deterministic field 2,000개와 point/scalar 256개를 대조한다.
+  256개를 reference와 대조하고, 매 sample의 known answer를 검사한다.
+- 공용/deep-native runner는 `state_label`에 따라 legacy `s2/0x5338` 또는
+  shifted `s3/0x3cea`를 검사하고 `d`, `r3`, `P=dQ`도 확인한다. 원본
+  Python은 low bits를 출력하지 않아 `s2` known answer까지만 검사한다.
+- native preflight는 deterministic random field pair 2,000개, limb/modulus
+  경계 pair 64개, point/scalar/table 256개, 실제 lift Hamburg/NAF 128개를
+  독립 canonical U128 및 affine reference와 대조한다.
+- promotion runner는 field backend, curve model, `d` multiplication,
+  table width, scan output index, thread/schedule/inverse/sqrt metadata가
+  요청한 후보와 일치하는지 검사한다. 서로 다른 compile-time 후보가 같은
+  binary hash를 만들면 inactive ablation으로 거부한다.
 
 최종 Python 실행 예:
 
@@ -430,13 +529,15 @@ predicted r3 = 0x2443c8daf1a9d52b09
 ```
 
 Binary-GCD/Fermat inverse,
-binary/window-4 sqrt, NAF/mixed multiplication과 fixed comb가 모두 이
-교차 검증을 통과해야 timing을 시작한다. 이는 challenge용 correctness
-검사이며 secret scalar를 위한 constant-time 구현을 뜻하지는 않는다.
+binary/window-4 sqrt, NAF/mixed multiplication, Hamburg ladder와 fixed
+comb가 모두 이 교차 검증을 통과해야 timing을 시작한다. 이는 challenge용
+correctness 검사이며 secret scalar를 위한 constant-time 구현을 뜻하지는
+않는다.
 
 ## 7. 반복 benchmark
 
-`solutions/benchmark_06_prng.py`는 다음 protocol을 사용한다.
+`solutions/benchmark_06_prng.py`와 `benchmark_deep_native_06.py`는 넓은
+언어/backend/thread 조합을 거르는 broad protocol을 사용한다.
 
 - 각 구현을 먼저 1회 완전히 실행해 warm-up 표본을 버린다.
 - 구현마다 완전한 end-to-end 실행을 5회 측정한다.
@@ -444,9 +545,10 @@ binary/window-4 sqrt, NAF/mixed multiplication과 fixed comb가 모두 이
   cycle에 들어가면 reverse하도록 구현했다. 최종 5-contender/5-sample
   캠페인은 정확히 첫 rotation 집합을 한 번 사용해 reverse 분기에는 도달하지
   않았다.
-- 모든 표본에서 `d`, `s2`, `r3`를 검사한다.
-- raw sample, median, MAD, p05/p95, min/max, 같은 round의 paired speedup과
-  내부 telemetry/state 시간을 JSON으로 보존한다.
+- 모든 표본에서 `d`, `r3`, `P=dQ`와 `state_label`별 `s2` 또는 `s3`,
+  해당 lift low를 검사한다.
+- raw sample, median, MAD, p05/p95, min/max, 같은 repetition index의
+  diagnostic ratio와 내부 telemetry/state 시간을 JSON으로 보존한다.
 - C++ build는 임시 디렉터리에서 한 번 수행하고 timed region에서 제외한다.
 
 공용 runner의 현재 기본 목록은 원본, Python `int`/`gmpy2`, GMP 1/auto,
@@ -455,8 +557,16 @@ native 1/auto adaptive의 7개다. 5회 실행이면 이 runner도 reverse 구�
 때에는 `--implementations`로 해당 다섯 경로를 명시해야 한다. OpenMP 환경은
 `OMP_DYNAMIC=FALSE`, `OMP_PROC_BIND=SPREAD`, `OMP_PLACES=THREADS`로 고정했다.
 
+작은 후보의 승격에는 더 엄격한 `benchmark_06_promotion.py`를 쓴다. 정확히
+두 frozen-source build를 같은 CPU set에 pin하고, warm-up 뒤 fresh process
+40개 adjacent pair를 네 시간 block마다 AB 5개/BA 5개로 균형화한다. paired
+median이 `1.02x`를 넘고 5,000회 bootstrap CI가 parity를 제외하며 AB/BA
+두 stratum과 absolute/effect stationarity를 모두 통과해야 승격한다.
+보고서 옆에는 측정 source snapshot과 source/runner/binary SHA-256, build
+argv, CPU model/flags/topology, 모든 timestamp와 child CPU time을 보존한다.
+
 측정 환경은 AMD EPYC 7B12 VM, 8 logical CPU, Python 3.11.2, G++ 12.2.0이다.
-먼저 언어/backend 단계별 효과를 확인한 캠페인은 다음과 같다.
+먼저 언어/backend 단계별 효과를 확인한 역사 캠페인은 다음과 같다.
 
 | 구현 | end-to-end 중앙값 | 중앙값 비율 | paired 중앙값 |
 |---|---:|---:|---:|
@@ -471,9 +581,10 @@ paired p05--p95는 25.21x--33.48x였다. 앞선 독립 캠페인도 0.445551초�
 31.76x를 기록해 같은 규모를 재현했다. 이 VM은 다른 작업과 공유되므로
 절대값보다 warm-up 이후 raw sample과 강건 통계를 함께 본다.
 
-native 최종 수치는 원본 Python, 같은 thread 수의 GMP와 native를 하나의
-cyclic-rotation 실행 순서에 넣어 다시 측정했다. 따라서 서로 다른 부하의
-run을 나눈 값이 아니다.
+다음 표는 **이번 pass 이전 native**와 원본 Python, 같은 thread 수의 GMP를
+하나의 cyclic-rotation 실행 순서에 넣어 측정한 역사 기준선이다. 서로 다른
+부하의 run을 나눈 값은 아니지만 shifted/Hamburg/BMI2 최종 binary의 수치로
+소급해서 부르지 않는다.
 
 | 구현 | end-to-end 중앙값 | MAD | 중앙값 비율 |
 |---|---:|---:|---:|
@@ -483,10 +594,11 @@ run을 나눈 값이 아니다.
 | C++/GMP/OpenMP 8 threads | 0.436403 s | 0.007239 s | 32.25x vs Python |
 | native adaptive 8 threads | 0.085076 s | 0.006915 s | 165.42x vs Python; 5.13x vs GMP |
 
-같은 round의 native/GMP paired speedup 중앙값은 각각 5.31x와 5.34x였다.
+같은 repetition index의 native/GMP diagnostic ratio 중앙값은 각각
+5.31x와 5.34x였다.
 8-thread native MAD는 8.13%로 host load 영향이 보이지만, 가장 느린 native
 표본도 가장 빠른 GMP 표본보다 4배 이상 빨랐다. 서로 다른 캠페인을 섞어
-계산하면 더 큰 수치가 나오지만 최종 주장에는 같은-run의 165.42x만 쓴다.
+계산하면 더 큰 수치가 나오지만 서로 다른 run의 수치이므로 폐기했다.
 
 최종 표의 외부 wall-clock raw sample은 다음과 같다.
 
@@ -501,9 +613,41 @@ native-8t       = [ 0.075537,  0.096514,  0.085076,  0.078161,  0.089694]
 서로 다른 run의 기존 Python 14.298741초와 native 0.077461초를 나누면
 184.6x지만 host 부하가 달라 최종 수치로 폐기했다. JSON에는 raw sample 외에
 `telemetry/precompute/scan/state/total` stage, field/point/table 크기,
-requested/effective schedule, build command와 paired speedup을 함께 보존한다.
+requested/effective schedule, build command와 same-index diagnostic ratio를
+함께 보존한다.
 
-재현 명령:
+두 번째 pass의 broad screening 7회에서는 최종 native가 1 thread
+`0.097596 s`(MAD `0.004957 s`), 8 threads `0.057401 s`
+(MAD `0.009471 s`)였다. 같은 run의 GMP는 각각 `2.529046 s`,
+`0.575237 s`여서 ratio-of-medians는 `25.91x`, `10.02x`였다. shared VM
+부하와 8-thread MAD가 커 이 표는 큰 효과의 sanity check로만 쓴다.
+
+작은 후보의 40-pair 결과는 다음과 같다.
+
+| 후보 (`A/B`) | paired median | bootstrap 95% CI | stationarity | 판정 |
+|---|---:|---:|---|---|
+| legacy / shifted scan | 1.3428x | 1.3336..1.3510 | PASS | shifted 채택 |
+| width-2 NAF / Hamburg | 1.1716x | 1.1682..1.1764 | PASS | Hamburg 채택 |
+| original curve / isomorphic `a=-3` | 1.1022x | 1.0320..1.1274 | FAIL | diagnostic-only |
+| w8 / w4 fixed table | 0.9483x | 0.9243..0.9737 | FAIL | w8 유지 |
+| block 64 / block 128 | 0.9948x | 0.9093..1.0473 | FAIL | 64 유지 |
+| generic carry / BMI2+ADX | 2.9808x | 2.7330..3.2589 | FAIL | diagnostic-only |
+
+마지막 arithmetic holdout은 40쌍 모두 BMI2/ADX가 크게 이겼지만 host load
+average가 16을 넘으며 시간 block spread가 gate를 실패했다. 따라서 방향과
+portable fallback의 필요성만 뒷받침하며 절대 성능 주장에는 쓰지 않는다.
+
+최종 source와 runner를 고정한 전체 legacy/final 비교는 warm-up 10쌍 뒤
+40쌍을 측정했다. baseline/candidate median은 `0.283205/0.076114 s`,
+paired median은 `3.7126x`(CI `3.7106..3.7251`)였다. AB/BA stratum도
+각각 `3.7125x/3.7197x`였고 absolute/effect block spread가 모두 기준
+안에 들어 stationarity와 promotion gate를 통과했다. 이 합산 결과는
+generic carry, legacy scan, 원곡선과 NAF 대조군에서 현재 최종 stack까지의
+동일-source compile-time 비교다.
+
+재현 명령이다. 첫 Python 정답 경로는 표준 라이브러리만 필요하다. C++/native
+benchmark에는 C++20을 지원하는 `g++`, OpenMP와 GMP 개발 라이브러리가
+필요하다.
 
 ```bash
 python3 solutions/solve_06_prng.py --backend int --telemetry analytic
@@ -516,6 +660,12 @@ python3 solutions/06_optimization/benchmark_deep_native_06.py \
   --warmup 1 --repetitions 5 --threads 1,8 \
   --native-schedules adaptive --include-original-python \
   --output /tmp/challenge06-native.json
+
+python3 solutions/06_optimization/benchmark_06_promotion.py \
+  --baseline-label naf --candidate-label hamburg \
+  --baseline-define CH6_NAF_D_MULTIPLICATION \
+  --threads 1 --warmup-pairs 2 --pairs 40 \
+  --output /tmp/challenge06-hamburg.json
 ```
 
 C++만 직접 실행하려면:
@@ -531,6 +681,12 @@ g++ -O3 -DNDEBUG -march=native -std=c++20 -fopenmp \
   -o /tmp/deep_native_06
 /tmp/deep_native_06 --self-test
 /tmp/deep_native_06 --threads 8 --schedule adaptive --json
+
+g++ -O3 -DNDEBUG -std=c++20 -fopenmp \
+  -DCH6_PORTABLE_ARITHMETIC \
+  solutions/06_optimization/deep_native_06.cpp \
+  -o /tmp/deep_native_06_portable
+/tmp/deep_native_06_portable --self-test --json
 ```
 
 ## 8. 계산 복잡도와 메모리
@@ -543,21 +699,22 @@ g++ -O3 -DNDEBUG -march=native -std=c++20 -fopenmp \
   worker의 이상적 wall time은 대략 `1/w`이나 precomputation과 scheduling
   overhead가 있다.
 - fixed-base table: GMP 기준은 11x256 Jacobian point이고, native 최종안은
-  90,112바이트의 11x256 affine point다. 구축 시 약 2,805회 addition과
-  한 번의 batch normalization이 필요하며 각 query는 최대 11회 mixed
-  addition이다.
+  90,112바이트의 11x256 affine point다. 구축 시 정확히 2,794회 mixed
+  addition, 80회 doubling과 12번의 batch-normalization call이 필요하며
+  각 query는 최대 11회 mixed addition이다.
 - 그 밖의 탐색 메모리는 worker마다 상수 크기 point 상태만 필요하다.
 
 ### 제한과 이식성
 
 - native 구현은 GNU/Clang 계열의 `unsigned __int128`과 OpenMP가 필요하다.
-- `-march=native`로 얻은 절대 시간은 다른 CPU와 직접 비교할 수 없다.
+  BMI2/ADX는 선택 사항이며 없으면 portable unrolled 경로로 fallback한다.
+- `-march=native` BMI2/ADX로 얻은 절대 시간은 다른 CPU와 직접 비교할 수 없다.
 - 90KB affine table은 현재 host cache에는 맞지만 private cache가 작은 target은
   4-bit fixed-window 같은 작은 table과 다시 비교해야 한다.
 - 이 코드는 공개 challenge input을 찾는 공격 구현이며 constant-time production
   ECC library가 아니다.
-- 생성 binary와 JSON report는 `/tmp`에만 만들고 repository에는 source,
-  문서와 작은 raw text만 남겼다.
+- 생성 binary, JSON report와 frozen source snapshot은 `/tmp`에만 만들고
+  repository에는 source와 문서만 남겼다.
 
 ## 제출 파일
 
@@ -573,13 +730,15 @@ g++ -O3 -DNDEBUG -march=native -std=c++20 -fopenmp \
 - [Shumow and Ferguson, *On the Possibility of a Back Door in the NIST SP800-90 Dual EC PRNG*](https://rump2007.cr.yp.to/15-shumow.pdf) — 출력의 누락 비트를 lift하고 숨은 점 관계로 다음 상태를 얻는 공격의 원형이다.
 - [AtCoder Library `floor_sum` 공식 문서](https://atcoder.github.io/ac-library/production/document_en/math.html), [공식 구현](https://github.com/atcoder/ac-library/blob/master/atcoder/internal_math.hpp), [공식 유도](https://atcoder.jp/contests/practice2/editorial/579) — Euclidean floor-sum recurrence와 `O(log n)` 복잡도의 근거다. 여기서는 86비트 modulus이므로 같은 recurrence를 arbitrary-precision 정수로 옮겼다.
 - [Explicit-Formulas Database, short-Weierstrass Jacobian coordinates](https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html) — Jacobian double/add 공식과 operation count를 점 연산 구현·후보 비교에 사용했다.
+- [Explicit-Formulas Database, `a=-3` Jacobian coordinates](https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-3.html) — 동형 곡선의 `dbl-2001-b` 계열 공식과 operation count를 확인했다.
 - [Cohen, Miyaji, Ono, *Efficient Elliptic Curve Exponentiation Using Mixed Coordinates*](https://dspace.jaist.ac.jp/dspace/handle/10119/4458?locale=en) — coordinate 선택과 mixed addition 최적화 검토의 원 논문이다.
 - [Morain and Olivos, *Speeding up the computations on an elliptic curve using addition-subtraction chains*](https://www.numdam.org/item/ITA_1990__24_6_531_0/) — signed digit/NAF로 point addition 수를 줄이는 근거다.
 - [Brier and Joye, *Weierstrass Elliptic Curves and Side-Channel Attacks*](https://marcjoye.github.io/papers/BJ02espa.pdf) — 일반 Weierstrass 곡선에서 x-only ladder 후보를 검토할 때 사용했다.
-- [Hamburg, *Faster Montgomery and double-add ladders for short Weierstrass curves*](https://eprint.iacr.org/2020/437) — Brier--Joye 이후의 더 낮은 operation count와 exceptional-point 조건을 대조했다.
+- [Hamburg, *Faster Montgomery and double-add ladders for short Weierstrass curves*](https://eprint.iacr.org/2020/437) — Figure 3의 co-Z ladder를 고정 `d` hot path에 구현하고 exceptional denominator를 NAF fallback으로 처리했다.
 - [Montgomery, *Speeding the Pollard and Elliptic Curve Methods of Factorization*](https://doi.org/10.1090/S0025-5718-1987-0866113-7) — differential ladder와 inversion amortization의 원형을 확인했다.
 - [Bernstein et al., *OpenSSLNTRU: Faster post-quantum TLS key exchange*](https://opensslntru.cr.yp.to/opensslntru-20211006.pdf) — prefix/reverse batch inversion의 `3n-3` multiplication과 1 inversion 비용을 확인했다.
 - [Montgomery, *Modular Multiplication Without Trial Division*](https://doi.org/10.1090/S0025-5718-1985-0777282-X) — 고정 2-limb REDC와 Montgomery residue 표현의 근거다.
 - [GNU MP Manual, Number Theoretic Functions](https://gmplib.org/manual/Number-Theoretic-Functions)과 [OpenMP 5.2 Specification](https://www.openmp.org/spec-html/5.2/openmp.html) — `mpz_invert`/`mpz_legendre`와 병렬 search의 구현 기준이다.
-- [Intel Intrinsics Guide](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html) — AVX2에 packed 64x64→128 정수 곱이 없음을 확인했다.
+- [Intel Intrinsics Guide](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html) — 채택한 BMI2/ADX scalar multiply/carry intrinsic과 AVX2에 packed 64x64→128 정수 곱이 없음을 확인했다.
+- [Michael McLoughlin, `addchain`](https://github.com/mmcloughlin/addchain) — 고정 sqrt 지수 addition chain을 탐색하고 sliding-window와 operation 수를 대조했다.
 - [Mytkowicz et al., *Producing Wrong Data Without Doing Anything Obviously Wrong!*](https://sape.inf.usi.ch/publications/asplos09.html), [Google Benchmark User Guide](https://github.com/google/benchmark/blob/main/docs/user_guide.md), [NIST Measures of Scale](https://www.itl.nist.gov/div898/handbook/eda/section3/eda356.htm) — 순서 교차, 반복 표본, raw data 보존과 MAD 보고라는 측정 방법의 근거다.

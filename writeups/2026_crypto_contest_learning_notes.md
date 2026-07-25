@@ -15,7 +15,7 @@
 | 3 | TLS 1.2 AES-GCM 위조 | 완료 | nonce 재사용으로 `H`와 `E_K(J0)`를 복원하고 유효한 급여 변경 record 생성 | [03_네트워크보안](03_네트워크보안.md) |
 | 4 | LLM weight steganography | 완료 | `CRYPTO{G00D_J0B!_y0u_f0und_7h3_h1dd3n_s3cr37_1n_LLM}` 추출 | [04_디지털포렌식](04_디지털포렌식.md) |
 | 5 | textbook-BGV | 완료 | ternary secret 64계수, 날짜 `20260410→20260411`, 고정 `State` 복원 | [05_동형암호](05_동형암호.md) |
-| 6 | Dual_EC_DRBG | 풀이·최적화 완료 | backdoor scalar `d`, state `s2`, `r3=0x2443c8daf1a9d52b09` 복원 | [06_PRNG](06_PRNG.md) |
+| 6 | Dual_EC_DRBG | 풀이·최적화 완료 | backdoor scalar `d`, legacy `s2`/shifted `s3`, `r3=0x2443c8daf1a9d52b09` 복원 | [06_PRNG](06_PRNG.md) |
 | 7 | RSA partial key exposure | 완료 | `p`, `q`와 `FLAG{d1rty_b1t_l34k_c0pp3rsm1th_m33ts_str4t3gy}` 복원 | [07_소인수분해](07_소인수분해.md) |
 | 8 | 변형 AES 7라운드 | 완료 | master key `2923be84e16cd6ae529049f1f1bbe9eb` 복원 | [08_블록암호](08_블록암호.md) |
 
@@ -255,15 +255,23 @@
 ### 6번
 
 - telemetry 전수조사를 `floor_sum` 기반 analytic count로 바꾸고,
-  sign 대칭, fixed-`Q` comb, wNAF, native Montgomery arithmetic와
-  OpenMP scheduling을 적용했다.
+  sign 대칭, shifted `r1/r2` scan, fixed-`Q` comb, BMI2/ADX 및 portable
+  Montgomery arithmetic, `a=-3` 동형 곡선, Hamburg co-Z ladder와 OpenMP
+  scheduling을 적용했다.
 - telemetry 단계 자체의 반복 측정 중앙값은 1,453.475ms에서 0.750ms로
   줄어 1,938x 개선됐다.
-- 모든 benchmark sample은 `d`, `s2`와 `r3`를 다시 검사하므로 빠른
-  오답 구현은 결과에 포함되지 않는다.
-- 같은 반복 캠페인에서 native adaptive 8-thread 구현은 원래 Python
-  대비 ratio-of-medians 165.42x를 기록했다. 절대 시간은 호스트 부하에
-  민감하므로 raw sample, median과 MAD를 함께 보존한다.
+- 모든 benchmark sample은 `d`, `r3`, `P=dQ`와 `state_label`별 legacy
+  `s2/0x5338` 또는 shifted `s3/0x3cea`를 다시 검사하므로 빠른 오답
+  구현은 결과에 포함되지 않는다.
+- shifted scan은 40-pair에서 `1.3428x`(95% CI
+  `1.3336..1.3510`), Hamburg는 `1.1716x`(95% CI
+  `1.1682..1.1764`)였고 둘 다 stationarity gate를 통과했다.
+- 현재 source의 전체 legacy/final 40-pair holdout도 warm-up 10쌍 뒤
+  paired `3.7126x`(95% CI `3.7106..3.7251`)로 stationarity와 promotion
+  gate를 통과했다.
+- 이전 native의 동일-run 역사 기준선은 원래 Python 대비 8-thread
+  165.42x였다. 새 최종 stack의 broad 절대 시간은 shared VM 부하에
+  민감하므로 작은 후보는 CPU-pinned adjacent AB/BA runner로 따로 판정한다.
 - 구현과 ablation은 [06 optimization README](../solutions/06_optimization/README.md),
   [algorithm review](../solutions/06_optimization/deep_review_06_algorithm.md),
   [native/cache review](../solutions/06_optimization/deep_review_06_micro.md)에 있다.
@@ -282,7 +290,7 @@ score-facing 성능 경쟁은 없다.
 | 3 | [`solve_03_tls_gcm_nonce_reuse.py`](../solutions/solve_03_tls_gcm_nonce_reuse.py) | pcap 파싱, GHASH 복원, record 위조와 제출값 검증 |
 | 4 | [`solve_04_digital_forensics.py`](../solutions/solve_04_digital_forensics.py) | 공식 모델 ZIP 해시 검증과 weight nibble payload 추출 |
 | 5 | [`solve_05_bgv.py`](../solutions/solve_05_bgv.py) | GF(257) 선형계로 secret과 두 평문 복원 |
-| 6 | [`solve_06_prng.py`](../solutions/solve_06_prng.py), [`deep_native_06.cpp`](../solutions/06_optimization/deep_native_06.cpp), [`benchmark_deep_native_06.py`](../solutions/06_optimization/benchmark_deep_native_06.py) | dependency-free Python 정답 경로, 최종 native 경로와 warmup 후 반복 benchmark |
+| 6 | [`solve_06_prng.py`](../solutions/solve_06_prng.py), [`deep_native_06.cpp`](../solutions/06_optimization/deep_native_06.cpp), [`benchmark_deep_native_06.py`](../solutions/06_optimization/benchmark_deep_native_06.py), [`benchmark_06_promotion.py`](../solutions/06_optimization/benchmark_06_promotion.py) | dependency-free Python 정답, 최종 native, broad screening과 frozen-source AB/BA 승격 benchmark |
 | 7 | [`solve_07_final.py`](../solutions/solve_07_final.py), [`solve_07_grouped_hm_flatter.cpp`](../solutions/solve_07_grouped_hm_flatter.cpp) | 결과 검증/RSA 복호화와 grouped HM 공격 재실행 |
 | 8 | [`solve_08_aes_key.py`](../solutions/solve_08_aes_key.py) | leak 기반 후보 join으로 key 복원과 전체 pair 재검증 |
 
@@ -303,9 +311,10 @@ python3 solutions/solve_07_final.py
 python3 solutions/solve_08_aes_key.py
 ```
 
-2번의 adaptive-inline 장기 캠페인과 6번의 165.42x native matrix를 같은 protocol로
-다시 측정하려면 각각 다음을 실행한다. 절대 시간과 speedup은 CPU 및 shared
-VM 부하에 따라 달라질 수 있으므로 raw sample, median과 MAD를 함께 본다.
+2번의 adaptive-inline 장기 캠페인과 6번의 broad native matrix를 각각
+재측정하려면 다음을 실행한다. 두 도구의 통계 protocol은 같지 않다.
+절대 시간과 speedup은 CPU 및 shared VM 부하에 따라 달라질 수 있으므로
+raw sample, median과 MAD를 함께 본다.
 
 ```bash
 python3 solutions/benchmark_02_permutation.py \
@@ -322,6 +331,12 @@ python3 solutions/06_optimization/benchmark_deep_native_06.py \
   --warmup 1 --repetitions 5 --threads 1,8 \
   --native-schedules adaptive --include-original-python \
   --output /tmp/challenge06-native.json
+
+python3 solutions/06_optimization/benchmark_06_promotion.py \
+  --baseline-label naf --candidate-label hamburg \
+  --baseline-define CH6_NAF_D_MULTIPLICATION \
+  --threads 1 --warmup-pairs 2 --pairs 40 \
+  --output /tmp/challenge06-hamburg.json
 ```
 
 4번은 Git에서 제외한 대형 공식 입력을 `4_raw/`에 두어야 한다. 2번의
@@ -337,7 +352,7 @@ benchmark는 correctness gate를 먼저 수행하며, 7번의 전체 격자 공�
 | 3 | pcap record 경계, nonce 재사용, `H`, `E_K(J0)`, plaintext delta, tag, 77바이트 record 길이와 제출 hex 일치 |
 | 4 | 공식 ZIP SHA-256 확인 후 `model.embed_tokens.weight`의 low nibble payload에서 flag 추출 |
 | 5 | 같은 secret으로 두 ciphertext 복호화, 날짜 하루 증가, 동일 `State`, error range `1..4` 확인 |
-| 6 | `P=dQ`, `d`, `s2`, `r3` 확인; native preflight에서 field 2,000개와 point/scalar 256개 reference 대조 |
+| 6 | `P=dQ`, `d`, legacy `s2`/shifted `s3`, `r3` 확인; native preflight에서 random field 2,000 pair, boundary 64 pair, point/table 256개, Hamburg/NAF lift 128개 reference 대조 |
 | 7 | `p*q=N`, `(p & MASK)==P_AND_MASK`, RSA 재암호화와 plaintext bytes 일치 |
 | 8 | 복구한 master key로 50,000개 평문/암문 pair 전체 재암호화, mismatch 0 |
 

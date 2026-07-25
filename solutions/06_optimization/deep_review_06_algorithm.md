@@ -2,38 +2,40 @@
 
 ## 결론
 
-현재의 C++/GMP/OpenMP 구현을 교체할 만큼 재현 가능한 알고리즘 개선은 찾지
-못했다. 가장 좋은 실험 후보인 `jacobian-batch`, width-4, block 32 조합도
-8-thread 중앙값에서 기준 구현과 사실상 같았다. Brier--Joye x-only ladder는
-정확하게 동작했지만 quadratic-residue 검사를 뒤로 미루면 약 2.06배 느렸고,
-Legendre 선필터를 넣어도 기준보다 느렸다.
+첫 GMP 후보군에서는 안정적인 개선을 찾지 못했지만, native 경로를 다시
+검토해 서로 독립적인 두 알고리즘 개선을 채택했다.
 
-따라서 **알고리즘 비교 층**의 권고안은 다음과 같다. 전체 최고 성능 경로는
-이후 별도 검토한 `deep_native_06.cpp`이며, 그 구현은 같은 공격을 고정폭
-arithmetic와 cache-friendly layout으로 옮긴 것이다.
+1. `r0`를 lift해 `r1`로 거르는 대신 **`r1`을 lift해 `r2`로 거른다**.
+   이 인스턴스의 순차 검사량은 21,305개에서 15,595개로 26.8% 줄었다.
+2. lift마다 실행하는 고정 스칼라 `d` 곱을 width-2 NAF에서 Hamburg의
+   short-Weierstrass co-Z x-only ladder로 바꿨다. exceptional denominator는
+   완전한 NAF 경로로 되돌아가도록 fail-closed 처리했다.
 
-1. 알고리즘 대조군은 기존 `solve_06_gmp.cpp`의 Jacobian + fixed-Q table +
-   OpenMP 경로를 유지한다.
-2. width-4와 batch inversion은 실제 채점 CPU에서 다시 이득이 확인될 때만
-   채택한다. 이 VM에서 관측된 차이는 노이즈 범위였다.
-3. Brier--Joye x-only 경로와 cubic finite difference는 채택하지 않는다.
-4. 최종 실행 성능이 목표라면 검증된 native 경로를 사용한다.
+40개 adjacent balanced AB/BA pair, 5,000회 deterministic bootstrap,
+4개 시간 block stationarity gate를 사용한 1-thread 측정에서 shifted scan은
+paired median `1.3428x`(95% CI `1.3336..1.3510`), Hamburg는
+`1.1716x`(95% CI `1.1682..1.1764`)였고 둘 다 gate를 통과했다. 따라서
+최종 `deep_native_06.cpp`의 기본값으로 승격했다. Brier--Joye, GMP batch
+inversion, finite difference, Legendre 선필터와 넓은 임의점 wNAF는 아래
+실패 기록처럼 유지하지 않는다.
 
-모든 후보는 매 실행마다 다음 값을 검증했다.
+모든 후보는 선택한 scan window에 맞춰 다음 값을 검증했다.
 
 ```text
-d  = 0x1c3cdd6b221806db0a7b28
-s2 = 0x638d9d631ab436da51e640
-r3 = 0x2443c8daf1a9d52b09
+d             = 0x1c3cdd6b221806db0a7b28
+legacy s2     = 0x638d9d631ab436da51e640
+shifted s3    = 0x948173253ad6d120a3f562
+predicted r3  = 0x2443c8daf1a9d52b09
 ```
 
-`s2` 표기는 중요하다. `r0`에서 lift한 점은 `s1 Q`이고, 여기에 `d`를
-곱한 점의 affine x-coordinate는 `X(s1 P)=s2`다.
+`state_label`과 lift/filter output index도 함께 검사하므로 `s2` 정답을
+우연히 `s3` 경로로 받아들이지 않는다.
 
 ## 기준 병목
 
-정답 low bits `0x5338`에 도달하기 전 curve 위에 있는 x 후보는 10,690개다.
-기준 구현에서는 후보마다 다음 두 번의 affine conversion이 발생한다.
+초기 기준은 `r0`의 low bits `0x5338`을 포함해 21,305개 x를 순서대로
+검사했고, 그중 curve 위에 있는 후보는 10,690개였다. 기준 구현에서는
+후보마다 다음 두 번의 affine conversion이 발생한다.
 
 1. `d * (s1 Q)`의 Jacobian 결과에서 `s2` 복원
 2. `s2 * Q`의 Jacobian 결과에서 `r1` 복원
@@ -42,9 +44,52 @@ r3 = 0x2443c8daf1a9d52b09
 doubling 898,148회, point addition 344,486회도 확인했다. 이 수치를 기준으로
 x-only와 batch inversion을 평가했다.
 
+## 채택 1: 관측 window를 한 칸 옮긴 scan
+
+출력 정의가
+
+```text
+r_i = TMSB(X(s_{i+1} Q))
+```
+
+이므로 `r1`에 low 16비트를 붙여 lift한 점 `T`는 부호를 제외하면
+`s2 Q`다. 백도어 관계 `P=dQ`를 적용하면
+
+```text
+X(dT) = X(s2 P) = s3
+r2 ?= TMSB(X(s3 Q))
+s4  = X(s3 P)
+r3  = TMSB(X(s4 Q))
+```
+
+가 된다. 즉 이미 공개된 `r2`가 72비트 filter 역할을 하므로 `r0/r1`
+window와 똑같이 후보를 유일하게 정할 수 있고, 그 뒤 목표 `r3`도 계산할
+수 있다. 단순히 정답 주변부터 찾는 순서 hardcode가 아니라 같은 공격을
+다음 관측 쌍 `(r1,r2)`에 적용한 것이다.
+
+실제 full x의 low 값은 기존 `r0`에서 `0x5338`, shifted `r1`에서
+`0x3cea`다. 따라서 순차 prefix는 각각 21,305개와 15,595개다. OpenMP
+실행의 `candidates_started`는 이미 배정된 block 때문에 이보다 조금 클 수
+있어, 문서와 JSON은 수학적 prefix와 실제 시작 작업 수를 구분한다.
+
+## 채택 2: Hamburg co-Z x-only `d` 곱
+
+Brier--Joye의 regular ladder 전체를 그대로 쓰는 대신 Hamburg 2020
+Figure 3의 short-Weierstrass co-Z state를 **고정된 복원 스칼라 `d`**에
+특화했다. 각 curve-valid lift에 대해 y를 복원해 fallback을 준비하되 hot
+path는 x와 곡선 우변만으로 `X([d]T)`를 계산한다. 최종
+numerator/denominator를 개별 invert하지 않고 Jacobian `X/Z^2`로 인코딩해
+기존 block batch normalization과 결합했다.
+
+함수는 의도적으로 `noinline`이다. inline 후보는 caller가 약 10KB로
+팽창하고 register spill이 생겨 느렸지만, 독립 함수는 NAF 대비 위의
+`1.1716x` 승격 기준을 통과했다. denominator가 0이거나 복원한 scalar가
+예상된 `d`가 아니면 width-2 NAF로 되돌아간다. self-test는 실제 lift
+128개에서 Hamburg와 NAF의 affine x를 대조한다.
+
 ## 후보 1: Brier--Joye x-only ladder
 
-### 구현
+### Brier--Joye 구현
 
 짧은 Weierstrass 곡선
 
@@ -73,7 +118,7 @@ ladder는 `(R0,R1)=(P,2P)`에서 시작하며 항상 `R1-R0=P`를 유지한다. 
 - 실제 `r0` 구간에서 curve lift 가능한 서로 다른 8개 x를 골라
   x-only 결과를 Jacobian `d*(x,y)` 결과와 비교
 
-### 결과와 실패 이유
+### Brier--Joye 결과와 실패 이유
 
 Brier--Joye 원문이 제시하는 비용은 scalar bit마다 대략 field multiplication
 14회와 constant multiplication 5회다. width-5 wNAF Jacobian은 비잔여 x를
@@ -86,13 +131,15 @@ regular ladder를 실행해야 한다. 그 결과 8-thread 중앙값은 `1.00328
 sqrt 제거 이득보다 regular x-only ladder의 높은 per-bit 비용이 더 컸다.
 
 Mike Hamburg의 후속 연구는 짧은 Weierstrass curve ladder를 bit당
-`8M+3S+7A`까지 줄이지만, exceptional-point 처리까지 포함하는 별도 formula
-set이 필요하다. 현재 Brier--Joye 결과만으로 제출 경로를 바꿀 근거는 없으며,
-Hamburg formula는 향후 독립 후보로 남긴다.
+`8M+3S+7A`까지 줄인다. 첫 GMP 검토에서는 exceptional-point 처리까지
+포함하는 별도 formula set이 필요해 보류했지만, 후속 native 검토에서
+denominator 예외를 NAF fallback으로 처리하고 채택했다. 따라서 이 절의
+Brier--Joye 실패는 “x-only 전체가 부적합”하다는 결론이 아니라, 이
+구현의 `14M` regular ladder와 residue 처리 순서가 부적합했다는 결론이다.
 
 ## 후보 2: Montgomery batch inversion
 
-### 구현
+### batch inversion 구현
 
 block 안에서 다음 pipeline을 사용했다.
 
@@ -107,7 +154,7 @@ prefix product와 reverse sweep을 이용하면 원소 `m`개의 역원을 inver
 multiplication `3m-3`회로 구할 수 있다. zero denominator는 별도 index로
 제외했다. block buffer는 OpenMP thread마다 한 번 할당한 뒤 재사용했다.
 
-### 결과와 실패 이유
+### batch inversion 결과와 실패 이유
 
 block 32, width-4의 8-thread 중앙값은 `0.484463 s`로 기준 대비 1.004배였다.
 Legendre를 끈 같은 후보는 `0.475473 s`, 즉 1.023배였지만 표준편차가
@@ -180,9 +227,11 @@ low 16비트에 대한 추가 정보가 없으므로 후보가 균일하다는 �
 탐색하는 것은 인스턴스 답을 hardcode하는 것과 같아 제외했다. 현재의 작은
 dynamic OpenMP chunk가 unbiased ordering에서 load balance가 가장 좋았다.
 
-`r1`은 사실상 유일한 강한 early filter이고 `r2`, `r3` 계산은 `r1` hit 뒤로
-미뤘다. x-only에서 curve-membership 검사까지 `r1` 뒤로 미루는 순서는
-비잔여 후보에도 비싼 ladder를 수행해 실패했다.
+다만 관측 window 자체를 `(r0,r1)`에서 `(r1,r2)`로 옮기는 것은 fixed
+permutation이 아니다. 뒤의 공개 출력도 같은 72비트 early filter이므로
+정확성을 유지하면서 이 인스턴스의 true low prefix를 26.8% 줄였고 최종
+경로에 채택했다. x-only에서 curve-membership 검사까지 filter 뒤로 미루는
+순서는 여전히 비잔여 후보에도 비싼 ladder를 수행해 실패했다.
 
 ## 반복 측정
 
@@ -196,8 +245,10 @@ arithmetic: GMP 6.2.1
 protocol: warmup 1회, 측정 5회, 매 round 실행 순서 회전
 ```
 
-아래 값은 solver 내부의 state-recovery 구간 중앙값이다. telemetry 분석과
-process 시작 비용은 제외했다. 모든 sample에서 `d`, `s2`, `r3`를 검증했다.
+아래 값은 **채택 전 GMP 1차 후보군**의 solver 내부 state-recovery 구간
+중앙값이다. telemetry 분석과 process 시작 비용은 제외했다. 모든 sample에서
+`d`, `s2`, `r3`를 검증했다. shifted/Hamburg의 최종 승격 수치는 위 결론의
+별도 40-pair native campaign에서 측정했다.
 
 | 후보 | 중앙값 | 표준편차 | 기준 대비 |
 |---|---:|---:|---:|
@@ -230,11 +281,13 @@ runner는 두 C++ 실행 파일을 임시 디렉터리에 빌드하고 각 실�
   difference, Legendre, wNAF 후보와 self-test
 - `benchmark_06_algorithm_candidates.py`: warmup/반복/순서 회전/known-answer
   검증 runner
+- `benchmark_06_promotion.py`: frozen source, CPU affinity, 40개 balanced
+  AB/BA pair, bootstrap CI와 stationarity gate를 쓰는 최종 승격 runner
 
 ## 참고 자료
 
 - [Eric Brier and Marc Joye, "Weierstrass Elliptic Curves and Side-Channel Attacks" (2002)](https://marcjoye.github.io/papers/BJ02espa.pdf) — Figure 3의 ladder invariant와 식 (6), (7), (9), (10)의 x-only differential addition/doubling을 그대로 구현했다. 원문은 projective ladder 비용도 bit당 약 14 multiplications로 분석한다.
-- [Mike Hamburg, "Faster Montgomery and double-add ladders for short Weierstrass curves" (TCHES 2020 / ePrint 2020/437)](https://eprint.iacr.org/2020/437) — Brier--Joye 이후 short-Weierstrass ladder의 operation count 개선과 exceptional-point 문제를 검토하는 데 사용했다.
+- [Mike Hamburg, "Faster Montgomery and double-add ladders for short Weierstrass curves" (TCHES 2020 / ePrint 2020/437)](https://eprint.iacr.org/2020/437) — Figure 3의 co-Z ladder를 고정 `d` hot path에 구현하고 exceptional denominator를 NAF fallback으로 처리했다.
 - [Peter L. Montgomery, "Speeding the Pollard and Elliptic Curve Methods of Factorization" (Mathematics of Computation, 1987)](https://www.ams.org/journals/mcom/1987-48-177/S0025-5718-1987-0866113-7/S0025-5718-1987-0866113-7.pdf) — differential-addition ladder와 inversion amortization의 원형을 확인했다.
 - [Daniel J. Bernstein et al., "OpenSSLNTRU: Faster post-quantum TLS key exchange" (2021), Section 2.2](https://opensslntru.cr.yp.to/opensslntru-20211006.pdf) — Montgomery batch inversion의 prefix/reverse 알고리즘과 `3n-3` multiplications + 1 inversion 비용을 대조했다.
 - [GNU MP Manual, Number Theoretic Functions](https://gmplib.org/manual/Number-Theoretic-Functions) — `mpz_invert`와 `mpz_legendre`의 공식 API 의미를 확인했다.

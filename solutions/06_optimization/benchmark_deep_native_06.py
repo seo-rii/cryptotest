@@ -3,7 +3,8 @@
 
 Build time and the native randomized self-test are outside the timed region.
 Each timed sample is a fresh complete process, follows at least one discarded
-warm-up, and must reproduce d, s2, r3, P=dQ (where reported), and lift bits.
+warm-up, and must reproduce d, its labelled s2/s3 scan state, r3, P=dQ, and
+the corresponding lift bits.
 """
 
 from __future__ import annotations
@@ -27,9 +28,21 @@ from typing import Any
 
 EXPECTED = {
     "d": int("1c3cdd6b221806db0a7b28", 16),
-    "state": int("638d9d631ab436da51e640", 16),
     "r3": int("2443c8daf1a9d52b09", 16),
-    "lift_low_bits": 21304,
+}
+EXPECTED_SCANS = {
+    "s2": {
+        "state": int("638d9d631ab436da51e640", 16),
+        "lift_low_bits": 21304,
+        "lift_output_index": 0,
+        "filter_output_index": 1,
+    },
+    "s3": {
+        "state": int("948173253ad6d120a3f562", 16),
+        "lift_low_bits": 15594,
+        "lift_output_index": 1,
+        "filter_output_index": 2,
+    },
 }
 
 
@@ -86,9 +99,21 @@ def compile_source(
 
 
 def parse_integer(value: Any) -> int:
+    if isinstance(value, bool) or not isinstance(value, (int, str)):
+        raise RuntimeError(f"expected integer-compatible value, got {value!r}")
     if isinstance(value, int):
         return value
     return int(value, 0)
+
+
+def command_option(contender: Contender, option: str) -> str:
+    try:
+        index = contender.command.index(option)
+        return contender.command[index + 1]
+    except (ValueError, IndexError) as error:
+        raise RuntimeError(
+            f"{contender.name} command is missing {option}"
+        ) from error
 
 
 def validate_result(contender: Contender, stdout: str) -> dict[str, Any]:
@@ -111,10 +136,15 @@ def validate_result(contender: Contender, stdout: str) -> dict[str, Any]:
                     f"could not parse {key} from original Python output"
                 )
             result[key] = int(match.group(1), 16)
-            if result[key] != EXPECTED[key]:
+            expected = (
+                EXPECTED_SCANS["s2"]["state"]
+                if key == "state"
+                else EXPECTED[key]
+            )
+            if result[key] != expected:
                 raise RuntimeError(
                     f"original Python {key} mismatch: "
-                    f"observed={result[key]:#x}, expected={EXPECTED[key]:#x}"
+                    f"observed={result[key]:#x}, expected={expected:#x}"
                 )
         return result
 
@@ -130,10 +160,59 @@ def validate_result(contender: Contender, stdout: str) -> dict[str, Any]:
             f"{contender.name} known-answer mismatch: "
             f"observed={observed}, expected={EXPECTED}"
         )
-    if result.get("state_label") != "s2":
-        raise RuntimeError(f"{contender.name} did not label state as s2")
-    if "p_equals_dq" in result and result["p_equals_dq"] is not True:
+    state_label = result.get("state_label")
+    if state_label not in EXPECTED_SCANS:
+        raise RuntimeError(
+            f"{contender.name} returned invalid state label: {state_label!r}"
+        )
+    expected_scan = EXPECTED_SCANS[state_label]
+    for key in ("state", "lift_low_bits"):
+        observed_value = parse_integer(result[key])
+        if observed_value != expected_scan[key]:
+            raise RuntimeError(
+                f"{contender.name} scan mismatch for {key}: "
+                f"{observed_value:#x} != {expected_scan[key]:#x}"
+            )
+    for key in ("lift_output_index", "filter_output_index"):
+        if key in result and parse_integer(result[key]) != expected_scan[key]:
+            raise RuntimeError(f"{contender.name} scan metadata mismatch for {key}")
+    if result.get("p_equals_dq") is not True:
         raise RuntimeError(f"{contender.name} failed P=dQ validation")
+    expected_threads = contender.threads
+    if parse_integer(result.get("threads")) != expected_threads:
+        raise RuntimeError(f"{contender.name} returned the wrong thread count")
+    if contender.family == "gmp":
+        if (
+            result.get("telemetry_strategy")
+            != command_option(contender, "--telemetry")
+        ):
+            raise RuntimeError(
+                f"{contender.name} returned the wrong telemetry strategy"
+            )
+    else:
+        expected_metadata: dict[str, Any] = {
+            "schedule_requested": command_option(contender, "--schedule"),
+            "block_size": int(command_option(contender, "--block-size")),
+            "inverse_method": command_option(contender, "--inverse"),
+            "sqrt_method": command_option(contender, "--sqrt"),
+            "telemetry_strategy": "analytic",
+        }
+        requested_schedule = str(expected_metadata["schedule_requested"])
+        expected_metadata["schedule_effective"] = (
+            "block"
+            if requested_schedule == "adaptive" and expected_threads == 1
+            else (
+                "scalar"
+                if requested_schedule == "adaptive"
+                else requested_schedule
+            )
+        )
+        for key, expected in expected_metadata.items():
+            if result.get(key) != expected:
+                raise RuntimeError(
+                    f"{contender.name} metadata mismatch for {key}: "
+                    f"{result.get(key)!r} != {expected!r}"
+                )
     return result
 
 
@@ -311,7 +390,9 @@ def main() -> None:
         expected_self_test = {
             "self_test": True,
             "field_vectors": 2000,
+            "field_boundary_pairs": 64,
             "point_vectors": 256,
+            "hamburg_lift_vectors": 128,
         }
         if (
             self_test.returncode != 0
@@ -384,8 +465,9 @@ def main() -> None:
         print(
             f"protocol: warmup={args.warmup}, repetitions={args.repetitions}, "
             "fresh process, cyclic/reversed interleaving, external wall clock, "
-            "known-answer check every sample, native 2000 field + 256 point/table "
-            "vector self-test passed",
+            "known-answer check every sample, native 2000 random + 64 boundary "
+            "field pairs, 256 point/table, and 128 Hamburg/NAF lift vector "
+            "self-test passed",
             flush=True,
         )
 
@@ -409,6 +491,9 @@ def main() -> None:
         internal: dict[str, dict[str, list[float]]] = {
             item.name: {stage: [] for stage in stage_names} for item in contenders
         }
+        work_counts: dict[str, list[int]] = {
+            item.name: [] for item in contenders
+        }
         metadata: dict[str, dict[str, Any]] = {}
         for repetition in range(args.repetitions):
             offset = repetition % len(contenders)
@@ -421,18 +506,40 @@ def main() -> None:
                 for stage in stage_names:
                     if stage in result:
                         internal[contender.name][stage].append(float(result[stage]))
-                metadata[contender.name] = {
+                if "candidates_started" in result:
+                    work_counts[contender.name].append(
+                        int(result["candidates_started"])
+                    )
+                sample_metadata = {
                     key: result[key]
                     for key in (
                         "implementation",
                         "field_bytes",
                         "jacobian_bytes",
                         "fixed_table_bytes",
+                        "fixed_window_bits",
+                        "field_backend",
+                        "scan_curve_model",
+                        "d_multiplication",
                         "schedule_requested",
                         "schedule_effective",
+                        "block_size",
+                        "threads",
+                        "inverse_method",
+                        "sqrt_method",
+                        "telemetry_strategy",
                     )
                     if key in result
                 }
+                previous_metadata = metadata.get(contender.name)
+                if (
+                    previous_metadata is not None
+                    and sample_metadata != previous_metadata
+                ):
+                    raise RuntimeError(
+                        f"{contender.name} metadata changed between samples"
+                    )
+                metadata[contender.name] = sample_metadata
                 print(
                     f"measure {repetition + 1}/{args.repetitions} "
                     f"{contender.name}: {elapsed:.6f}s [verified]",
@@ -448,7 +555,7 @@ def main() -> None:
             }
             for name, stages in internal.items()
         }
-        paired_speedup: dict[str, dict[str, float | int]] = {}
+        same_repetition_vs_gmp: dict[str, dict[str, float | int]] = {}
         for contender in contenders:
             if not contender.family.startswith("native-"):
                 continue
@@ -460,13 +567,13 @@ def main() -> None:
                 )
             ]
             ratio_summary = summarize(ratios)
-            paired_speedup[contender.name] = ratio_summary
+            same_repetition_vs_gmp[contender.name] = ratio_summary
             summary[contender.name]["ratio_of_medians_vs_same_thread_gmp"] = (
                 float(summary[baseline_name]["median_seconds"])
                 / float(summary[contender.name]["median_seconds"])
             )
 
-        paired_vs_original: dict[str, dict[str, float | int]] = {}
+        same_repetition_vs_original: dict[str, dict[str, float | int]] = {}
         if "python-original" in raw:
             original_median = float(
                 summary["python-original"]["median_seconds"]
@@ -480,7 +587,7 @@ def main() -> None:
                         raw["python-original"], raw[contender.name], strict=True
                     )
                 ]
-                paired_vs_original[contender.name] = summarize(ratios)
+                same_repetition_vs_original[contender.name] = summarize(ratios)
                 summary[contender.name]["ratio_of_medians_vs_original_python"] = (
                     original_median
                     / float(summary[contender.name]["median_seconds"])
@@ -519,11 +626,22 @@ def main() -> None:
                 "repetitions": args.repetitions,
                 "clock": "time.perf_counter external wall time",
                 "ordering": "cyclic rotations, then reversed rotations",
+                "comparison_scope": (
+                    "broad screening; repetition-index ratios are not "
+                    "adjacent AB/BA pairs"
+                ),
                 "fresh_process_per_sample": True,
                 "build_excluded": True,
                 "native_self_test_excluded": True,
                 "native_self_test": expected_self_test,
                 "validation": {key: hex(value) for key, value in EXPECTED.items()},
+                "scan_validation": {
+                    label: {
+                        key: hex(value) if key in {"state", "lift_low_bits"} else value
+                        for key, value in expected.items()
+                    }
+                    for label, expected in EXPECTED_SCANS.items()
+                },
                 "native_build": list(native_build),
                 "gmp_build": list(gmp_build),
                 "block_size": args.block_size,
@@ -531,10 +649,15 @@ def main() -> None:
             "metadata": metadata,
             "raw_seconds": raw,
             "internal_raw_seconds": internal,
+            "raw_candidates_started": work_counts,
             "summary": summary,
             "internal_stage_summary": stage_summary,
-            "paired_speedup_vs_same_thread_gmp": paired_speedup,
-            "paired_speedup_vs_original_python": paired_vs_original,
+            "diagnostic_same_repetition_speedup_vs_same_thread_gmp": (
+                same_repetition_vs_gmp
+            ),
+            "diagnostic_same_repetition_speedup_vs_original_python": (
+                same_repetition_vs_original
+            ),
         }
         if args.output:
             args.output.parent.mkdir(parents=True, exist_ok=True)

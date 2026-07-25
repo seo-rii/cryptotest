@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Warm-up and repeatedly benchmark challenge-6 solver variants.
 
-Every invocation is treated as invalid unless it reproduces all three known
-values: the telemetry scalar, recovered state, and predicted r3.  The reported
-wall clock includes process startup and input loading, but excludes C++ build
-time.  Measurement order rotates each round to reduce fixed ordering bias.
+Every invocation is treated as invalid unless it reproduces the telemetry
+scalar, its labelled s2/s3 scan state, and predicted r3.  The reported wall
+clock includes process startup and input loading, but excludes C++ build time.
+Measurement order rotates each round to reduce fixed ordering bias.
 """
 
 from __future__ import annotations
@@ -28,8 +28,17 @@ from typing import Any
 
 EXPECTED = {
     "d": int("1c3cdd6b221806db0a7b28", 16),
-    "state": int("638d9d631ab436da51e640", 16),
     "r3": int("2443c8daf1a9d52b09", 16),
+}
+EXPECTED_SCANS = {
+    "s2": {
+        "state": int("638d9d631ab436da51e640", 16),
+        "lift_low_bits": 21304,
+    },
+    "s3": {
+        "state": int("948173253ad6d120a3f562", 16),
+        "lift_low_bits": 15594,
+    },
 }
 
 
@@ -40,6 +49,8 @@ class Contender:
 
 
 def parse_integer(value: Any) -> int:
+    if isinstance(value, bool) or not isinstance(value, (int, str)):
+        raise RuntimeError(f"expected integer-compatible value, got {value!r}")
     if isinstance(value, int):
         return value
     return int(value, 0)
@@ -54,7 +65,10 @@ def parse_result(name: str, stdout: str) -> dict[str, Any]:
             "state": r"recovered state s1 = (0x[0-9a-f]+)",
             "r3": r"predicted r3 = (0x[0-9a-f]+)",
         }
-        result: dict[str, Any] = {"implementation": "baseline"}
+        result: dict[str, Any] = {
+            "implementation": "baseline",
+            "state_label": "s2",
+        }
         for key, pattern in patterns.items():
             match = re.search(pattern, stdout)
             if match is None:
@@ -94,8 +108,20 @@ def run_once(
             f"{contender.name} failed known-answer validation: "
             f"observed={observed}, expected={EXPECTED}"
         )
-    if contender.name != "baseline" and result.get("state_label") != "s2":
-        raise RuntimeError(f"{contender.name} did not label the recovered state as s2")
+    state_label = result.get("state_label")
+    if state_label not in EXPECTED_SCANS:
+        raise RuntimeError(
+            f"{contender.name} returned invalid state label: {state_label!r}"
+        )
+    expected_scan = EXPECTED_SCANS[state_label]
+    if parse_integer(result.get("state")) != expected_scan["state"]:
+        raise RuntimeError(f"{contender.name} returned the wrong scan state")
+    if (
+        "lift_low_bits" in result
+        and parse_integer(result["lift_low_bits"])
+        != expected_scan["lift_low_bits"]
+    ):
+        raise RuntimeError(f"{contender.name} returned the wrong lift bits")
     if "p_equals_dq" in result and result["p_equals_dq"] is not True:
         raise RuntimeError(f"{contender.name} failed P = dQ validation")
     return elapsed, result
@@ -260,7 +286,9 @@ def main() -> None:
             if native_self_test != {
                 "self_test": True,
                 "field_vectors": 2000,
+                "field_boundary_pairs": 64,
                 "point_vectors": 256,
+                "hamburg_lift_vectors": 128,
             }:
                 raise RuntimeError(f"unexpected native self-test result: {native_self_test}")
 
@@ -339,8 +367,9 @@ def main() -> None:
         )
         if native_self_test is not None:
             print(
-                "native preflight: 2000 field vectors and 256 point/table "
-                "vectors verified",
+                "native preflight: 2000 random + 64 boundary field pairs, "
+                "256 point/table vectors, and 128 Hamburg/NAF lift vectors "
+                "verified",
                 flush=True,
             )
 
