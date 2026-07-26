@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from pathlib import Path
 from zipfile import ZipFile
 import itertools
@@ -185,14 +186,12 @@ def recover_key(leaks: dict[tuple[int, int], str], plaintext: bytes, ciphertext:
             )
         )
 
-    hits: list[bytes] = []
+    hits: set[bytes] = set()
     for x2_column in itertools.product(*(byte_candidates(leaks[(2, i)]) for i in range(4))):
         inv_x2 = inv_mix_column(list(x2_column))
         k5 = inv_x2[0] ^ SBOX[before_x1[0] ^ k0]
         k8 = inv_x2[1] ^ SBOX[before_x1[5] ^ k5]
         needed_sbox = k3 ^ inv_x2[3]
-        if needed_sbox not in SBOX:
-            continue
         k15 = before_x1[15] ^ INV_SBOX[needed_sbox]
         s_x2 = [SBOX[value] for value in x2_column]
 
@@ -216,19 +215,21 @@ def recover_key(leaks: dict[tuple[int, int], str], plaintext: bytes, ciphertext:
                                 (10, k10), (11, k11), (12, k12), (13, k13), (15, k15),
                             ):
                                 partial[key_index] = value
-                            maybe = complete_partial_key(partial, p, x3)
-                            if maybe is None:
-                                continue
-                            key = bytes(maybe)
-                            if encrypt(bytes(p), round_keys(maybe)) == bytes(c):
-                                hits.append(key)
+                            for maybe in complete_partial_keys(partial, p, x3):
+                                key = bytes(maybe)
+                                if encrypt(bytes(p), round_keys(maybe)) == bytes(c):
+                                    hits.add(key)
 
     if len(hits) != 1:
         raise RuntimeError(f"expected one key candidate, got {len(hits)}")
-    return hits[0]
+    return hits.pop()
 
 
-def complete_partial_key(partial: list[int | None], plaintext_block: list[int], x3: list[int]) -> list[int] | None:
+def complete_partial_keys(
+    partial: list[int | None],
+    plaintext_block: list[int],
+    x3: list[int],
+) -> Iterator[list[int]]:
     before_x1 = round_function(plaintext_block)
     probe = [0 if value is None else value for value in partial]
     rk2_col0 = round_keys(probe)[2][0:4]
@@ -242,14 +243,14 @@ def complete_partial_key(partial: list[int | None], plaintext_block: list[int], 
         if x2_byte10(before_x1, partial, k2) == target_x2_10:
             k2_candidates.append(k2)
     if not k2_candidates:
-        return None
+        return
 
     k4_candidates = []
     for k4 in range(256):
         if x2_byte15(before_x1, partial, k4) == target_x2_15:
             k4_candidates.append(k4)
     if not k4_candidates:
-        return None
+        return
 
     for k2 in k2_candidates:
         for k4 in k4_candidates:
@@ -263,8 +264,7 @@ def complete_partial_key(partial: list[int | None], plaintext_block: list[int], 
                 x2_round1 = x2_from_key(before_x1, key)
                 x2_round2 = inverse_round_function([x3[i] ^ round_keys(key)[2][i] for i in range(16)])
                 if x2_round1 == x2_round2:
-                    return key
-    return None
+                    yield key
 
 
 def x2_byte10(before_x1: list[int], partial: list[int | None], k2: int) -> int:
@@ -317,6 +317,12 @@ def main() -> None:
     print(f"mismatches = {len(mismatches)}")
     if mismatches:
         raise RuntimeError(f"first mismatch at pair {mismatches[0]}")
+    submitted_key = (
+        root / "submissions" / "08" / "master_key.txt"
+    ).read_text(encoding="ascii").strip()
+    if submitted_key != key.hex():
+        raise RuntimeError("submissions/08/master_key.txt is out of sync")
+    print("submission key check = PASS")
 
 
 if __name__ == "__main__":
