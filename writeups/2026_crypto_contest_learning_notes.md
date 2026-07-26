@@ -288,10 +288,10 @@ score-facing 성능 경쟁은 없다.
 | 1 | [`solve_01_classical.py`](../solutions/solve_01_classical.py) | IC, Caesar/Vigenère 복호와 분류 결과 재현 |
 | 2 | [`solve_02_permutation.py`](../solutions/solve_02_permutation.py), [`solve_02_permutation.c`](../solutions/solve_02_permutation.c), [`benchmark_02_permutation.py`](../solutions/benchmark_02_permutation.py) | 구조 복원, standalone oracle와 warmup 후 반복 benchmark |
 | 3 | [`solve_03_tls_gcm_nonce_reuse.py`](../solutions/solve_03_tls_gcm_nonce_reuse.py) | pcap 파싱, GHASH 복원, record 위조와 제출값 검증 |
-| 4 | [`solve_04_digital_forensics.py`](../solutions/solve_04_digital_forensics.py) | 공식 모델 ZIP 해시 검증과 weight nibble payload 추출 |
-| 5 | [`solve_05_bgv.py`](../solutions/solve_05_bgv.py) | GF(257) 선형계로 secret과 두 평문 복원 |
+| 4 | [`solve_04_digital_forensics.py`](../solutions/solve_04_digital_forensics.py) | 로그 증거 스트리밍, 전체 F32 tensor discovery와 payload 추출 |
+| 5 | [`solve_05_bgv.py`](../solutions/solve_05_bgv.py) | 네 자리 날짜 delta 전체와 GF(257) 선형계에서 유일 secret·평문 검증 |
 | 6 | [`solve_06_prng.py`](../solutions/solve_06_prng.py), [`deep_native_06.cpp`](../solutions/06_optimization/deep_native_06.cpp), [`benchmark_deep_native_06.py`](../solutions/06_optimization/benchmark_deep_native_06.py), [`benchmark_06_promotion.py`](../solutions/06_optimization/benchmark_06_promotion.py) | dependency-free Python 정답, 최종 native, broad screening과 frozen-source AB/BA 승격 benchmark |
-| 7 | [`solve_07_final.py`](../solutions/solve_07_final.py), [`solve_07_grouped_hm_flatter.cpp`](../solutions/solve_07_grouped_hm_flatter.cpp) | 결과 검증/RSA 복호화와 grouped HM 공격 재실행 |
+| 7 | [`solve_07_final.py`](../solutions/solve_07_final.py), [`solve_07_grouped_hm_flatter.cpp`](../solutions/solve_07_grouped_hm_flatter.cpp), [`run_07_grouped_hm_scan.py`](../solutions/run_07_grouped_hm_scan.py) | 결과 검증/RSA 복호화, grouped HM과 256개 blind scan |
 | 8 | [`solve_08_aes_key.py`](../solutions/solve_08_aes_key.py) | leak 기반 후보 join으로 key 복원과 전체 pair 재검증 |
 
 먼저 기본 정답·smoke 검증은 다음과 같다. 8번 전체 key 복원은 이 호스트에서
@@ -347,27 +347,31 @@ benchmark는 correctness gate를 먼저 수행하며, 7번의 전체 격자 공�
 
 | 번호 | 검증 기준 |
 |---:|---|
-| 1 | Caesar shift `6`, Kasiski period `5`와 key `KLVOJ`, held-out 분류 58/58, 구조적 식별 불가능성 확인 |
+| 1 | Caesar shift `6`, Kasiski period `5`와 key `KLVOJ`, 동일 corpus/key의 paired holdout 58/58; 관측 구조와 출제 의도 추정 label 분리 |
 | 2 | 제공 1-round 1,000개와 20-round vector, 100,000개 deterministic random differential case 통과 |
-| 3 | pcap record 경계, nonce 재사용, `H`, `E_K(J0)`, plaintext delta, tag, 77바이트 record 길이와 제출 hex 일치 |
-| 4 | 공식 ZIP SHA-256 확인 후 `model.embed_tokens.weight`의 low nibble payload에서 flag 추출 |
-| 5 | 같은 secret으로 두 ciphertext 복호화, 날짜 하루 증가, 동일 `State`, error range `1..4` 확인 |
+| 3 | GCM bit ordering self-test, pcap record 경계, nonce 재사용, 유일 `H`, known-plaintext 출처, tag와 77바이트 제출 hex 일치 |
+| 4 | 모든 F32 tensor의 bounded-memory discovery, SafeTensors 범위와 로그 증거 보존을 합성 테스트 5개로 검증; 공식 대형 원본 재실행은 별도 필요 |
+| 5 | 네 자리 Gregorian 다음날 delta 11종 전체에서 ternary 후보를 수집하고, 연속 날짜·동일 `State`·padding·error·제출 TXT를 통과한 후보가 1개인지 확인 |
 | 6 | `P=dQ`, `d`, legacy `s2`/shifted `s3`, `r3` 확인; native preflight에서 random field 2,000 pair, boundary 64 pair, point/table 256개, Hamburg/NAF lift 128개 reference 대조 |
-| 7 | `p*q=N`, `(p & MASK)==P_AND_MASK`, RSA 재암호화와 plaintext bytes 일치 |
-| 8 | 복구한 master key로 50,000개 평문/암문 pair 전체 재암호화, mismatch 0 |
+| 7 | pinned FLATTER로 `cid=155` 복원과 선택 다항식 12개의 정수 평가 0 확인; `p*q=N`, mask, RSA 재암호화 일치. 256개 blind runner는 제공하되 전체 scan은 이번 정리에서 재실행하지 않음 |
+| 8 | 모든 partial completion을 generator로 열거·중복 제거해 유일 key를 얻고, 50,000개 평문/암문 pair 전체 재암호화 mismatch 0 |
 
 ## 7번 장기 탐색의 최종 정리
 
 7번은 장기간 여러 solver와 변수 분할을 비교했지만 최종 공격은 간결하다.
 양끝 4비트씩만 256개로 열거하고, 정답 `cid=155 (0x9b)`에서 나머지를 `[265,420)` 155비트와
 `[600,830)` 230비트의 두 연속 변수로 완화한다. `m=17,t=5`의
-171차원 Herrmann--May 격자를 FLATTER로 감축한 뒤, 소수체 resultant/GCD와
-CRT로 정답 근을 복원했다.
+171차원 Herrmann--May 격자를 고정한 FLATTER revision으로 감축한 뒤,
+소수체 resultant/GCD와 CRT로 정답 근을 복원했다. 선택 행과 modular
+resultant 추출은 heuristic이라 실패 branch의 completeness는 보장하지
+않지만, 복원 factor는 나눗셈·mask·RSA 재암호화로 sound하게 검증한다.
+`run_07_grouped_hm_scan.py`는 정답 cid를 seed하지 않고 0..255의 로그·해시와
+성공 후보 수를 JSON으로 남긴다.
 
 SMT, exact-tail CP-SAT, Hensel prefix, exact·얕은 grouped HM, cuso 설계,
 two-sided/partial-`p`, Coron, 휴리스틱 q-gap과 조건부 low600 clause, ranker와
 Jochemsz--May low-lift의 결과와 중단 근거는
-[7번 실패 전략 절](07_소인수분해.md#1-직접-탐색과-실패한-전략)에
+[7번 실패 전략 부록](07_소인수분해.md#직접-탐색과-실패한-전략)에
 전략별로 정리했다.
 
 시점별 세부 실험은 다음 자료에 보존한다.

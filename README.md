@@ -1,6 +1,6 @@
 # 2026 암호분석경진대회 풀이
 
-2026 암호분석경진대회 8문제의 분석, 재현 코드, writeup과 제출용 결과를 모은 저장소다. 복원 가능한 요구 결과를 모두 얻었고, 데이터만으로 결정할 수 없는 1번의 숨은 생성기 label은 그 식별 불가능성을 증명했다. 원문이 요구한 별도 제출 형식도 `submissions/`에 정리했다.
+2026 암호분석경진대회 8문제의 분석, 재현 코드, writeup과 제출용 결과를 모은 저장소다. 복원 가능한 요구 결과를 모두 얻었다. 1번의 네 짧은 표본은 관측 가능한 구조와 출제 의도 추정 label을 분리해 기록했고, 원문이 요구한 별도 제출 형식도 `submissions/`에 정리했다.
 
 처음 읽는 경우 [전체 정리와 진행상황](writeups/2026_crypto_contest_learning_notes.md)에서 8문제의 결과·성능·검증 수준을 확인한 뒤, 아래 표에서 문제별 상세 writeup으로 들어가면 된다.
 
@@ -55,24 +55,25 @@ P-only/E-only/P+E/all-core 및 block-size 후보를 각각 별도 JSON으로
 
 - [문제 7 최종 writeup](writeups/07_소인수분해.md)
 - [문제 7 최종 격자 solver](solutions/solve_07_grouped_hm_flatter.cpp)
+- [문제 7 전체 256개 blind-scan runner](solutions/run_07_grouped_hm_scan.py)
 - [문제 7 결과 검증 및 RSA 복호화](solutions/solve_07_final.py)
 
 ## 완료 현황
 
 | 번호 | 문제 | 최종 결과 | 재현 코드 |
 |---:|---|---|---|
-| 1 | [암호분석](writeups/01_암호분석.md) | Caesar `6`, Vigenère `KLVOJ`, held-out `58/58`; 숨은 label 식별 불가능성 증명 | [`solve_01_classical.py`](solutions/solve_01_classical.py) |
+| 1 | [암호분석](writeups/01_암호분석.md) | Caesar `6`, Vigenère `KLVOJ`, paired within-corpus holdout `58/58`; 관측 구조와 의도 추정 label 분리 | [`solve_01_classical.py`](solutions/solve_01_classical.py) |
 | 2 | [암호구현](writeups/02_암호구현.md) | `rot={43,7,29,14}`, 검증된 scalar incumbent, 122-instruction/549-byte AVX2·122-byte/29-static counted block 후보, raw-recomputed 정상성 gate와 범위 제한 ISA 합성까지 로컬 탐색 종료; 실제 255H 판정만 미완 | [`solve_02_permutation.c`](solutions/solve_02_permutation.c) |
 | 3 | [네트워크보안](writeups/03_네트워크보안.md) | 유효한 TLS-GCM 위조 record | [`solve_03_tls_gcm_nonce_reuse.py`](solutions/solve_03_tls_gcm_nonce_reuse.py) |
-| 4 | [디지털포렌식](writeups/04_디지털포렌식.md) | `CRYPTO{...}` 모델 은닉 payload | [`solve_04_digital_forensics.py`](solutions/solve_04_digital_forensics.py) |
-| 5 | [동형암호](writeups/05_동형암호.md) | BGV secret 64계수와 State 56계수 | [`solve_05_bgv.py`](solutions/solve_05_bgv.py) |
+| 4 | [디지털포렌식](writeups/04_디지털포렌식.md) | bounded-memory 전체 tensor 발견 scanner와 `CRYPTO{...}` payload 추출 | [`solve_04_digital_forensics.py`](solutions/solve_04_digital_forensics.py) |
+| 5 | [동형암호](writeups/05_동형암호.md) | 네 자리 전체 날짜 delta와 유일 후보 검증으로 BGV secret·State 복원 | [`solve_05_bgv.py`](solutions/solve_05_bgv.py) |
 | 6 | [PRNG](writeups/06_PRNG.md) | `r3=0x2443c8daf1a9d52b09`; analytic telemetry, shifted `s3` scan, BMI2/ADX와 Hamburg native 경로 | [`Python`](solutions/solve_06_prng.py), [`native C++`](solutions/06_optimization/deep_native_06.cpp) |
-| 7 | [소인수분해](writeups/07_소인수분해.md) | RSA 인수와 `FLAG{...}` | [`solve_07_final.py`](solutions/solve_07_final.py) |
-| 8 | [블록암호](writeups/08_블록암호.md) | AES key `2923be84e16cd6ae529049f1f1bbe9eb` | [`solve_08_aes_key.py`](solutions/solve_08_aes_key.py) |
+| 7 | [소인수분해](writeups/07_소인수분해.md) | pinned FLATTER HM 복원, heuristic 경계와 RSA 인수·`FLAG{...}` 검증 | [`scan`](solutions/run_07_grouped_hm_scan.py), [`verify`](solutions/solve_07_final.py) |
+| 8 | [블록암호](writeups/08_블록암호.md) | leak-assisted key-byte constraint join과 50,000쌍 검증, key `2923be84e16cd6ae529049f1f1bbe9eb` | [`solve_08_aes_key.py`](solutions/solve_08_aes_key.py) |
 
 [제출 파일 색인](submissions/README.md)에는 문제별로 바로 제출하거나 패키징할 파일을 연결했다.
 
-1번의 네 짧은 분류 표본은 모두 단일 Caesar shift로 완전히 설명된다. 길이 1 Vigenère는 Caesar와 같은 함수이므로, 별도의 숨은 생성기 라벨은 암호문만으로 식별할 수 없다. 모델 결과와 이 식별 불가능성 증명은 1번 writeup에 함께 기록했다.
+1번의 네 짧은 분류 표본은 모두 단일 Caesar shift로 완전히 설명된다. 길이 1 Vigenère는 Caesar와 같은 함수이므로 숨은 생성기 label은 암호문만으로 식별할 수 없다. writeup과 제출 PDF에는 관측 결과 `Caesar-like` 4개와, 복원 key의 shift `6/10`을 근거로 한 출제 의도 추정 `Caesar, Vigenère, Vigenère, Caesar`를 함께 기록했다.
 
 ## 제외한 로컬 자료
 
