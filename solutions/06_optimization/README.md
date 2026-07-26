@@ -59,9 +59,10 @@ Before timing, the native self-test checks:
 - 128 real curve lifts comparing Hamburg and NAF affine x-coordinates.
 
 Every timed JSON result also reports the selected field backend, curve model,
-`d` multiplication, table width, scan label and output indices, threads,
-schedule, inverse, and square-root method. The benchmark rejects a mismatch
-instead of timing an accidentally inactive macro.
+`d` multiplication, lift residue test, table width/encoding, scan label and
+output indices, requested and actual threads, schedule, inverse, and
+square-root method. The solver rejects a smaller OpenMP team, and the benchmark
+rejects metadata mismatches instead of timing an accidentally inactive macro.
 
 ## Reproduce
 
@@ -113,9 +114,13 @@ python3 solutions/06_optimization/benchmark_06_promotion.py \
 ```
 
 The promotion protocol uses four chronological blocks, each with five AB and
-five BA pairs, 5,000 deterministic bootstrap resamples, both order strata, and
-an absolute/effect stationarity gate. It preserves the measured source beside
-the report as `/tmp/ch6-hamburg.json.source.cpp`.
+five BA pairs, 5,000 deterministic bootstrap resamples within the eight
+block-by-order strata, both order strata, and an absolute/effect stationarity
+gate. It rejects identical build/runtime configurations unless
+`--null-calibration` is explicit. All runners clear inherited OpenMP thread and
+affinity overrides, use the current affinity mask for `auto`, and record what
+was cleared. The measured source is preserved beside the report as
+`/tmp/ch6-hamburg.json.source.cpp`.
 
 ## Selection results
 

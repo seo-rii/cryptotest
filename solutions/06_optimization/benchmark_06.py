@@ -40,12 +40,46 @@ EXPECTED_SCANS = {
         "lift_low_bits": 15594,
     },
 }
+INHERITED_OPENMP_VARIABLES = (
+    "GOMP_CPU_AFFINITY",
+    "OMP_NUM_THREADS",
+    "OMP_SCHEDULE",
+    "OMP_THREAD_LIMIT",
+)
+OPENMP_ENVIRONMENT = {
+    "OMP_DYNAMIC": "FALSE",
+    "OMP_PROC_BIND": "SPREAD",
+    "OMP_PLACES": "THREADS",
+}
 
 
 @dataclass(frozen=True)
 class Contender:
     name: str
+    family: str
     command: tuple[str, ...]
+
+
+def benchmark_environment() -> tuple[dict[str, str], list[str]]:
+    environment = os.environ.copy()
+    removed = sorted(
+        key for key in INHERITED_OPENMP_VARIABLES if key in environment
+    )
+    for key in removed:
+        del environment[key]
+    environment.update(OPENMP_ENVIRONMENT)
+    return environment, removed
+
+
+def cpu_availability() -> tuple[int, list[int] | None, int]:
+    logical_cpus = os.cpu_count() or 1
+    affinity = (
+        sorted(os.sched_getaffinity(0))
+        if hasattr(os, "sched_getaffinity")
+        else None
+    )
+    available_cpus = len(affinity) if affinity is not None else logical_cpus
+    return logical_cpus, affinity, available_cpus
 
 
 def parse_integer(value: Any) -> int:
@@ -68,6 +102,7 @@ def parse_result(name: str, stdout: str) -> dict[str, Any]:
         result: dict[str, Any] = {
             "implementation": "baseline",
             "state_label": "s2",
+            "p_equals_dq": True,
         }
         for key, pattern in patterns.items():
             match = re.search(pattern, stdout)
@@ -80,7 +115,211 @@ def parse_result(name: str, stdout: str) -> dict[str, Any]:
         result = json.loads(stdout)
     except json.JSONDecodeError as error:
         raise RuntimeError(f"invalid JSON from {name}: {stdout!r}") from error
+    if not isinstance(result, dict):
+        raise RuntimeError(f"expected a JSON object from {name}, got {result!r}")
     return result
+
+
+def command_option(contender: Contender, option: str) -> str:
+    try:
+        index = contender.command.index(option)
+        return contender.command[index + 1]
+    except (ValueError, IndexError) as error:
+        raise RuntimeError(
+            f"{contender.name} command is missing {option}"
+        ) from error
+
+
+def validate_result(contender: Contender, result: dict[str, Any]) -> None:
+    observed = {key: parse_integer(result.get(key)) for key in EXPECTED}
+    if observed != EXPECTED:
+        raise RuntimeError(
+            f"{contender.name} failed known-answer validation: "
+            f"observed={observed}, expected={EXPECTED}"
+        )
+    state_label = result.get("state_label")
+    expected_label = "s3" if contender.family == "native" else "s2"
+    if state_label != expected_label:
+        raise RuntimeError(
+            f"{contender.name} returned invalid state label: "
+            f"{state_label!r} != {expected_label!r}"
+        )
+    expected_scan = EXPECTED_SCANS[expected_label]
+    if parse_integer(result.get("state")) != expected_scan["state"]:
+        raise RuntimeError(f"{contender.name} returned the wrong scan state")
+
+    if contender.family == "baseline":
+        if result.get("p_equals_dq") is not True:
+            raise RuntimeError(f"{contender.name} failed P = dQ validation")
+        return
+
+    if parse_integer(result.get("lift_low_bits")) != expected_scan["lift_low_bits"]:
+        raise RuntimeError(f"{contender.name} returned the wrong lift bits")
+
+    if contender.family == "python":
+        match = re.fullmatch(
+            r"python-(int|gmpy2)(?:-(analytic|recurrence))?",
+            contender.name,
+        )
+        if match is None:
+            raise RuntimeError(f"invalid Python contender name: {contender.name}")
+        backend = match.group(1)
+        strategy = match.group(2) or "analytic"
+        if result.get("implementation") != f"python-{backend}-{strategy}":
+            raise RuntimeError(
+                f"{contender.name} returned the wrong implementation metadata"
+            )
+        if result.get("backdoor_relation") != "P = dQ":
+            raise RuntimeError(f"{contender.name} failed P = dQ validation")
+        required_stages = (
+            "telemetry_seconds",
+            "state_seconds",
+            "total_seconds",
+        )
+    elif contender.family == "gmp":
+        threads = int(command_option(contender, "--threads"))
+        strategy = command_option(contender, "--telemetry")
+        required = {
+            "implementation": f"cpp-gmp-omp-{threads}-{strategy}",
+            "p_equals_dq": True,
+            "threads": threads,
+            "threads_actual": threads,
+            "telemetry_strategy": strategy,
+            "lift_residue_test": "sqrt",
+        }
+        for key, expected in required.items():
+            observed_metadata = result.get(key)
+            if (
+                (
+                    isinstance(expected, bool)
+                    and not isinstance(observed_metadata, bool)
+                )
+                or (
+                    isinstance(expected, int)
+                    and not isinstance(expected, bool)
+                    and (
+                        isinstance(observed_metadata, bool)
+                        or not isinstance(observed_metadata, int)
+                    )
+                )
+                or observed_metadata != expected
+            ):
+                raise RuntimeError(
+                    f"{contender.name} metadata mismatch for {key}: "
+                    f"{observed_metadata!r} != {expected!r}"
+                )
+        required_stages = (
+            "telemetry_seconds",
+            "state_seconds",
+            "total_seconds",
+        )
+    elif contender.family == "native":
+        threads = int(command_option(contender, "--threads"))
+        schedule = command_option(contender, "--schedule")
+        effective_schedule = (
+            "block"
+            if schedule == "adaptive" and threads == 1
+            else ("scalar" if schedule == "adaptive" else schedule)
+        )
+        required = {
+            "implementation": (
+                "cpp-native-montgomery-binary-window4-"
+                f"{effective_schedule}-{threads}"
+            ),
+            "p_equals_dq": True,
+            "threads": threads,
+            "threads_actual": threads,
+            "schedule_requested": schedule,
+            "schedule_effective": effective_schedule,
+            "block_size": int(command_option(contender, "--block-size")),
+            "inverse_method": command_option(contender, "--inverse"),
+            "sqrt_method": command_option(contender, "--sqrt"),
+            "telemetry_strategy": "analytic",
+            "scan_curve_model": "isomorphic-a-minus-3",
+            "d_multiplication": "hamburg-co-z",
+            "lift_residue_test": "sqrt",
+            "fixed_window_bits": 8,
+            "fixed_digit_encoding": "unsigned",
+            "lift_output_index": 1,
+            "filter_output_index": 2,
+        }
+        for key, expected in required.items():
+            observed_metadata = result.get(key)
+            if (
+                (
+                    isinstance(expected, bool)
+                    and not isinstance(observed_metadata, bool)
+                )
+                or (
+                    isinstance(expected, int)
+                    and not isinstance(expected, bool)
+                    and (
+                        isinstance(observed_metadata, bool)
+                        or not isinstance(observed_metadata, int)
+                    )
+                )
+                or observed_metadata != expected
+            ):
+                raise RuntimeError(
+                    f"{contender.name} metadata mismatch for {key}: "
+                    f"{observed_metadata!r} != {expected!r}"
+                )
+        if result.get("field_backend") not in {
+            "bmi2-adx",
+            "portable-u128-unrolled",
+        }:
+            raise RuntimeError(
+                f"{contender.name} returned an invalid field backend"
+            )
+        candidates_started = result.get("candidates_started")
+        if (
+            isinstance(candidates_started, bool)
+            or not isinstance(candidates_started, int)
+            or candidates_started < expected_scan["lift_low_bits"] + 1
+            or candidates_started > (1 << 16)
+        ):
+            raise RuntimeError(
+                f"{contender.name} returned invalid candidates_started: "
+                f"{candidates_started!r}"
+            )
+        required_stages = (
+            "telemetry_seconds",
+            "precompute_seconds",
+            "scan_seconds",
+            "state_seconds",
+            "total_seconds",
+        )
+    else:
+        raise RuntimeError(f"unknown contender family: {contender.family}")
+
+    for key in required_stages:
+        value = result.get(key)
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(float(value))
+            or float(value) < 0.0
+        ):
+            raise RuntimeError(
+                f"{contender.name} returned invalid {key}: {value!r}"
+            )
+    total = float(result["total_seconds"])
+    parts = float(result["telemetry_seconds"]) + float(result["state_seconds"])
+    if not math.isclose(total, parts, rel_tol=1e-5, abs_tol=1e-6):
+        raise RuntimeError(
+            f"{contender.name} internal total is inconsistent with stages"
+        )
+    if contender.family == "native":
+        state = float(result["state_seconds"])
+        state_parts = (
+            float(result["precompute_seconds"])
+            + float(result["scan_seconds"])
+        )
+        residual = state - state_parts
+        if residual < -1e-6 or residual > max(1e-3, state * 0.01):
+            raise RuntimeError(
+                f"{contender.name} internal state time is inconsistent with stages"
+            )
 
 
 def run_once(
@@ -102,28 +341,12 @@ def run_once(
             f"stdout:\n{process.stdout}\nstderr:\n{process.stderr}"
         )
     result = parse_result(contender.name, process.stdout)
-    observed = {key: parse_integer(result[key]) for key in EXPECTED}
-    if observed != EXPECTED:
-        raise RuntimeError(
-            f"{contender.name} failed known-answer validation: "
-            f"observed={observed}, expected={EXPECTED}"
-        )
-    state_label = result.get("state_label")
-    if state_label not in EXPECTED_SCANS:
-        raise RuntimeError(
-            f"{contender.name} returned invalid state label: {state_label!r}"
-        )
-    expected_scan = EXPECTED_SCANS[state_label]
-    if parse_integer(result.get("state")) != expected_scan["state"]:
-        raise RuntimeError(f"{contender.name} returned the wrong scan state")
+    validate_result(contender, result)
     if (
-        "lift_low_bits" in result
-        and parse_integer(result["lift_low_bits"])
-        != expected_scan["lift_low_bits"]
+        "total_seconds" in result
+        and elapsed + 1e-6 < float(result["total_seconds"])
     ):
-        raise RuntimeError(f"{contender.name} returned the wrong lift bits")
-    if "p_equals_dq" in result and result["p_equals_dq"] is not True:
-        raise RuntimeError(f"{contender.name} failed P = dQ validation")
+        raise RuntimeError(f"{contender.name} external time is below internal time")
     return elapsed, result
 
 
@@ -224,15 +447,52 @@ def main() -> None:
     args = parser.parse_args()
     if args.warmup < 1 or args.repetitions < 5:
         parser.error("warmup must be positive and repetitions must be at least 5")
+    if not math.isfinite(args.timeout) or args.timeout <= 0.0:
+        parser.error("timeout must be finite and positive")
 
     directory = Path(__file__).resolve().parent
     names = [name.strip() for name in args.implementations.split(",") if name.strip()]
     if not names or len(set(names)) != len(names):
         parser.error("implementations must be a nonempty list without duplicates")
+    logical_cpus, affinity, available_cpus = cpu_availability()
+    families: dict[str, str] = {}
+    resolved_threads: dict[str, int] = {}
+    for name in names:
+        thread_text: str | None = None
+        if name == "baseline":
+            families[name] = "baseline"
+        elif re.fullmatch(
+            r"python-(int|gmpy2)(?:-(analytic|recurrence))?", name
+        ):
+            families[name] = "python"
+        elif match := re.fullmatch(
+            r"cpp-(auto|[1-9][0-9]*)(?:-(analytic|recurrence))?", name
+        ):
+            families[name] = "gmp"
+            thread_text = match.group(1)
+        elif match := re.fullmatch(
+            r"native-(auto|[1-9][0-9]*)"
+            r"(?:-(adaptive|block|scalar|static))?",
+            name,
+        ):
+            families[name] = "native"
+            thread_text = match.group(1)
+        else:
+            parser.error(f"unknown implementation: {name}")
+        if thread_text is not None:
+            threads = (
+                available_cpus if thread_text == "auto" else int(thread_text)
+            )
+            if threads > available_cpus:
+                parser.error(
+                    f"thread count in {name} exceeds the {available_cpus} "
+                    "CPUs in the current affinity mask"
+                )
+            resolved_threads[name] = threads
 
     compiler = shutil.which(args.compiler)
-    needs_gmp = any(name.startswith("cpp-") for name in names)
-    needs_native = any(name.startswith("native-") for name in names)
+    needs_gmp = "gmp" in families.values()
+    needs_native = "native" in families.values()
     needs_cpp = needs_gmp or needs_native
     if needs_cpp and compiler is None:
         parser.error(f"compiler not found: {args.compiler}")
@@ -260,14 +520,7 @@ def main() -> None:
                 )
             )
 
-        environment = os.environ.copy()
-        environment.update(
-            {
-                "OMP_DYNAMIC": "FALSE",
-                "OMP_PROC_BIND": "SPREAD",
-                "OMP_PLACES": "THREADS",
-            }
-        )
+        environment, removed_openmp_variables = benchmark_environment()
         repository_root = directory.parents[1]
         git_commit: str | None = None
         git_dirty: bool | None = None
@@ -321,7 +574,6 @@ def main() -> None:
                 raise RuntimeError(f"unexpected native self-test result: {native_self_test}")
 
         contenders: list[Contender] = []
-        logical_cpus = os.cpu_count() or 1
         for name in names:
             if name == "baseline":
                 command = (sys.executable, str(directory / "solve_06_baseline.py"))
@@ -342,11 +594,8 @@ def main() -> None:
             elif match := re.fullmatch(
                 r"cpp-(auto|[1-9][0-9]*)(?:-(analytic|recurrence))?", name
             ):
-                thread_text = match.group(1)
                 strategy = match.group(2) or "analytic"
-                threads = logical_cpus if thread_text == "auto" else int(thread_text)
-                if threads < 1:
-                    parser.error(f"invalid thread count in {name}")
+                threads = resolved_threads[name]
                 command = (
                     str(gmp_binary),
                     "--threads",
@@ -360,9 +609,8 @@ def main() -> None:
                 r"(?:-(adaptive|block|scalar|static))?",
                 name,
             ):
-                thread_text = match.group(1)
                 schedule = match.group(2) or "adaptive"
-                threads = logical_cpus if thread_text == "auto" else int(thread_text)
+                threads = resolved_threads[name]
                 command = (
                     str(native_binary),
                     "--threads",
@@ -378,18 +626,19 @@ def main() -> None:
                     "--json",
                 )
             else:
-                parser.error(f"unknown implementation: {name}")
-            contenders.append(Contender(name, command))
+                raise AssertionError(f"unvalidated implementation: {name}")
+            contenders.append(Contender(name, families[name], command))
 
         print(
             f"environment: {cpu_model()}, logical_cpus={logical_cpus}, "
+            f"available_cpus={available_cpus}, affinity={affinity}, "
             f"Python {platform.python_version()}"
         )
         if compiler is not None and needs_cpp:
             print(f"compiler: {compiler_version(compiler)}")
         print(
             f"protocol: warmup={args.warmup}, repetitions={args.repetitions}, "
-            "balanced cyclic/reversed order, external wall clock, "
+            "cyclic/reversed interleaving, external wall clock, "
             "known-answer check every run",
             flush=True,
         )
@@ -421,6 +670,7 @@ def main() -> None:
             }
             for item in contenders
         }
+        metadata: dict[str, dict[str, Any]] = {}
         for repetition in range(args.repetitions):
             offset = repetition % len(contenders)
             measurement_order = contenders[offset:] + contenders[:offset]
@@ -432,6 +682,41 @@ def main() -> None:
                 for key in internal_samples[contender.name]:
                     if key in result:
                         internal_samples[contender.name][key].append(float(result[key]))
+                sample_metadata = {
+                    key: result[key]
+                    for key in (
+                        "implementation",
+                        "state_label",
+                        "lift_output_index",
+                        "filter_output_index",
+                        "field_backend",
+                        "scan_curve_model",
+                        "d_multiplication",
+                        "lift_residue_test",
+                        "fixed_window_bits",
+                        "fixed_digit_encoding",
+                        "schedule_requested",
+                        "schedule_effective",
+                        "block_size",
+                        "threads",
+                        "threads_actual",
+                        "inverse_method",
+                        "sqrt_method",
+                        "telemetry_strategy",
+                        "backdoor_relation",
+                        "p_equals_dq",
+                    )
+                    if key in result
+                }
+                previous_metadata = metadata.get(contender.name)
+                if (
+                    previous_metadata is not None
+                    and sample_metadata != previous_metadata
+                ):
+                    raise RuntimeError(
+                        f"{contender.name} metadata changed between samples"
+                    )
+                metadata[contender.name] = sample_metadata
                 print(
                     f"measure {repetition + 1}/{args.repetitions} {contender.name}: "
                     f"{elapsed:.6f}s [verified]",
@@ -492,7 +777,10 @@ def main() -> None:
             )
 
         if paired_comparisons:
-            print("\npaired speedup (same measurement round vs baseline)")
+            print(
+                "\nsame-repetition diagnostic speedup "
+                "(not adjacent pairs, vs baseline)"
+            )
             for name, comparison in paired_comparisons.items():
                 print(
                     f"{name:14s} median={comparison['median']:.2f}x, "
@@ -506,6 +794,8 @@ def main() -> None:
             "environment": {
                 "cpu": cpu_model(),
                 "logical_cpus": logical_cpus,
+                "available_cpus": available_cpus,
+                "affinity": affinity,
                 "platform": platform.platform(),
                 "python": platform.python_version(),
                 "compiler": compiler_version(compiler) if compiler and needs_cpp else None,
@@ -516,7 +806,11 @@ def main() -> None:
                 "warmup": args.warmup,
                 "repetitions": args.repetitions,
                 "clock": "time.perf_counter external wall time",
-                "ordering": "balanced cyclic rotations, then reversed rotations",
+                "ordering": "cyclic rotations, then reversed rotations",
+                "comparison_scope": (
+                    "broad screening; repetition-index ratios are not "
+                    "adjacent AB/BA pairs"
+                ),
                 "validation": {key: hex(value) for key, value in EXPECTED.items()},
                 "cpp_build_commands": build_commands,
                 "native_self_test": native_self_test,
@@ -524,10 +818,16 @@ def main() -> None:
                     key: environment[key]
                     for key in ("OMP_DYNAMIC", "OMP_PROC_BIND", "OMP_PLACES")
                 },
+                "removed_inherited_openmp_variables": (
+                    removed_openmp_variables
+                ),
             },
+            "metadata": metadata,
             "raw_seconds": samples,
             "summary": summaries,
-            "paired_speedup_vs_baseline": paired_comparisons,
+            "diagnostic_same_repetition_speedup_vs_baseline": (
+                paired_comparisons
+            ),
             "internal_stage_summary": internal_summaries,
         }
         if args.output:

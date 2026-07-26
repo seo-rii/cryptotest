@@ -114,6 +114,8 @@ constexpr std::string_view D_MULTIPLICATION = "hamburg-co-z";
 constexpr std::string_view D_MULTIPLICATION = "width-2-naf";
 #endif
 
+constexpr std::string_view LIFT_RESIDUE_TEST = "sqrt";
+
 #if !defined(CH6_FIXED_WINDOW_BITS)
 #define CH6_FIXED_WINDOW_BITS 8
 #endif
@@ -122,6 +124,7 @@ constexpr std::size_t FIXED_WINDOW_BITS = CH6_FIXED_WINDOW_BITS;
 constexpr std::size_t FIXED_TABLE_ROWS =
     (88U + FIXED_WINDOW_BITS - 1U) / FIXED_WINDOW_BITS;
 constexpr std::size_t FIXED_TABLE_ENTRIES = 1U << FIXED_WINDOW_BITS;
+constexpr std::string_view FIXED_DIGIT_ENCODING = "unsigned";
 constexpr std::size_t FIXED_NORMALIZE_CAPACITY =
     std::max(FIXED_TABLE_ROWS, FIXED_TABLE_ENTRIES);
 static_assert(FIXED_WINDOW_BITS >= 4 && FIXED_WINDOW_BITS <= 11);
@@ -1468,6 +1471,18 @@ struct Prediction {
     std::uint64_t candidates_started = 0;
 };
 
+int probe_openmp_team_size(int requested_threads) {
+    omp_set_dynamic(0);
+    omp_set_num_threads(requested_threads);
+    int actual_threads = 0;
+#pragma omp parallel shared(actual_threads)
+    {
+#pragma omp single
+        actual_threads = omp_get_num_threads();
+    }
+    return actual_threads;
+}
+
 struct CandidateContext {
     U128 d;
     const NafDigits& d_digits;
@@ -1943,6 +1958,12 @@ int main(int argc, char** argv) {
     const std::string effective_schedule = schedule == "adaptive"
         ? (threads == 1 ? "block" : "scalar")
         : schedule;
+    const int actual_threads = probe_openmp_team_size(threads);
+    if (actual_threads != threads) {
+        std::cerr << "OpenMP created " << actual_threads
+                  << " threads, but " << threads << " were requested\n";
+        return 2;
+    }
 
     try {
         if (self_test) {
@@ -1991,6 +2012,7 @@ int main(int argc, char** argv) {
                       << ",\"field_backend\":\"" << FIELD_BACKEND
                       << "\",\"scan_curve_model\":\"" << SCAN_CURVE_MODEL
                       << "\",\"d_multiplication\":\"" << D_MULTIPLICATION
+                      << "\",\"lift_residue_test\":\"" << LIFT_RESIDUE_TEST
                       << "\",\"r3\":\""
                       << hex(prediction.r3)
                       << "\",\"lift_low_bits\":" << prediction.low_bits
@@ -1998,6 +2020,7 @@ int main(int argc, char** argv) {
                       << "\",\"schedule_effective\":\"" << effective_schedule
                       << "\",\"block_size\":" << block_size
                       << ",\"threads\":" << threads
+                      << ",\"threads_actual\":" << actual_threads
                       << ",\"inverse_method\":\"" << inverse_name
                       << "\",\"sqrt_method\":\"" << sqrt_name
                       << "\",\"telemetry_strategy\":\"analytic\""
@@ -2006,6 +2029,8 @@ int main(int argc, char** argv) {
                       << ",\"jacobian_bytes\":" << sizeof(JacobianPoint)
                       << ",\"fixed_table_bytes\":" << sizeof(FixedTable)
                       << ",\"fixed_window_bits\":" << FIXED_WINDOW_BITS
+                      << ",\"fixed_digit_encoding\":\""
+                      << FIXED_DIGIT_ENCODING << '"'
                       << ",\"candidates_started\":"
                       << prediction.candidates_started
                       << ",\"telemetry_seconds\":" << std::setprecision(12)
@@ -2016,6 +2041,7 @@ int main(int argc, char** argv) {
                       << ",\"total_seconds\":" << total_seconds << "}\n";
         } else {
             std::cout << "threads = " << threads << '\n'
+                      << "threads actual = " << actual_threads << '\n'
                       << "schedule requested = " << schedule << '\n'
                       << "schedule effective = " << effective_schedule << '\n'
                       << "inverse = " << inverse_name << '\n'
@@ -2023,6 +2049,7 @@ int main(int argc, char** argv) {
                       << "field backend = " << FIELD_BACKEND << '\n'
                       << "scan curve = " << SCAN_CURVE_MODEL << '\n'
                       << "d multiplication = " << D_MULTIPLICATION << '\n'
+                      << "lift residue test = " << LIFT_RESIDUE_TEST << '\n'
                       << "backdoor scalar d = " << hex(d) << '\n'
                       << "P == d*Q: True\n"
                       << "recovered state " << SCAN_STATE_LABEL << " = "

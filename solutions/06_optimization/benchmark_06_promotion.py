@@ -51,11 +51,19 @@ BOOTSTRAP_RESAMPLES = 5_000
 BLOCK_COUNT = 4
 MAX_ABSOLUTE_BLOCK_SPREAD = 0.05
 MAX_EFFECT_BLOCK_SPREAD = 0.02
+INTERFERING_OPENMP_ENV = (
+    "GOMP_CPU_AFFINITY",
+    "OMP_NUM_THREADS",
+    "OMP_SCHEDULE",
+    "OMP_THREAD_LIMIT",
+)
 CONFIGURATION_KEYS = (
     "field_backend",
     "scan_curve_model",
     "d_multiplication",
+    "lift_residue_test",
     "fixed_window_bits",
+    "fixed_digit_encoding",
     "inverse_method",
     "sqrt_method",
     "telemetry_strategy",
@@ -95,8 +103,21 @@ def expected_configuration(
             if "CH6_NAF_D_MULTIPLICATION" in defines
             else "hamburg-co-z"
         ),
+        "lift_residue_test": (
+            "binary-jacobi-deferred-sqrt"
+            if (
+                "CH6_BINARY_JACOBI_LIFT" in defines
+                and "CH6_NAF_D_MULTIPLICATION" not in defines
+            )
+            else "sqrt"
+        ),
         "fixed_window_bits": int(
             defines.get("CH6_FIXED_WINDOW_BITS") or "8", 0
+        ),
+        "fixed_digit_encoding": (
+            "balanced-signed"
+            if "CH6_SIGNED_FIXED_TABLE" in defines
+            else "unsigned"
         ),
     }
     if "CH6_GENERIC_MONTGOMERY" in defines:
@@ -140,6 +161,34 @@ def bootstrap_median_ci(
         for _ in range(BOOTSTRAP_RESAMPLES)
     )
     return samples[124], samples[4_874]
+
+
+def stratified_bootstrap_median_ci(
+    values: list[float], orders: list[str], seed: int
+) -> tuple[float, float]:
+    if len(values) != len(orders) or len(values) % BLOCK_COUNT:
+        raise RuntimeError("invalid samples for block/order-stratified bootstrap")
+    block_size = len(values) // BLOCK_COUNT
+    strata: dict[tuple[int, str], list[float]] = {}
+    for index, (value, order) in enumerate(zip(values, orders, strict=True)):
+        strata.setdefault((index // block_size, order), []).append(value)
+    expected_size = block_size // 2
+    if (
+        len(strata) != BLOCK_COUNT * 2
+        or any(len(items) != expected_size for items in strata.values())
+    ):
+        raise RuntimeError("pair schedule does not balance order within each block")
+    generator = random.Random(seed)
+    medians: list[float] = []
+    for _ in range(BOOTSTRAP_RESAMPLES):
+        sample = [
+            value
+            for items in strata.values()
+            for value in generator.choices(items, k=len(items))
+        ]
+        medians.append(statistics.median(sample))
+    medians.sort()
+    return medians[124], medians[4_874]
 
 
 def summarize(values: list[float], seed: int) -> dict[str, float | int]:
@@ -282,6 +331,10 @@ def validate_result(
         raise RuntimeError(
             f"{variant.label} returned invalid JSON: {stdout!r}"
         ) from error
+    if not isinstance(result, dict):
+        raise RuntimeError(
+            f"{variant.label} returned a non-object JSON result: {result!r}"
+        )
     observed = {key: parse_integer(result.get(key)) for key in EXPECTED}
     if observed != EXPECTED:
         raise RuntimeError(
@@ -295,10 +348,25 @@ def validate_result(
         )
     configuration = expected_configuration(variant, native_bmi2_adx)
     for key, expected in configuration.items():
-        if result.get(key) != expected:
+        observed_value = result.get(key)
+        if (
+            (
+                isinstance(expected, bool)
+                and not isinstance(observed_value, bool)
+            )
+            or (
+                isinstance(expected, int)
+                and not isinstance(expected, bool)
+                and (
+                    isinstance(observed_value, bool)
+                    or not isinstance(observed_value, int)
+                )
+            )
+            or observed_value != expected
+        ):
             raise RuntimeError(
                 f"{variant.label} configuration mismatch for {key}: "
-                f"{result.get(key)!r} != {expected!r}"
+                f"{observed_value!r} != {expected!r}"
             )
     expected_scan = EXPECTED_SCANS[state_label]
     for key, expected in expected_scan.items():
@@ -311,6 +379,7 @@ def validate_result(
     required = {
         "p_equals_dq": True,
         "threads": threads,
+        "threads_actual": threads,
         "schedule_requested": "adaptive",
         "schedule_effective": "block" if threads == 1 else "scalar",
         "block_size": block_size,
@@ -319,10 +388,25 @@ def validate_result(
         "telemetry_strategy": "analytic",
     }
     for key, expected in required.items():
-        if result.get(key) != expected:
+        observed_value = result.get(key)
+        if (
+            (
+                isinstance(expected, bool)
+                and not isinstance(observed_value, bool)
+            )
+            or (
+                isinstance(expected, int)
+                and not isinstance(expected, bool)
+                and (
+                    isinstance(observed_value, bool)
+                    or not isinstance(observed_value, int)
+                )
+            )
+            or observed_value != expected
+        ):
             raise RuntimeError(
                 f"{variant.label} metadata mismatch for {key}: "
-                f"{result.get(key)!r} != {expected!r}"
+                f"{observed_value!r} != {expected!r}"
             )
     for key in (
         "telemetry_seconds",
@@ -518,6 +602,11 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0x06C0FFEE)
     parser.add_argument("--timeout", type=float, default=60.0)
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--null-calibration",
+        action="store_true",
+        help="allow an intentionally identical A/A pair to calibrate the protocol",
+    )
     args = parser.parse_args()
 
     directory = Path(__file__).resolve().parent
@@ -551,6 +640,15 @@ def main() -> None:
         parser.error("threads must be positive and block size must be in 1..256")
     if args.warmup_pairs < 1:
         parser.error("warmup pairs must be positive")
+    if (
+        tuple(args.baseline_define) == tuple(args.candidate_define)
+        and block_sizes["A"] == block_sizes["B"]
+        and not args.null_calibration
+    ):
+        parser.error(
+            "baseline and candidate have the same effective build/runtime "
+            "configuration; use --null-calibration for an intentional A/A run"
+        )
     try:
         orders = pair_orders(args.pairs, args.seed)
     except ValueError as error:
@@ -574,6 +672,11 @@ def main() -> None:
         parser.error("chosen CPU count must equal the OpenMP thread count")
 
     environment = os.environ.copy()
+    cleared_openmp = {
+        key: environment.pop(key)
+        for key in INTERFERING_OPENMP_ENV
+        if key in environment
+    }
     environment.update(
         {
             "OMP_DYNAMIC": "FALSE",
@@ -635,12 +738,12 @@ def main() -> None:
         }
         binary_hashes = {key: sha256(item.binary) for key, item in variants.items()}
         if (
-            baseline.defines != candidate.defines
-            and block_sizes["A"] == block_sizes["B"]
+            block_sizes["A"] == block_sizes["B"]
             and binary_hashes["A"] == binary_hashes["B"]
+            and not args.null_calibration
         ):
             raise RuntimeError(
-                "different compile-time variants produced identical binaries; "
+                "baseline and candidate produced identical binaries; "
                 "the requested ablation is not active"
             )
 
@@ -762,6 +865,11 @@ def main() -> None:
         baseline_summary = summarize(baseline_times, args.seed + 1)
         candidate_summary = summarize(candidate_times, args.seed + 2)
         ratio_summary = summarize(ratios, args.seed + 3)
+        stratified_low, stratified_high = stratified_bootstrap_median_ci(
+            ratios, orders, args.seed + 3
+        )
+        ratio_summary["bootstrap_median_ci95_low"] = stratified_low
+        ratio_summary["bootstrap_median_ci95_high"] = stratified_high
         order_summaries = {
             order: summarize(values, args.seed + 10 + index)
             for index, (order, values) in enumerate(sorted(strata.items()))
@@ -788,7 +896,7 @@ def main() -> None:
             "reasons": promotion_reasons,
         }
         report = {
-            "schema": 1,
+            "schema": 2,
             "environment": {
                 "platform": platform.platform(),
                 "python": platform.python_version(),
@@ -805,6 +913,7 @@ def main() -> None:
                     key: environment[key]
                     for key in ("OMP_DYNAMIC", "OMP_PROC_BIND", "OMP_PLACES")
                 },
+                "cleared_inherited_openmp": cleared_openmp,
             },
             "build": {
                 "source": str(source),
@@ -828,6 +937,9 @@ def main() -> None:
                 "adjacent_pairs": True,
                 "build_and_self_test_excluded": True,
                 "bootstrap_resamples": BOOTSTRAP_RESAMPLES,
+                "paired_bootstrap": (
+                    "resample-within-four-block-by-order-strata"
+                ),
                 "threads": args.threads,
                 "block_sizes": block_sizes,
             },

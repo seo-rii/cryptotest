@@ -420,6 +420,18 @@ struct Prediction {
     int low_bits;
 };
 
+int probe_openmp_team_size(int requested_threads) {
+    omp_set_dynamic(0);
+    omp_set_num_threads(requested_threads);
+    int actual_threads = 0;
+#pragma omp parallel shared(actual_threads)
+    {
+#pragma omp single
+        actual_threads = omp_get_num_threads();
+    }
+    return actual_threads;
+}
+
 Prediction recover_state(const Z& d, int threads) {
     const FixedTable q_table = build_fixed_table(point_q());
     const std::vector<int> d_digits = wnaf(d);
@@ -503,6 +515,12 @@ int main(int argc, char** argv) {
         std::cerr << "telemetry strategy must be analytic or recurrence\n";
         return 2;
     }
+    const int actual_threads = probe_openmp_team_size(threads);
+    if (actual_threads != threads) {
+        std::cerr << "OpenMP created " << actual_threads
+                  << " threads, but " << threads << " were requested\n";
+        return 2;
+    }
 
     try {
         const auto started = std::chrono::steady_clock::now();
@@ -539,6 +557,8 @@ int main(int argc, char** argv) {
                       << "\",\"state_label\":\"s2\",\"r3\":\""
                       << hex(prediction.r3) << "\",\"lift_low_bits\":" << prediction.low_bits
                       << ",\"p_equals_dq\":true,\"threads\":" << threads
+                      << ",\"threads_actual\":" << actual_threads
+                      << ",\"lift_residue_test\":\"sqrt\""
                       << ",\"telemetry_strategy\":\"" << telemetry_strategy << '"'
                       << ",\"telemetry_seconds\":" << std::setprecision(12)
                       << telemetry_time.count() << ",\"state_seconds\":"
@@ -546,6 +566,7 @@ int main(int argc, char** argv) {
                       << "}\n";
         } else {
             std::cout << "threads = " << threads << '\n'
+                      << "threads actual = " << actual_threads << '\n'
                       << "backdoor scalar d = " << hex(d) << '\n'
                       << "recovered state s2 = " << hex(prediction.state_s2) << '\n'
                       << "predicted r3 = " << hex(prediction.r3) << '\n'

@@ -45,6 +45,17 @@ EXPECTED_SCANS = {
         "filter_output_index": 2,
     },
 }
+INHERITED_OPENMP_VARIABLES = (
+    "GOMP_CPU_AFFINITY",
+    "OMP_NUM_THREADS",
+    "OMP_SCHEDULE",
+    "OMP_THREAD_LIMIT",
+)
+OPENMP_ENVIRONMENT = {
+    "OMP_DYNAMIC": "FALSE",
+    "OMP_PROC_BIND": "SPREAD",
+    "OMP_PLACES": "THREADS",
+}
 
 
 @dataclass(frozen=True)
@@ -53,6 +64,28 @@ class Contender:
     family: str
     threads: int
     command: tuple[str, ...]
+
+
+def benchmark_environment() -> tuple[dict[str, str], list[str]]:
+    environment = os.environ.copy()
+    removed = sorted(
+        key for key in INHERITED_OPENMP_VARIABLES if key in environment
+    )
+    for key in removed:
+        del environment[key]
+    environment.update(OPENMP_ENVIRONMENT)
+    return environment, removed
+
+
+def cpu_availability() -> tuple[int, list[int] | None, int]:
+    logical_cpus = os.cpu_count() or 1
+    affinity = (
+        sorted(os.sched_getaffinity(0))
+        if hasattr(os, "sched_getaffinity")
+        else None
+    )
+    available_cpus = len(affinity) if affinity is not None else logical_cpus
+    return logical_cpus, affinity, available_cpus
 
 
 def cpu_model() -> str:
@@ -155,16 +188,22 @@ def validate_result(contender: Contender, stdout: str) -> dict[str, Any]:
         raise RuntimeError(
             f"{contender.name} returned invalid JSON: {stdout!r}"
         ) from error
-    observed = {key: parse_integer(result[key]) for key in EXPECTED}
+    if not isinstance(result, dict):
+        raise RuntimeError(
+            f"{contender.name} returned a non-object JSON result: {result!r}"
+        )
+    observed = {key: parse_integer(result.get(key)) for key in EXPECTED}
     if observed != EXPECTED:
         raise RuntimeError(
             f"{contender.name} known-answer mismatch: "
             f"observed={observed}, expected={EXPECTED}"
         )
     state_label = result.get("state_label")
-    if state_label not in EXPECTED_SCANS:
+    expected_label = "s2" if contender.family == "gmp" else "s3"
+    if state_label != expected_label:
         raise RuntimeError(
-            f"{contender.name} returned invalid state label: {state_label!r}"
+            f"{contender.name} returned invalid state label: "
+            f"{state_label!r} != {expected_label!r}"
         )
     expected_scan = EXPECTED_SCANS[state_label]
     for key in ("state", "lift_low_bits"):
@@ -174,32 +213,45 @@ def validate_result(contender: Contender, stdout: str) -> dict[str, Any]:
                 f"{contender.name} scan mismatch for {key}: "
                 f"{observed_value:#x} != {expected_scan[key]:#x}"
             )
-    for key in ("lift_output_index", "filter_output_index"):
-        if key in result and parse_integer(result[key]) != expected_scan[key]:
-            raise RuntimeError(f"{contender.name} scan metadata mismatch for {key}")
+    if contender.family != "gmp":
+        for key in ("lift_output_index", "filter_output_index"):
+            observed_index = result.get(key)
+            if (
+                isinstance(observed_index, bool)
+                or not isinstance(observed_index, int)
+                or observed_index != expected_scan[key]
+            ):
+                raise RuntimeError(
+                    f"{contender.name} scan metadata mismatch for {key}"
+                )
     if result.get("p_equals_dq") is not True:
         raise RuntimeError(f"{contender.name} failed P=dQ validation")
     expected_threads = contender.threads
-    if parse_integer(result.get("threads")) != expected_threads:
-        raise RuntimeError(f"{contender.name} returned the wrong thread count")
-    if contender.family == "gmp":
+    for key in ("threads", "threads_actual"):
+        observed_threads = result.get(key)
         if (
-            result.get("telemetry_strategy")
-            != command_option(contender, "--telemetry")
+            isinstance(observed_threads, bool)
+            or not isinstance(observed_threads, int)
+            or observed_threads != expected_threads
         ):
             raise RuntimeError(
-                f"{contender.name} returned the wrong telemetry strategy"
+                f"{contender.name} returned the wrong thread count for {key}"
             )
-    else:
+    if contender.family == "gmp":
+        strategy = command_option(contender, "--telemetry")
         expected_metadata: dict[str, Any] = {
-            "schedule_requested": command_option(contender, "--schedule"),
-            "block_size": int(command_option(contender, "--block-size")),
-            "inverse_method": command_option(contender, "--inverse"),
-            "sqrt_method": command_option(contender, "--sqrt"),
-            "telemetry_strategy": "analytic",
+            "implementation": f"cpp-gmp-omp-{expected_threads}-{strategy}",
+            "telemetry_strategy": strategy,
+            "lift_residue_test": "sqrt",
         }
-        requested_schedule = str(expected_metadata["schedule_requested"])
-        expected_metadata["schedule_effective"] = (
+        required_stages = (
+            "telemetry_seconds",
+            "state_seconds",
+            "total_seconds",
+        )
+    else:
+        requested_schedule = command_option(contender, "--schedule")
+        effective_schedule = (
             "block"
             if requested_schedule == "adaptive" and expected_threads == 1
             else (
@@ -208,12 +260,95 @@ def validate_result(contender: Contender, stdout: str) -> dict[str, Any]:
                 else requested_schedule
             )
         )
-        for key, expected in expected_metadata.items():
-            if result.get(key) != expected:
-                raise RuntimeError(
-                    f"{contender.name} metadata mismatch for {key}: "
-                    f"{result.get(key)!r} != {expected!r}"
+        expected_metadata = {
+            "implementation": (
+                f"cpp-native-montgomery-"
+                f"{command_option(contender, '--inverse')}-"
+                f"{command_option(contender, '--sqrt')}-"
+                f"{effective_schedule}-{expected_threads}"
+            ),
+            "schedule_requested": command_option(contender, "--schedule"),
+            "schedule_effective": effective_schedule,
+            "block_size": int(command_option(contender, "--block-size")),
+            "inverse_method": command_option(contender, "--inverse"),
+            "sqrt_method": command_option(contender, "--sqrt"),
+            "telemetry_strategy": "analytic",
+            "scan_curve_model": "isomorphic-a-minus-3",
+            "d_multiplication": "hamburg-co-z",
+            "lift_residue_test": "sqrt",
+            "fixed_window_bits": 8,
+            "fixed_digit_encoding": "unsigned",
+        }
+        if result.get("field_backend") not in {
+            "bmi2-adx",
+            "portable-u128-unrolled",
+        }:
+            raise RuntimeError(
+                f"{contender.name} returned an invalid field backend"
+            )
+        candidates_started = result.get("candidates_started")
+        if (
+            isinstance(candidates_started, bool)
+            or not isinstance(candidates_started, int)
+            or candidates_started < int(expected_scan["lift_low_bits"]) + 1
+            or candidates_started > (1 << 16)
+        ):
+            raise RuntimeError(
+                f"{contender.name} returned invalid candidates_started: "
+                f"{candidates_started!r}"
+            )
+        required_stages = (
+            "telemetry_seconds",
+            "precompute_seconds",
+            "scan_seconds",
+            "state_seconds",
+            "total_seconds",
+        )
+    for key, expected in expected_metadata.items():
+        observed_metadata = result.get(key)
+        if (
+            (
+                isinstance(expected, int)
+                and not isinstance(expected, bool)
+                and (
+                    isinstance(observed_metadata, bool)
+                    or not isinstance(observed_metadata, int)
                 )
+            )
+            or observed_metadata != expected
+        ):
+            raise RuntimeError(
+                f"{contender.name} metadata mismatch for {key}: "
+                f"{observed_metadata!r} != {expected!r}"
+            )
+    for key in required_stages:
+        value = result.get(key)
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(float(value))
+            or float(value) < 0.0
+        ):
+            raise RuntimeError(
+                f"{contender.name} returned invalid {key}: {value!r}"
+            )
+    total = float(result["total_seconds"])
+    parts = float(result["telemetry_seconds"]) + float(result["state_seconds"])
+    if not math.isclose(total, parts, rel_tol=1e-5, abs_tol=1e-6):
+        raise RuntimeError(
+            f"{contender.name} internal total is inconsistent with stages"
+        )
+    if contender.family != "gmp":
+        state_seconds = float(result["state_seconds"])
+        state_parts = (
+            float(result["precompute_seconds"])
+            + float(result["scan_seconds"])
+        )
+        residual = state_seconds - state_parts
+        if residual < -1e-6 or residual > max(1e-3, state_seconds * 0.01):
+            raise RuntimeError(
+                f"{contender.name} internal state time is inconsistent with stages"
+            )
     return result
 
 
@@ -235,7 +370,13 @@ def run_once(
             f"{contender.name} exited {process.returncode}:\n"
             f"stdout:\n{process.stdout}\nstderr:\n{process.stderr}"
         )
-    return elapsed, validate_result(contender, process.stdout)
+    result = validate_result(contender, process.stdout)
+    if (
+        "total_seconds" in result
+        and elapsed + 1e-6 < float(result["total_seconds"])
+    ):
+        raise RuntimeError(f"{contender.name} external time is below internal time")
+    return elapsed, result
 
 
 def percentile(ordered: list[float], fraction: float) -> float:
@@ -314,6 +455,8 @@ def main() -> None:
 
     if args.warmup < 1 or args.repetitions < 5:
         parser.error("warmup must be positive and repetitions must be at least 5")
+    if not math.isfinite(args.timeout) or args.timeout <= 0.0:
+        parser.error("timeout must be finite and positive")
     if not 1 <= args.block_size <= 256:
         parser.error("block size must be in 1..256")
     try:
@@ -366,11 +509,12 @@ def main() -> None:
         "gmp": hashlib.sha256(gmp_source.read_bytes()).hexdigest(),
         "runner": hashlib.sha256(runner_path.read_bytes()).hexdigest(),
     }
-    affinity = (
-        sorted(os.sched_getaffinity(0))
-        if hasattr(os, "sched_getaffinity")
-        else None
-    )
+    logical_cpus, affinity, available_cpus = cpu_availability()
+    if any(threads > available_cpus for threads in thread_counts):
+        parser.error(
+            f"requested thread count exceeds the {available_cpus} CPUs in the "
+            "current affinity mask"
+        )
     git_commit: str | None = None
     git_dirty: bool | None = None
     git_executable = shutil.which("git")
@@ -393,14 +537,7 @@ def main() -> None:
             git_commit = commit_process.stdout.strip()
         if status_process.returncode == 0:
             git_dirty = bool(status_process.stdout)
-    environment = os.environ.copy()
-    environment.update(
-        {
-            "OMP_DYNAMIC": "FALSE",
-            "OMP_PROC_BIND": "SPREAD",
-            "OMP_PLACES": "THREADS",
-        }
-    )
+    environment, removed_openmp_variables = benchmark_environment()
 
     with tempfile.TemporaryDirectory(prefix="deep-bench06-") as temporary_text:
         temporary = Path(temporary_text)
@@ -495,7 +632,8 @@ def main() -> None:
                         )
 
         print(
-            f"environment: {cpu_model()}, logical_cpus={os.cpu_count() or 1}, "
+            f"environment: {cpu_model()}, logical_cpus={logical_cpus}, "
+            f"available_cpus={available_cpus}, affinity={affinity}, "
             f"Python {platform.python_version()}"
         )
         print(f"compiler: {compiler_version(compiler)}")
@@ -562,9 +700,12 @@ def main() -> None:
                         "schedule_effective",
                         "block_size",
                         "threads",
+                        "threads_actual",
                         "inverse_method",
                         "sqrt_method",
                         "telemetry_strategy",
+                        "lift_residue_test",
+                        "fixed_digit_encoding",
                     )
                     if key in result
                 }
@@ -649,7 +790,8 @@ def main() -> None:
             "schema": 1,
             "environment": {
                 "cpu": cpu_model(),
-                "logical_cpus": os.cpu_count() or 1,
+                "logical_cpus": logical_cpus,
+                "available_cpus": available_cpus,
                 "affinity": affinity,
                 "platform": platform.platform(),
                 "python": platform.python_version(),
@@ -660,6 +802,9 @@ def main() -> None:
                     key: environment[key]
                     for key in ("OMP_DYNAMIC", "OMP_PROC_BIND", "OMP_PLACES")
                 },
+                "removed_inherited_openmp_variables": (
+                    removed_openmp_variables
+                ),
             },
             "protocol": {
                 "warmup": args.warmup,

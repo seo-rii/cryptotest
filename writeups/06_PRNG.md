@@ -535,9 +535,12 @@ multi-buffer 구현을 다시 비교할 수 있다.
   경계 pair 64개, point/scalar/table 256개, 실제 lift Hamburg/NAF 128개를
   독립 canonical U128 및 affine reference와 대조한다.
 - promotion runner는 field backend, curve model, `d` multiplication,
-  table width, scan output index, thread/schedule/inverse/sqrt metadata가
-  요청한 후보와 일치하는지 검사한다. 서로 다른 compile-time 후보가 같은
-  binary hash를 만들면 inactive ablation으로 거부한다.
+  lift residue 판정, table 폭/부호 encoding, scan output index,
+  thread/schedule/inverse/sqrt metadata가 요청한 후보와 일치하는지 검사한다.
+  solver는 실제 생성된 OpenMP team 크기를 `threads_actual`로 보고하고,
+  요청값과 다르면 timing 전에 종료한다. 서로 다른 compile-time 후보가
+  같은 binary hash를 만들거나 build/runtime 설정이 같은 A/A 비교도
+  명시적인 null calibration이 아니면 inactive ablation으로 거부한다.
 
 최종 Python 실행 예:
 
@@ -576,12 +579,17 @@ native 1/auto adaptive의 7개다. 5회 실행이면 이 runner도 reverse 구�
 도달하지 않는다. 아래의 과거 5행 language/backend 표를 정확히 다시 만들
 때에는 `--implementations`로 해당 다섯 경로를 명시해야 한다. OpenMP 환경은
 `OMP_DYNAMIC=FALSE`, `OMP_PROC_BIND=SPREAD`, `OMP_PLACES=THREADS`로 고정했다.
+상속된 `OMP_THREAD_LIMIT`, `OMP_NUM_THREADS`, `OMP_SCHEDULE`,
+`GOMP_CPU_AFFINITY`는 제거하고 어떤 변수를 지웠는지 보고서에 남긴다.
+`auto` thread 수는 `os.cpu_count()`가 아니라 현재 affinity mask를 따르며,
+mask보다 많은 thread를 요청하면 build 전에 거부한다.
 
 작은 후보의 승격에는 더 엄격한 `benchmark_06_promotion.py`를 쓴다. 정확히
 두 frozen-source build를 같은 CPU set에 pin하고, warm-up 뒤 fresh process
 40개 adjacent pair를 네 시간 block마다 AB 5개/BA 5개로 균형화한다. paired
-median이 `1.02x`를 넘고 5,000회 bootstrap CI가 parity를 제외하며 AB/BA
-두 stratum과 absolute/effect stationarity를 모두 통과해야 승격한다.
+median이 `1.02x`를 넘고, 시간 block과 AB/BA 순서의 8개 stratum 안에서
+각각 재표집한 5,000회 bootstrap CI가 parity를 제외하며 AB/BA 두 stratum과
+absolute/effect stationarity를 모두 통과해야 승격한다.
 보고서 옆에는 측정 source snapshot과 source/runner/binary SHA-256, build
 argv, CPU model/flags/topology, 모든 timestamp와 child CPU time을 보존한다.
 
