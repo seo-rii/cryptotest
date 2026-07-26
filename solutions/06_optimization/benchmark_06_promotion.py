@@ -64,6 +64,7 @@ CONFIGURATION_KEYS = (
     "lift_residue_test",
     "fixed_window_bits",
     "fixed_digit_encoding",
+    "fixed_multiplication",
     "inverse_method",
     "sqrt_method",
     "telemetry_strategy",
@@ -104,9 +105,13 @@ def expected_configuration(
             else "hamburg-co-z"
         ),
         "lift_residue_test": (
-            "binary-jacobi-deferred-sqrt"
+            (
+                "subtractive-jacobi-deferred-sqrt"
+                if "CH6_SUBTRACTIVE_JACOBI" in defines
+                else "binary-jacobi-deferred-sqrt"
+            )
             if (
-                "CH6_BINARY_JACOBI_LIFT" in defines
+                "CH6_SQRT_LIFT" not in defines
                 and "CH6_NAF_D_MULTIPLICATION" not in defines
             )
             else "sqrt"
@@ -118,6 +123,11 @@ def expected_configuration(
             "balanced-signed"
             if "CH6_SIGNED_FIXED_TABLE" in defines
             else "unsigned"
+        ),
+        "fixed_multiplication": (
+            "row-batched-affine"
+            if "CH6_ROW_BATCHED_FIXED_MUL" in defines
+            else "candidate-jacobian"
         ),
     }
     if "CH6_GENERIC_MONTGOMERY" in defines:
@@ -323,7 +333,7 @@ def build_variant(
 
 def validate_result(
     variant: Variant, stdout: str, threads: int, block_size: int,
-    native_bmi2_adx: bool,
+    schedule: str, native_bmi2_adx: bool,
 ) -> dict[str, Any]:
     try:
         result = json.loads(stdout)
@@ -376,13 +386,26 @@ def validate_result(
                 f"{variant.label} scan mismatch for {key}: "
                 f"{observed_value!r} != {expected!r}"
             )
+    effective_schedule = (
+        "block"
+        if schedule == "adaptive" and threads <= 2
+        else ("scalar" if schedule == "adaptive" else schedule)
+    )
+    effective_block_size = (
+        32 if schedule == "adaptive" and threads == 2 else block_size
+    )
     required = {
+        "implementation": (
+            "cpp-native-montgomery-binary-window4-"
+            f"{effective_schedule}-{threads}"
+        ),
         "p_equals_dq": True,
         "threads": threads,
         "threads_actual": threads,
-        "schedule_requested": "adaptive",
-        "schedule_effective": "block" if threads == 1 else "scalar",
-        "block_size": block_size,
+        "schedule_requested": schedule,
+        "schedule_effective": effective_schedule,
+        "block_size_requested": block_size,
+        "block_size": effective_block_size,
         "inverse_method": "binary",
         "sqrt_method": "window4",
         "telemetry_strategy": "analytic",
@@ -465,6 +488,7 @@ def run_once(
     cpus: set[int],
     threads: int,
     block_size: int,
+    schedule: str,
     native_bmi2_adx: bool,
 ) -> dict[str, Any]:
     usage_before = resource.getrusage(resource.RUSAGE_CHILDREN)
@@ -488,7 +512,8 @@ def run_once(
             f"stdout:\n{process.stdout}\nstderr:\n{process.stderr}"
         )
     result = validate_result(
-        variant, process.stdout, threads, block_size, native_bmi2_adx
+        variant, process.stdout, threads, block_size, schedule,
+        native_bmi2_adx
     )
     if elapsed + 1e-6 < float(result["total_seconds"]):
         raise RuntimeError(f"{variant.label} external time is below internal time")
@@ -597,6 +622,16 @@ def main() -> None:
     parser.add_argument("--block-size", type=int, default=64)
     parser.add_argument("--baseline-block-size", type=int)
     parser.add_argument("--candidate-block-size", type=int)
+    parser.add_argument(
+        "--baseline-schedule",
+        choices=("adaptive", "block", "scalar", "static"),
+        default="adaptive",
+    )
+    parser.add_argument(
+        "--candidate-schedule",
+        choices=("adaptive", "block", "scalar", "static"),
+        default="adaptive",
+    )
     parser.add_argument("--warmup-pairs", type=int, default=2)
     parser.add_argument("--pairs", type=int, default=40)
     parser.add_argument("--seed", type=int, default=0x06C0FFEE)
@@ -634,6 +669,10 @@ def main() -> None:
             else args.block_size
         ),
     }
+    schedules = {
+        "A": args.baseline_schedule,
+        "B": args.candidate_schedule,
+    }
     if args.threads < 1 or any(
         not 1 <= block_size <= 256 for block_size in block_sizes.values()
     ):
@@ -643,6 +682,7 @@ def main() -> None:
     if (
         tuple(args.baseline_define) == tuple(args.candidate_define)
         and block_sizes["A"] == block_sizes["B"]
+        and schedules["A"] == schedules["B"]
         and not args.null_calibration
     ):
         parser.error(
@@ -739,6 +779,7 @@ def main() -> None:
         binary_hashes = {key: sha256(item.binary) for key, item in variants.items()}
         if (
             block_sizes["A"] == block_sizes["B"]
+            and schedules["A"] == schedules["B"]
             and binary_hashes["A"] == binary_hashes["B"]
             and not args.null_calibration
         ):
@@ -779,7 +820,7 @@ def main() -> None:
                 "--threads",
                 str(args.threads),
                 "--schedule",
-                "adaptive",
+                schedules[key],
                 "--block-size",
                 str(block_sizes[key]),
                 "--inverse",
@@ -812,6 +853,7 @@ def main() -> None:
                     chosen_cpus,
                     args.threads,
                     block_sizes[key],
+                    schedules[key],
                     native_bmi2_adx,
                 )
                 print(
@@ -837,6 +879,7 @@ def main() -> None:
                     chosen_cpus,
                     args.threads,
                     block_sizes[key],
+                    schedules[key],
                     native_bmi2_adx,
                 )
                 event.update(
@@ -942,6 +985,7 @@ def main() -> None:
                 ),
                 "threads": args.threads,
                 "block_sizes": block_sizes,
+                "schedules": schedules,
             },
             "variants": {
                 "A": {

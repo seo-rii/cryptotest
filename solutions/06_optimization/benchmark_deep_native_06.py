@@ -253,12 +253,18 @@ def validate_result(contender: Contender, stdout: str) -> dict[str, Any]:
         requested_schedule = command_option(contender, "--schedule")
         effective_schedule = (
             "block"
-            if requested_schedule == "adaptive" and expected_threads == 1
+            if requested_schedule == "adaptive" and expected_threads <= 2
             else (
                 "scalar"
                 if requested_schedule == "adaptive"
                 else requested_schedule
             )
+        )
+        requested_block_size = int(command_option(contender, "--block-size"))
+        effective_block_size = (
+            32
+            if requested_schedule == "adaptive" and expected_threads == 2
+            else requested_block_size
         )
         expected_metadata = {
             "implementation": (
@@ -269,15 +275,17 @@ def validate_result(contender: Contender, stdout: str) -> dict[str, Any]:
             ),
             "schedule_requested": command_option(contender, "--schedule"),
             "schedule_effective": effective_schedule,
-            "block_size": int(command_option(contender, "--block-size")),
+            "block_size_requested": requested_block_size,
+            "block_size": effective_block_size,
             "inverse_method": command_option(contender, "--inverse"),
             "sqrt_method": command_option(contender, "--sqrt"),
             "telemetry_strategy": "analytic",
             "scan_curve_model": "isomorphic-a-minus-3",
             "d_multiplication": "hamburg-co-z",
-            "lift_residue_test": "sqrt",
+            "lift_residue_test": "binary-jacobi-deferred-sqrt",
             "fixed_window_bits": 8,
             "fixed_digit_encoding": "unsigned",
+            "fixed_multiplication": "candidate-jacobian",
         }
         if result.get("field_backend") not in {
             "bmi2-adx",
@@ -698,6 +706,7 @@ def main() -> None:
                         "d_multiplication",
                         "schedule_requested",
                         "schedule_effective",
+                        "block_size_requested",
                         "block_size",
                         "threads",
                         "threads_actual",
@@ -706,6 +715,7 @@ def main() -> None:
                         "telemetry_strategy",
                         "lift_residue_test",
                         "fixed_digit_encoding",
+                        "fixed_multiplication",
                     )
                     if key in result
                 }

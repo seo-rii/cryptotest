@@ -114,17 +114,41 @@ constexpr std::string_view D_MULTIPLICATION = "hamburg-co-z";
 constexpr std::string_view D_MULTIPLICATION = "width-2-naf";
 #endif
 
+#if !defined(CH6_SQRT_LIFT) && !defined(CH6_NAF_D_MULTIPLICATION)
+#if defined(CH6_SUBTRACTIVE_JACOBI)
+constexpr std::string_view LIFT_RESIDUE_TEST =
+    "subtractive-jacobi-deferred-sqrt";
+#else
+constexpr std::string_view LIFT_RESIDUE_TEST =
+    "binary-jacobi-deferred-sqrt";
+#endif
+#else
 constexpr std::string_view LIFT_RESIDUE_TEST = "sqrt";
+#endif
 
 #if !defined(CH6_FIXED_WINDOW_BITS)
 #define CH6_FIXED_WINDOW_BITS 8
 #endif
 
 constexpr std::size_t FIXED_WINDOW_BITS = CH6_FIXED_WINDOW_BITS;
-constexpr std::size_t FIXED_TABLE_ROWS =
+constexpr std::size_t FIXED_RADIX = 1U << FIXED_WINDOW_BITS;
+constexpr std::size_t FIXED_UNSIGNED_ROWS =
     (88U + FIXED_WINDOW_BITS - 1U) / FIXED_WINDOW_BITS;
-constexpr std::size_t FIXED_TABLE_ENTRIES = 1U << FIXED_WINDOW_BITS;
+#if defined(CH6_SIGNED_FIXED_TABLE)
+constexpr std::size_t FIXED_TABLE_ROWS =
+    FIXED_UNSIGNED_ROWS + (88U % FIXED_WINDOW_BITS == 0U ? 1U : 0U);
+constexpr std::size_t FIXED_TABLE_ENTRIES = FIXED_RADIX / 2U + 1U;
+constexpr std::string_view FIXED_DIGIT_ENCODING = "balanced-signed";
+#else
+constexpr std::size_t FIXED_TABLE_ROWS = FIXED_UNSIGNED_ROWS;
+constexpr std::size_t FIXED_TABLE_ENTRIES = FIXED_RADIX;
 constexpr std::string_view FIXED_DIGIT_ENCODING = "unsigned";
+#endif
+#if defined(CH6_ROW_BATCHED_FIXED_MUL)
+constexpr std::string_view FIXED_MULTIPLICATION = "row-batched-affine";
+#else
+constexpr std::string_view FIXED_MULTIPLICATION = "candidate-jacobian";
+#endif
 constexpr std::size_t FIXED_NORMALIZE_CAPACITY =
     std::max(FIXED_TABLE_ROWS, FIXED_TABLE_ENTRIES);
 static_assert(FIXED_WINDOW_BITS >= 4 && FIXED_WINDOW_BITS <= 11);
@@ -858,6 +882,79 @@ bool field_sqrt(const FieldElement& value, FieldElement& root) {
     return field_equal(field_square(root), value);
 }
 
+bool field_is_square_euclidean_jacobi(const FieldElement& value) {
+    U128 numerator = from_montgomery(value);
+    if (numerator == 0) {
+        return true;
+    }
+    U128 denominator = FIELD;
+    int sign = 1;
+    while (numerator != 0) {
+        unsigned powers_of_two = 0;
+        while ((numerator & 1U) == 0) {
+            numerator >>= 1U;
+            ++powers_of_two;
+        }
+        if (
+            (powers_of_two & 1U) != 0 &&
+            ((denominator & 7U) == 3U || (denominator & 7U) == 5U)) {
+            sign = -sign;
+        }
+        if (
+            (numerator & 3U) == 3U &&
+            (denominator & 3U) == 3U) {
+            sign = -sign;
+        }
+        const U128 next_numerator = denominator % numerator;
+        denominator = numerator;
+        numerator = next_numerator;
+    }
+    return denominator == 1 && sign > 0;
+}
+
+bool field_is_square_subtractive_jacobi(const FieldElement& value) {
+    U128 numerator = from_montgomery(value);
+    if (numerator == 0) {
+        return true;
+    }
+    U128 denominator = FIELD;
+    int sign = 1;
+    while (numerator != 0) {
+        const std::uint64_t low = static_cast<std::uint64_t>(numerator);
+        const unsigned powers_of_two = low != 0
+            ? static_cast<unsigned>(__builtin_ctzll(low))
+            : 64U + static_cast<unsigned>(
+                __builtin_ctzll(static_cast<std::uint64_t>(numerator >> 64U)));
+        numerator >>= powers_of_two;
+        if (
+            (powers_of_two & 1U) != 0 &&
+            ((denominator & 7U) == 3U || (denominator & 7U) == 5U)) {
+            sign = -sign;
+        }
+        if (numerator == 1) {
+            return sign > 0;
+        }
+        if (numerator < denominator) {
+            std::swap(numerator, denominator);
+            if (
+                (numerator & 3U) == 3U &&
+                (denominator & 3U) == 3U) {
+                sign = -sign;
+            }
+        }
+        numerator -= denominator;
+    }
+    return denominator == 1 && sign > 0;
+}
+
+bool field_is_square_binary_jacobi(const FieldElement& value) {
+#if defined(CH6_SUBTRACTIVE_JACOBI)
+    return field_is_square_subtractive_jacobi(value);
+#else
+    return field_is_square_euclidean_jacobi(value);
+#endif
+}
+
 struct AffinePoint {
     FieldElement x;
     FieldElement y;
@@ -1082,10 +1179,12 @@ void batch_affine_x_impl(
     }
 }
 
+#if !defined(CH6_ROW_BATCHED_FIXED_MUL)
 void batch_affine_x(
     JacobianPoint* points, U128* output, std::size_t count) {
     batch_affine_x_impl<false>(points, output, count);
 }
+#endif
 
 void batch_affine_x_minus3(
     JacobianPoint* points, U128* output, std::size_t count) {
@@ -1325,19 +1424,133 @@ void build_fixed_table(const AffinePoint& base, FixedTable& table) {
     }
 }
 
+struct FixedDigit {
+    unsigned magnitude;
+    bool negative;
+};
+
+FixedDigit take_fixed_digit(U128& scalar) {
+    unsigned digit = static_cast<unsigned>(scalar & (FIXED_RADIX - 1U));
+    scalar >>= FIXED_WINDOW_BITS;
+#if defined(CH6_SIGNED_FIXED_TABLE)
+    const bool negative = digit > FIXED_RADIX / 2U;
+    if (negative) {
+        digit = static_cast<unsigned>(FIXED_RADIX) - digit;
+        ++scalar;
+    }
+    return {digit, negative};
+#else
+    return {digit, false};
+#endif
+}
+
 JacobianPoint fixed_mul(U128 scalar, const FixedTable& table) {
     JacobianPoint result = infinity();
     for (std::size_t row = 0; row < table.rows.size(); ++row) {
-        const unsigned digit =
-            static_cast<unsigned>(
-                (scalar >> (FIXED_WINDOW_BITS * row)) &
-                (FIXED_TABLE_ENTRIES - 1U));
-        if (digit != 0) {
-            result = point_add_mixed(result, table.rows[row].points[digit]);
+        const FixedDigit digit = take_fixed_digit(scalar);
+        if (digit.magnitude != 0) {
+            AffinePoint addend = table.rows[row].points[digit.magnitude];
+#if defined(CH6_SIGNED_FIXED_TABLE)
+            if (digit.negative) {
+                addend.y = field_negate(addend.y);
+            }
+#endif
+            result = point_add_mixed(result, addend);
         }
     }
+    assert(scalar == 0);
     return result;
 }
+
+#if defined(CH6_ROW_BATCHED_FIXED_MUL)
+[[gnu::noinline]]
+void batch_fixed_mul_affine_x(
+    const U128* scalars, U128* output, std::size_t count,
+    const FixedTable& table) {
+    if (count > 256) {
+        throw std::runtime_error("batch fixed multiplication capacity exceeded");
+    }
+    std::array<U128, 256> remaining{};
+    std::array<AffinePoint, 256> accumulators{};
+    std::array<bool, 256> is_infinity{};
+    std::copy_n(scalars, count, remaining.begin());
+    std::fill_n(is_infinity.begin(), count, true);
+
+    std::array<std::size_t, 256> active_indices{};
+    std::array<FieldElement, 256> denominators{};
+    std::array<FieldElement, 256> numerators{};
+    std::array<FieldElement, 256> addend_x{};
+    std::array<FieldElement, 256> prefixes{};
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        std::size_t active_count = 0;
+        FieldElement product = field_one();
+        for (std::size_t index = 0; index < count; ++index) {
+            const FixedDigit digit = take_fixed_digit(remaining[index]);
+            if (digit.magnitude == 0) {
+                continue;
+            }
+            AffinePoint addend = table.rows[row].points[digit.magnitude];
+#if defined(CH6_SIGNED_FIXED_TABLE)
+            if (digit.negative) {
+                addend.y = field_negate(addend.y);
+            }
+#endif
+            if (is_infinity[index]) {
+                accumulators[index] = addend;
+                is_infinity[index] = false;
+                continue;
+            }
+            if (field_equal(accumulators[index].x, addend.x)) {
+                const AffineReferencePoint sum = affine_add_reference(
+                    {accumulators[index], false}, {addend, false});
+                is_infinity[index] = sum.is_infinity;
+                if (!sum.is_infinity) {
+                    accumulators[index] = sum.point;
+                }
+                continue;
+            }
+            active_indices[active_count] = index;
+            denominators[active_count] =
+                field_subtract(addend.x, accumulators[index].x);
+            numerators[active_count] =
+                field_subtract(addend.y, accumulators[index].y);
+            addend_x[active_count] = addend.x;
+            prefixes[active_count] = product;
+            product = field_multiply(product, denominators[active_count]);
+            ++active_count;
+        }
+        if (active_count == 0) {
+            continue;
+        }
+        FieldElement inverse_product = field_inverse(product);
+        for (std::size_t active = active_count; active-- > 0;) {
+            const FieldElement inverse_denominator =
+                field_multiply(inverse_product, prefixes[active]);
+            inverse_product =
+                field_multiply(inverse_product, denominators[active]);
+            const std::size_t index = active_indices[active];
+            const FieldElement slope =
+                field_multiply(numerators[active], inverse_denominator);
+            const FieldElement x3 = field_subtract(
+                field_subtract(field_square(slope), accumulators[index].x),
+                addend_x[active]);
+            const FieldElement y3 = field_subtract(
+                field_multiply(
+                    slope, field_subtract(accumulators[index].x, x3)),
+                accumulators[index].y);
+            accumulators[index] = {x3, y3};
+        }
+    }
+    for (std::size_t index = 0; index < count; ++index) {
+        if (remaining[index] != 0) {
+            throw std::runtime_error("fixed scalar exceeds table capacity");
+        }
+        output[index] = is_infinity[index]
+            ? std::numeric_limits<U128>::max()
+            : from_montgomery(accumulators[index].x);
+    }
+}
+#endif
 
 struct TelemetryRow {
     U128 scale;
@@ -1514,10 +1727,16 @@ bool lift_state_point(
         field_add(field_multiply(x2, x), field_multiply(curve_a(), x)),
         curve_b());
 #endif
-    FieldElement y;
+    FieldElement y{};
+#if !defined(CH6_SQRT_LIFT) && !defined(CH6_NAF_D_MULTIPLICATION)
+    if (!field_is_square_binary_jacobi(rhs)) {
+        return false;
+    }
+#else
     if (!field_sqrt(rhs, y)) {
         return false;
     }
+#endif
 
     // +/-y yield opposite points, while every observation uses affine x only.
 #if !defined(CH6_NAF_D_MULTIPLICATION)
@@ -1531,8 +1750,13 @@ bool lift_state_point(
             context.d, x, x2, rhs, curve_a_value, state_point)) {
     } else {
         // The simple Hamburg finalization has exceptional small-order inputs.
-        // The y-coordinate is already available, so retain the complete NAF
-        // path as a fail-closed fallback.
+        // Recover y only on this exceptional path, then retain the complete
+        // NAF implementation as a fail-closed fallback.
+#if !defined(CH6_SQRT_LIFT)
+        if (!field_sqrt(rhs, y)) {
+            return false;
+        }
+#endif
 #if !defined(CH6_ORIGINAL_CURVE_SCAN)
         state_point =
             scalar_mul_naf_minus3(context.d_digits, AffinePoint{x, y});
@@ -1617,12 +1841,17 @@ bool evaluate_candidate_block(
     batch_affine_x(state_points.data(), states.data(), count);
 #endif
 
-    std::array<JacobianPoint, 256> output_points{};
     std::array<U128, 256> output_x{};
+#if defined(CH6_ROW_BATCHED_FIXED_MUL)
+    batch_fixed_mul_affine_x(
+        states.data(), output_x.data(), count, context.q_table);
+#else
+    std::array<JacobianPoint, 256> output_points{};
     for (std::size_t index = 0; index < count; ++index) {
         output_points[index] = fixed_mul(states[index], context.q_table);
     }
     batch_affine_x(output_points.data(), output_x.data(), count);
+#endif
 
     bool found = false;
     for (std::size_t index = 0; index < count; ++index) {
@@ -1793,6 +2022,16 @@ void run_self_test() {
             !field_equal(root_binary, root_window)) {
             throw std::runtime_error("field square-root self-test failed");
         }
+        const FieldElement legendre =
+            field_power(left_mont, (FIELD - 1U) >> 1U);
+        const bool expected_square =
+            left == 0 || field_equal(legendre, field_one());
+        if (
+            field_is_square_euclidean_jacobi(left_mont) != expected_square ||
+            field_is_square_subtractive_jacobi(left_mont) != expected_square ||
+            field_is_square_binary_jacobi(left_mont) != expected_square) {
+            throw std::runtime_error("binary Jacobi self-test failed");
+        }
     };
     constexpr std::array<U128, 8> FIELD_BOUNDARIES{
         0,
@@ -1820,19 +2059,54 @@ void run_self_test() {
     const AffinePoint q = point_q();
     FixedTable q_table;
     build_fixed_table(q, q_table);
+    constexpr std::array<U128, 16> POINT_SCALAR_BOUNDARIES{
+        1,
+        255,
+        256,
+        257,
+        511,
+        512,
+        (U128{1} << 81U) - 1U,
+        U128{1} << 81U,
+        (U128{1} << 81U) + 1U,
+        (U128{1} << 87U) - 1U,
+        U128{1} << 87U,
+        (U128{1} << 87U) + 1U,
+        ORDER - 1U,
+        ORDER,
+        ORDER + 1U,
+        (U128{1} << 88U) - 1U,
+    };
+    constexpr U128 MAX_FIXED_SCALAR = (U128{1} << 88U) - 1U;
+    std::array<U128, 256> point_scalars{};
+    std::array<U128, 256> expected_fixed_x{};
     for (int iteration = 0; iteration < 256; ++iteration) {
-        const U128 scalar = iteration < 32
-            ? static_cast<unsigned>(iteration + 1)
-            : (((static_cast<U128>(random64()) << 64U) | random64()) %
-               (ORDER - 1U)) + 1U;
+        const U128 scalar =
+            iteration < static_cast<int>(POINT_SCALAR_BOUNDARIES.size())
+            ? POINT_SCALAR_BOUNDARIES[iteration]
+            : ((((static_cast<U128>(random64()) << 64U) | random64()) %
+                MAX_FIXED_SCALAR) + 1U);
+        point_scalars[iteration] = scalar;
         const AffineReferencePoint reference =
             scalar_mul_affine_reference(scalar, q);
+        const JacobianPoint naf_jacobian =
+            scalar_mul_naf(make_naf(scalar), q);
+        const JacobianPoint fixed_jacobian = fixed_mul(scalar, q_table);
         if (reference.is_infinity) {
+            if (!field_is_zero(naf_jacobian.z) ||
+                !field_is_zero(fixed_jacobian.z)) {
+                throw std::runtime_error("point/table infinity self-test failed");
+            }
+            expected_fixed_x[iteration] = std::numeric_limits<U128>::max();
+            continue;
+        }
+        if (field_is_zero(naf_jacobian.z) ||
+            field_is_zero(fixed_jacobian.z)) {
             throw std::runtime_error("unexpected point self-test infinity");
         }
-        const AffinePoint naf =
-            affine_point(scalar_mul_naf(make_naf(scalar), q));
-        const AffinePoint fixed = affine_point(fixed_mul(scalar, q_table));
+        const AffinePoint naf = affine_point(naf_jacobian);
+        const AffinePoint fixed = affine_point(fixed_jacobian);
+        expected_fixed_x[iteration] = from_montgomery(reference.point.x);
         if (!field_equal(reference.point.x, naf.x) ||
             !field_equal(reference.point.y, naf.y) ||
             !field_equal(reference.point.x, fixed.x) ||
@@ -1840,6 +2114,15 @@ void run_self_test() {
             throw std::runtime_error("point/table self-test failed");
         }
     }
+#if defined(CH6_ROW_BATCHED_FIXED_MUL)
+    std::array<U128, 256> batch_fixed_x{};
+    batch_fixed_mul_affine_x(
+        point_scalars.data(), batch_fixed_x.data(), point_scalars.size(),
+        q_table);
+    if (batch_fixed_x != expected_fixed_x) {
+        throw std::runtime_error("row-batched fixed multiplication self-test failed");
+    }
+#endif
     int lifted_checked = 0;
     for (unsigned low = 0;
          low < (1U << 16U) && lifted_checked < 128;
@@ -1956,8 +2239,10 @@ int main(int argc, char** argv) {
         ? SqrtMethod::Window4
         : SqrtMethod::Binary;
     const std::string effective_schedule = schedule == "adaptive"
-        ? (threads == 1 ? "block" : "scalar")
+        ? (threads <= 2 ? "block" : "scalar")
         : schedule;
+    const int effective_block_size =
+        schedule == "adaptive" && threads == 2 ? 32 : block_size;
     const int actual_threads = probe_openmp_team_size(threads);
     if (actual_threads != threads) {
         std::cerr << "OpenMP created " << actual_threads
@@ -1984,7 +2269,7 @@ int main(int argc, char** argv) {
         double precompute_seconds = 0;
         double scan_seconds = 0;
         const Prediction prediction = recover_state(
-            d, threads, block_size, effective_schedule,
+            d, threads, effective_block_size, effective_schedule,
             precompute_seconds, scan_seconds);
         const auto finished = std::chrono::steady_clock::now();
 
@@ -2018,7 +2303,8 @@ int main(int argc, char** argv) {
                       << "\",\"lift_low_bits\":" << prediction.low_bits
                       << ",\"schedule_requested\":\"" << schedule
                       << "\",\"schedule_effective\":\"" << effective_schedule
-                      << "\",\"block_size\":" << block_size
+                      << "\",\"block_size_requested\":" << block_size
+                      << ",\"block_size\":" << effective_block_size
                       << ",\"threads\":" << threads
                       << ",\"threads_actual\":" << actual_threads
                       << ",\"inverse_method\":\"" << inverse_name
@@ -2031,6 +2317,8 @@ int main(int argc, char** argv) {
                       << ",\"fixed_window_bits\":" << FIXED_WINDOW_BITS
                       << ",\"fixed_digit_encoding\":\""
                       << FIXED_DIGIT_ENCODING << '"'
+                      << ",\"fixed_multiplication\":\""
+                      << FIXED_MULTIPLICATION << '"'
                       << ",\"candidates_started\":"
                       << prediction.candidates_started
                       << ",\"telemetry_seconds\":" << std::setprecision(12)
@@ -2044,12 +2332,15 @@ int main(int argc, char** argv) {
                       << "threads actual = " << actual_threads << '\n'
                       << "schedule requested = " << schedule << '\n'
                       << "schedule effective = " << effective_schedule << '\n'
+                      << "block size requested = " << block_size << '\n'
+                      << "block size effective = " << effective_block_size << '\n'
                       << "inverse = " << inverse_name << '\n'
                       << "sqrt = " << sqrt_name << '\n'
                       << "field backend = " << FIELD_BACKEND << '\n'
                       << "scan curve = " << SCAN_CURVE_MODEL << '\n'
                       << "d multiplication = " << D_MULTIPLICATION << '\n'
                       << "lift residue test = " << LIFT_RESIDUE_TEST << '\n'
+                      << "fixed multiplication = " << FIXED_MULTIPLICATION << '\n'
                       << "backdoor scalar d = " << hex(d) << '\n'
                       << "P == d*Q: True\n"
                       << "recovered state " << SCAN_STATE_LABEL << " = "

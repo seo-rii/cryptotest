@@ -60,13 +60,15 @@ def native_result() -> dict[str, object]:
         "field_backend": "bmi2-adx",
         "scan_curve_model": "isomorphic-a-minus-3",
         "d_multiplication": "hamburg-co-z",
-        "lift_residue_test": "sqrt",
+        "lift_residue_test": "binary-jacobi-deferred-sqrt",
         "fixed_window_bits": 8,
         "fixed_digit_encoding": "unsigned",
+        "fixed_multiplication": "candidate-jacobian",
         "r3": hex(PUBLIC.EXPECTED["r3"]),
         "lift_low_bits": PUBLIC.EXPECTED_SCANS["s3"]["lift_low_bits"],
         "schedule_requested": "adaptive",
         "schedule_effective": "block",
+        "block_size_requested": 64,
         "block_size": 64,
         "threads": 1,
         "threads_actual": 1,
@@ -147,6 +149,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
             ("lift_residue_test", None),
             ("lift_output_index", None),
             ("fixed_digit_encoding", None),
+            ("fixed_multiplication", None),
             ("schedule_effective", "scalar"),
             ("scan_seconds", "NaN"),
         ):
@@ -174,6 +177,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
             ("lift_residue_test", None),
             ("lift_output_index", None),
             ("fixed_digit_encoding", None),
+            ("fixed_multiplication", None),
             ("field_backend", None),
             ("state_seconds", float("nan")),
         ):
@@ -272,7 +276,35 @@ class BenchmarkRunnerTests(unittest.TestCase):
             "incumbent", Path("/tmp/deep_native_06"), ()
         )
         PROMOTION.validate_result(
-            variant, json.dumps(native_result()), 1, 64, True
+            variant, json.dumps(native_result()), 1, 64, "adaptive", True
+        )
+        scalar_result = native_result()
+        scalar_result.update(
+            {
+                "implementation": (
+                    "cpp-native-montgomery-binary-window4-scalar-1"
+                ),
+                "schedule_requested": "scalar",
+                "schedule_effective": "scalar",
+            }
+        )
+        PROMOTION.validate_result(
+            variant, json.dumps(scalar_result), 1, 64, "scalar", True
+        )
+        adaptive_two_result = native_result()
+        adaptive_two_result.update(
+            {
+                "implementation": (
+                    "cpp-native-montgomery-binary-window4-block-2"
+                ),
+                "threads": 2,
+                "threads_actual": 2,
+                "block_size": 32,
+            }
+        )
+        PROMOTION.validate_result(
+            variant, json.dumps(adaptive_two_result), 2, 64,
+            "adaptive", True
         )
         for key, value in (("threads_actual", 2), ("threads", True)):
             with self.subTest(key=key):
@@ -280,7 +312,8 @@ class BenchmarkRunnerTests(unittest.TestCase):
                 malformed[key] = value
                 with self.assertRaises(RuntimeError):
                     PROMOTION.validate_result(
-                        variant, json.dumps(malformed), 1, 64, True
+                        variant, json.dumps(malformed), 1, 64,
+                        "adaptive", True
                     )
 
     def test_promotion_runner_rejects_accidental_noop(self) -> None:

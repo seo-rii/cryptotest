@@ -218,8 +218,14 @@ def validate_result(contender: Contender, result: dict[str, Any]) -> None:
         schedule = command_option(contender, "--schedule")
         effective_schedule = (
             "block"
-            if schedule == "adaptive" and threads == 1
+            if schedule == "adaptive" and threads <= 2
             else ("scalar" if schedule == "adaptive" else schedule)
+        )
+        requested_block_size = int(command_option(contender, "--block-size"))
+        effective_block_size = (
+            32
+            if schedule == "adaptive" and threads == 2
+            else requested_block_size
         )
         required = {
             "implementation": (
@@ -231,15 +237,17 @@ def validate_result(contender: Contender, result: dict[str, Any]) -> None:
             "threads_actual": threads,
             "schedule_requested": schedule,
             "schedule_effective": effective_schedule,
-            "block_size": int(command_option(contender, "--block-size")),
+            "block_size_requested": requested_block_size,
+            "block_size": effective_block_size,
             "inverse_method": command_option(contender, "--inverse"),
             "sqrt_method": command_option(contender, "--sqrt"),
             "telemetry_strategy": "analytic",
             "scan_curve_model": "isomorphic-a-minus-3",
             "d_multiplication": "hamburg-co-z",
-            "lift_residue_test": "sqrt",
+            "lift_residue_test": "binary-jacobi-deferred-sqrt",
             "fixed_window_bits": 8,
             "fixed_digit_encoding": "unsigned",
+            "fixed_multiplication": "candidate-jacobian",
             "lift_output_index": 1,
             "filter_output_index": 2,
         }
@@ -695,8 +703,10 @@ def main() -> None:
                         "lift_residue_test",
                         "fixed_window_bits",
                         "fixed_digit_encoding",
+                        "fixed_multiplication",
                         "schedule_requested",
                         "schedule_effective",
+                        "block_size_requested",
                         "block_size",
                         "threads",
                         "threads_actual",
