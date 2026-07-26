@@ -92,14 +92,28 @@ width-4 wNAF, Legendre 선필터와 연속 cubic finite difference를 각각 반
 Jacobian point는 48바이트 POD다. 임의점 scan은 동형 `a=-3` 곡선과
 Hamburg ladder를 쓰고, 고정 `Q` table은 구축 중
 batch-normalize한 90,112바이트 affine table로 만들어 generic addition
-대신 mixed addition을 쓴다. 연속 64-candidate block을 atomic counter로
-배분하며, 1 thread에서는 batch inverse, 다중 thread에서는 scalar
-pipeline을 택한다. AVX2는 packed 64x64→128 정수 곱이 없어 radix 분해와
-lane compaction 비용이 커지므로 보류했다.
+대신 mixed addition을 쓴다. Hamburg 정상 경로에는 y좌표가 필요 없으므로
+모든 lift에서 제곱근 지수승을 하지 않고 canonical 88비트 우변의 Euclidean
+Jacobi symbol만 계산한다. denominator 예외에서 NAF fallback이 필요할 때만
+실제 제곱근을 지연 계산한다.
+
+연속 candidate block은 atomic counter로 배분한다. 최종 adaptive 정책은
+1 thread에서 block/batch inverse 64개, 2 threads에서 block 32개, 3 threads
+이상에서 scalar 64개다. 2-thread만 별도 고정 CPU 40-pair 검사를 통과했기
+때문에 다른 thread 수로 보간하지 않았다. AVX2는 packed 64x64→128 정수
+곱이 없어 radix 분해와 lane compaction 비용이 커지므로 보류했다.
 
 `a=-3`의 직교 측정은 `1.1022x`(CI `1.0320..1.1274`)였지만
 stationarity gate를 실패해 성능 수치는 diagnostic-only다. 원곡선
 compile-time fallback과 실제 lift 교차 검증을 함께 유지한다.
+
+후속 후보도 같은 정확성·측정 gate로 판정했다. balanced signed-w9는 table을
+82,560바이트로 줄였지만 `1.0065x`에 그쳤고, comb row별 affine batch는
+`0.9351x`로 느렸다. 나눗셈을 반복 뺄셈으로 바꾼 Jacobi는 `1.0072x`이며
+CI가 parity를 포함했다. 두 후보는 실험 macro만 남기고 unsigned w8 table과
+Euclidean Jacobi를 유지했다. cofactor가 5라는 사실을 이용한 subgroup
+membership 선필터는 유효 lift의 79.94%를 이론상 제거하지만, 단순 `[n]T`
+판정 자체가 비싸므로 후속 연구 후보로 남겼다.
 
 복잡도는 telemetry가 이 인스턴스에서 `O(log B log n)`, 상태 탐색 work가
 최악 `O(2^16 log n)`이다. native 고정 table 외 탐색 메모리는 worker마다
@@ -135,14 +149,19 @@ interleaved run에서 warm-up 1회 후 각각 5회 측정한 역사 기준선이
 
 후속 40-pair 승격 측정에서 shifted scan은 `1.3428x`
 (95% CI `1.3336..1.3510`), Hamburg는 `1.1716x`
-(95% CI `1.1682..1.1764`)였고 둘 다 stationarity gate를 통과했다.
-최종 source의 전체 legacy/final holdout도 warm-up 10쌍 뒤 paired
-`3.7126x`(95% CI `3.7106..3.7251`)로 gate를 통과했다.
+(95% CI `1.1682..1.1764`), sqrt/Jacobi는 `1.0819x`
+(95% CI `1.0769..1.0842`), 2-thread scalar64/adaptive-block32는
+`1.2121x`(95% CI `1.2051..1.2163`)였고 모두 stationarity gate를 통과했다.
+Jacobi와 새 2-thread 정책 전 source의 전체 legacy/당시-final holdout은
+warm-up 10쌍 뒤 paired `3.7126x`(95% CI `3.7106..3.7251`)였다. 이는 현재
+전체 stack의 합산 수치가 아니라 이전 단계의 역사적 같은-source 비교다.
 
 timing 전에 독립 canonical arithmetic와 affine reference로 field 2,000개,
 64개 경계 field pair, point/scalar 256개와 실제 lift Hamburg/NAF 128개를
-교차 검증했다. 모든 측정 process도 `P=dQ`, `d`, `r3`와
-`state_label`별 `s2/s3`, 정답 low bits를 다시 검사했다.
+교차 검증했다. signed carry와 subgroup order 경계도 point vector에 넣고,
+Euclidean/subtractive Jacobi를 Fermat/Legendre와 비교했다. 모든 측정
+process도 `P=dQ`, `d`, `r3`, `state_label`별 `s2/s3`, 정답 low bits와
+요청/실제 thread·schedule·table·residue metadata를 다시 검사했다.
 
 ## 참고 자료
 
@@ -152,7 +171,9 @@ timing 전에 독립 canonical arithmetic와 affine reference로 field 2,000개,
 - [Morain--Olivos, *Speeding up the computations on an elliptic curve using addition-subtraction chains*](https://www.numdam.org/item/ITA_1990__24_6_531_0/): NAF addition-subtraction chain.
 - [Brier--Joye, *Weierstrass Elliptic Curves and Side-Channel Attacks*](https://marcjoye.github.io/papers/BJ02espa.pdf): X/Z-only ladder 후보.
 - [EFD `a=-3` Jacobian formulas](https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-3.html): 동형 곡선 doubling 공식.
-- [Hamburg, *Faster Montgomery and double-add ladders for short Weierstrass curves*](https://eprint.iacr.org/2020/437): 실제 구현한 co-Z ladder와 exceptional case.
+- [Hamburg, *Faster Montgomery and double-add ladders for short Weierstrass curves*](https://eprint.iacr.org/2020/437), [공식 supplementary formulas](https://github.com/bitwiseshiftleft/ladder_formulas): 실제 구현한 co-Z ladder, exceptional case와 대조한 Figure 4/6 DAG.
+- [Möller, *Efficient computation of the Jacobi symbol*](https://arxiv.org/abs/1907.07795), [GNU MP Jacobi algorithm](https://gmplib.org/manual/Jacobi-Symbol.html): Euclidean reduction 중 quadratic-reciprocity 부호 갱신.
+- [Koshelev, *Subgroup membership testing on elliptic curves via the Tate pairing*](https://eprint.iacr.org/2022/037.pdf): cofactor-5 subgroup 선필터의 후속 연구 근거.
 - [Bernstein et al., *OpenSSLNTRU*](https://opensslntru.cr.yp.to/opensslntru-20211006.pdf): prefix/reverse batch inversion 비용.
 - [Montgomery, *Modular Multiplication Without Trial Division*](https://doi.org/10.1090/S0025-5718-1985-0777282-X): 2-limb REDC와 Montgomery 표현.
 - [GNU MP Manual](https://gmplib.org/manual/) 및 [OpenMP 5.2](https://www.openmp.org/spec-html/5.2/openmp.html): C++ arithmetic와 병렬 구현.

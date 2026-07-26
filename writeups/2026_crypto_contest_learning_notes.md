@@ -15,7 +15,7 @@
 | 3 | TLS 1.2 AES-GCM 위조 | 완료 | nonce 재사용으로 `H`와 `E_K(J0)`를 복원하고 유효한 급여 변경 record 생성 | [03_네트워크보안](03_네트워크보안.md) |
 | 4 | LLM weight steganography | 완료 | `CRYPTO{G00D_J0B!_y0u_f0und_7h3_h1dd3n_s3cr37_1n_LLM}` 추출 | [04_디지털포렌식](04_디지털포렌식.md) |
 | 5 | textbook-BGV | 완료 | ternary secret 64계수, 날짜 `20260410→20260411`, 고정 `State` 복원 | [05_동형암호](05_동형암호.md) |
-| 6 | Dual_EC_DRBG | 풀이·최적화 완료 | backdoor scalar `d`, legacy `s2`/shifted `s3`, `r3=0x2443c8daf1a9d52b09` 복원 | [06_PRNG](06_PRNG.md) |
+| 6 | Dual_EC_DRBG | 풀이·최적화 완료 | `d`와 `r3` 복원; shifted scan·Hamburg·Jacobi와 2T adaptive scheduler 채택 | [06_PRNG](06_PRNG.md) |
 | 7 | RSA partial key exposure | 완료 | `p`, `q`와 `FLAG{d1rty_b1t_l34k_c0pp3rsm1th_m33ts_str4t3gy}` 복원 | [07_소인수분해](07_소인수분해.md) |
 | 8 | 변형 AES 7라운드 | 완료 | master key `2923be84e16cd6ae529049f1f1bbe9eb` 복원 | [08_블록암호](08_블록암호.md) |
 
@@ -266,9 +266,20 @@
 - shifted scan은 40-pair에서 `1.3428x`(95% CI
   `1.3336..1.3510`), Hamburg는 `1.1716x`(95% CI
   `1.1682..1.1764`)였고 둘 다 stationarity gate를 통과했다.
-- 현재 source의 전체 legacy/final 40-pair holdout도 warm-up 10쌍 뒤
-  paired `3.7126x`(95% CI `3.7106..3.7251`)로 stationarity와 promotion
-  gate를 통과했다.
+- Hamburg 정상 경로에서 y가 필요 없다는 점을 이용해 모든 lift의 sqrt를
+  88비트 Euclidean Jacobi 판정으로 바꿨다. sqrt/Jacobi 40-pair는
+  `1.0819x`(95% CI `1.0769..1.0842`)로 gate를 통과했다.
+- runtime schedule까지 같은 frozen binary에서 비교해 2-thread만
+  `scalar64`에서 `block32`로 바꿨다. paired `1.2121x`(95% CI
+  `1.2051..1.2163`)였으며 최종 adaptive 정책은 `1T=block64`,
+  `2T=block32`, `3T+=scalar64`다.
+- balanced signed-w9(`1.0065x`), subtractive Jacobi(`1.0072x`, parity 포함),
+  row-batched affine fixed-`Q`(`0.9351x`)와 2-lane Hamburg(`0.8624x`)는
+  검증·반복 측정 뒤 기각했다. cofactor-5 subgroup 선필터는 유효 lift의
+  79.94%를 제거할 잠재력이 있지만 판정 비용 때문에 고위험 연구로 남겼다.
+- warm-up 10쌍 뒤 전체 legacy/당시-final 40-pair holdout의
+  `3.7126x`(95% CI `3.7106..3.7251`)는 Jacobi와 새 2-thread 정책 전의
+  역사적 합산 결과다. 현재 전체 stack 수치로 소급하지 않는다.
 - 이전 native의 동일-run 역사 기준선은 원래 Python 대비 8-thread
   165.42x였다. 새 최종 stack의 broad 절대 시간은 shared VM 부하에
   민감하므로 작은 후보는 CPU-pinned adjacent AB/BA runner로 따로 판정한다.
@@ -352,7 +363,7 @@ benchmark는 correctness gate를 먼저 수행하며, 7번의 전체 격자 공�
 | 3 | GCM bit ordering self-test, pcap record 경계, nonce 재사용, 유일 `H`, known-plaintext 출처, tag와 77바이트 제출 hex 일치 |
 | 4 | 모든 F32 tensor의 bounded-memory discovery, SafeTensors 범위와 로그 증거 보존을 합성 테스트 5개로 검증; 공식 대형 원본 재실행은 별도 필요 |
 | 5 | 네 자리 Gregorian 다음날 delta 11종 전체에서 ternary 후보를 수집하고, 연속 날짜·동일 `State`·padding·error·제출 TXT를 통과한 후보가 1개인지 확인 |
-| 6 | `P=dQ`, `d`, legacy `s2`/shifted `s3`, `r3` 확인; native preflight에서 random field 2,000 pair, boundary 64 pair, point/table 256개, Hamburg/NAF lift 128개 reference 대조 |
+| 6 | `P=dQ`, `d`, legacy `s2`/shifted `s3`, `r3` 확인; native preflight에서 random field 2,000 pair, boundary 64 pair, point/table 256개, Hamburg/NAF lift 128개 및 Euclidean/subtractive Jacobi reference 대조; 요청/실제 thread와 모든 후보 metadata 검사 |
 | 7 | pinned FLATTER로 `cid=155` 복원과 선택 다항식 12개의 정수 평가 0 확인; `p*q=N`, mask, RSA 재암호화 일치. 256개 blind runner는 제공하되 전체 scan은 이번 정리에서 재실행하지 않음 |
 | 8 | 모든 partial completion을 generator로 열거·중복 제거해 유일 key를 얻고, 50,000개 평문/암문 pair 전체 재암호화 mismatch 0 |
 

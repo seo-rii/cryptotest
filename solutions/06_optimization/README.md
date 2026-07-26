@@ -42,9 +42,11 @@ The default `deep_native_06.cpp` combines:
 6. an isomorphic `a=-3` curve for the arbitrary-point scan;
 7. Hamburg's co-Z short-Weierstrass ladder for the recovered fixed `d`, with a
    complete width-2 NAF fallback for exceptional inputs;
-8. a width-8 fixed-`Q` affine comb table and mixed Jacobian addition;
-9. monotone OpenMP blocks, with batch normalization at one thread and a scalar
-   pipeline at multiple threads.
+8. an 88-bit Jacobi residue test, deferring the square root to the exceptional
+   NAF fallback instead of exponentiating for every lift;
+9. a width-8 fixed-`Q` affine comb table and mixed Jacobian addition;
+10. monotone OpenMP work assignment: block-64 at one thread, block-32 at two
+    threads, and the scalar pipeline at three or more threads.
 
 The fixed field element is 16 bytes, a Jacobian point is 48 bytes, and the
 default read-only fixed table is 90,112 bytes.
@@ -55,13 +57,18 @@ Before timing, the native self-test checks:
 
 - 2,000 deterministic random field pairs;
 - 64 boundary pairs around zero, `p`, and the 64-bit limb boundary;
-- 256 point/scalar/table vectors against an affine reference;
+- 256 point/scalar/table vectors against an affine reference, including signed
+  carry, subgroup-order, and 88-bit scalar boundaries;
 - 128 real curve lifts comparing Hamburg and NAF affine x-coordinates.
+
+The same field vectors compare Euclidean and subtractive Jacobi results with a
+Fermat/Legendre reference.
 
 Every timed JSON result also reports the selected field backend, curve model,
 `d` multiplication, lift residue test, table width/encoding, scan label and
 output indices, requested and actual threads, schedule, inverse, and
-square-root method. The solver rejects a smaller OpenMP team, and the benchmark
+square-root method, plus requested/effective block size and fixed-`Q`
+multiplication layout. The solver rejects a smaller OpenMP team, and the benchmark
 rejects metadata mismatches instead of timing an accidentally inactive macro.
 
 ## Reproduce
@@ -102,13 +109,14 @@ python3 solutions/06_optimization/benchmark_deep_native_06.py \
   --output /tmp/ch6-broad.json
 ```
 
-Use the promotion runner for a small candidate. This example compares the NAF
-fallback with the default Hamburg path:
+Use the promotion runner for a small candidate. This example isolates the
+NAF/Hamburg change by forcing the same square-root lift in both builds:
 
 ```bash
 python3 solutions/06_optimization/benchmark_06_promotion.py \
   --baseline-label naf --candidate-label hamburg \
   --baseline-define CH6_NAF_D_MULTIPLICATION \
+  --candidate-define CH6_SQRT_LIFT \
   --threads 1 --warmup-pairs 2 --pairs 40 \
   --output /tmp/ch6-hamburg.json
 ```
@@ -124,20 +132,26 @@ was cleared. The measured source is preserved beside the report as
 
 ## Selection results
 
-The two stationarity-gated 1-thread wins were:
+The stationarity-gated wins now include:
 
 | candidate | paired median | bootstrap 95% CI | decision |
 |---|---:|---:|---|
 | shifted scan vs legacy scan | 1.3428x | 1.3336..1.3510 | adopted |
 | Hamburg co-Z vs width-2 NAF | 1.1716x | 1.1682..1.1764 | adopted |
+| Jacobi lift vs square-root lift, 1T | 1.0819x | 1.0769..1.0842 | adopted |
+| adaptive block-32 vs scalar-64, 2T | 1.2121x | 1.2051..1.2163 | adopted |
 
-After ten warm-up pairs, a final current-source comparison of the complete
+After ten warm-up pairs, the pre-Jacobi source comparison of the complete
 legacy stack (generic carry, legacy scan, original curve, NAF) against the
-default stack measured `0.283205 s` versus `0.076114 s`. Its paired median was
+then-default stack measured `0.283205 s` versus `0.076114 s`. Its paired median was
 `3.7126x` (CI `3.7106..3.7251`); both order strata and all four stationarity
-blocks passed.
+blocks passed. It is historical combined evidence, not a current-stack number.
 
-A w4 fixed table lost to w8 (`0.9483x`, CI `0.9243..0.9737`), and block 128
+A balanced signed-w9 table reduced the table to 82,560 bytes but reached only
+`1.0065x` (CI `1.0035..1.0094`), below the 2% promotion threshold. Row-batched
+affine fixed-`Q` multiplication lost at `0.9351x`, and subtractive Jacobi was
+statistical parity at `1.0072x` with a parity-containing CI. A w4 fixed table
+lost to w8 (`0.9483x`, CI `0.9243..0.9737`), and block 128
 did not beat block 64 (`0.9948x`, CI `0.9093..1.0473`). Specialized square,
 direct U128 add, a straight-line sqrt chain, w9, field-multiply `noinline`,
 Hamburg inline, PRAC, and GLV/endomorphism variants were also rejected or kept
