@@ -1,15 +1,16 @@
 /*
  * Centered, triangular Herrmann--May lattice solver for challenge #7.
  *
- * Build (Debian FLINT plus locally installed FLATTER):
- *   g++ -O3 -std=c++17 -I/usr/local/include grouped_hm_flatter.cpp \
+ * Build (Debian FLINT plus pinned, locally installed FLATTER):
+ *   g++ -O3 -std=c++17 -DFLATTER_GIT_COMMIT='"<commit>"' \
+ *     -I/usr/local/include solve_07_grouped_hm_flatter.cpp \
  *     -L/usr/local/lib -Wl,-rpath,/usr/local/lib \
  *     -lflatter -lflint -lgmpxx -lgmp -lopenblas -pthread \
  *     -o grouped_hm_flatter
  *
  * The defaults run a planted self-check.  Scan one challenge edge candidate:
  *   OPENBLAS_NUM_THREADS=1 ./grouped_hm_flatter \
- *     --challenge --cid 0 --lead x --centered
+ *     --challenge --cid 0 --threads 4 --lead x --centered
  */
 #include <flatter/computation_context.h>
 #include <flatter/data/lattice.h>
@@ -30,6 +31,10 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#ifndef FLATTER_GIT_COMMIT
+#define FLATTER_GIT_COMMIT "unknown"
+#endif
 
 using Clock = std::chrono::steady_clock;
 using Monomial = std::pair<unsigned int, unsigned int>;
@@ -234,6 +239,7 @@ int main(int argc, char **argv) {
     bool build_only = false;
     bool challenge = false;
     unsigned int candidate_id = 0;
+    unsigned int threads = 4;
     unsigned int trim_x = 0;
     unsigned int trim_y = 0;
     for(int i = 1; i < argc; i++) {
@@ -256,6 +262,8 @@ int main(int argc, char **argv) {
             t = std::stoul(argv[++i]);
         else if(arg == "--rhf" && i + 1 < argc)
             rhf = std::stod(argv[++i]);
+        else if(arg == "--threads" && i + 1 < argc)
+            threads = std::stoul(argv[++i]);
         else if(arg == "--trim-x" && i + 1 < argc)
             trim_x = std::stoul(argv[++i]);
         else if(arg == "--trim-y" && i + 1 < argc)
@@ -270,8 +278,10 @@ int main(int argc, char **argv) {
                 throw std::runtime_error("--lead must be x or y");
         }
         else
-            throw std::runtime_error("usage: grouped_hm_bench [--wrong] [--centered] [--build-only] [--challenge --cid ID] [--m M] [--t T] [--rhf R] [--lead x|y] [--trim-x BITS] [--trim-y BITS]");
+            throw std::runtime_error("usage: grouped_hm_bench [--wrong] [--centered] [--build-only] [--challenge --cid ID] [--m M] [--t T] [--rhf R] [--threads N] [--lead x|y] [--trim-x BITS] [--trim-y BITS]");
     }
+    if(threads == 0)
+        throw std::runtime_error("--threads must be positive");
 
     if(modular_selftest) {
         const ulong prime = 1000000007UL;
@@ -398,6 +408,8 @@ int main(int argc, char **argv) {
               << " m=" << m << " t=" << t << " dim=" << dimension
               << " rhf=" << rhf << " lead=" << (lead_y ? "y" : "x")
               << " centered=" << centered
+              << " threads=" << threads
+              << " flatter_commit=" << FLATTER_GIT_COMMIT
               << " trim_x=" << trim_x << " trim_y=" << trim_y
               << " xbits=" << bit_length(x_root)
               << " ybits=" << bit_length(y_root) << std::endl;
@@ -428,7 +440,7 @@ int main(int argc, char **argv) {
 
     flatter::Lattice lattice(basis);
     flatter::LatticeReductionParams params(lattice, transform, rhf, true);
-    flatter::ComputationContext context(4);
+    flatter::ComputationContext context(threads);
     flatter::LatticeReduction reduction(params, context);
     const auto reduction_start = Clock::now();
     reduction.solve();
@@ -520,11 +532,35 @@ int main(int argc, char **argv) {
         crt_y += crt_modulus * delta_y;
         crt_modulus *= prime;
         std::cout << "crt_bits=" << bit_length(crt_modulus) << std::endl;
-        if(crt_modulus > Y && crt_x < X && crt_y < Y) {
+        if(crt_modulus > std::max(X, Y) && crt_x < X && crt_y < Y) {
             const mpz_class candidate = C + A*crt_x + B*crt_y;
             recovered = candidate > 1 && N % candidate == 0;
-            if(recovered)
+            if(recovered) {
                 std::cout << "RECOVERED p=" << candidate << std::endl;
+                std::vector<mpz_class> recovered_x_powers(m + 1);
+                std::vector<mpz_class> recovered_y_powers(m + 1);
+                recovered_x_powers[0] = recovered_y_powers[0] = 1;
+                for(unsigned int i = 1; i <= m; i++) {
+                    recovered_x_powers[i] = recovered_x_powers[i-1] * crt_x;
+                    recovered_y_powers[i] = recovered_y_powers[i-1] * crt_y;
+                }
+                bool all_selected_zero = true;
+                for(unsigned int row = 0; row < selected.size(); row++) {
+                    mpz_class evaluation = 0;
+                    for(unsigned int col = 0; col < monomials.size(); col++) {
+                        evaluation += selected[row][col]
+                            * recovered_x_powers[monomials[col].first]
+                            * recovered_y_powers[monomials[col].second];
+                    }
+                    std::cout << "selected_polynomial_" << row
+                              << "_evaluation=" << evaluation << std::endl;
+                    all_selected_zero = all_selected_zero && evaluation == 0;
+                }
+                if(!all_selected_zero)
+                    throw std::runtime_error(
+                        "recovered factor does not make every selected "
+                        "auxiliary polynomial an integer zero");
+            }
         }
     }
     flatter::finalize();
