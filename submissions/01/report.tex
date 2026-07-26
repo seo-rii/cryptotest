@@ -1,0 +1,265 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=18mm]{geometry}
+\usepackage{fontspec}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+
+\setmainfont{Noto Sans CJK KR}
+\setsansfont{Noto Sans CJK KR}
+\setmonofont{D2Coding}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlist{nosep,leftmargin=6mm}
+\pagestyle{plain}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  columns=fullflexible,
+  breaklines=true,
+  keepspaces=true
+}
+
+\title{1번 암호분석\\Caesar/Vigenère 복원과 학습 분류기}
+\author{암호분석경진대회 제출 보고서}
+\date{2026년 7월}
+
+\begin{document}
+\maketitle
+
+\section{제출 답 요약}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+항목 & 결과 \\
+\midrule
+\texttt{ciphertexts1.txt} & Caesar, IC $0.067638\to\mathbf{0.068}$,
+shift $6$ \\
+\texttt{ciphertexts2.txt} & Vigenère, IC $0.043972\to\mathbf{0.044}$,
+key \texttt{KLVOJ}, 줄마다 key position 초기화 \\
+3-다/4-다 평문 &
+\texttt{THESOVEREIGNTYOFTHEREPUBLICOFKOREA}\newline
+\texttt{SHALLRESIDEINTHEPEOPLEANDALLSTATEAUTHORITY}\newline
+\texttt{SHALLEMANATEFROMTHEPEOPLE} \\
+분류기 holdout &
+동일 corpus·동일 key 안의 paired line holdout $58/58$ \\
+관측 가능한 1--4 구조 &
+모두 period-1 Caesar-like, shift $6,10,10,6$ \\
+출제 의도 추정 라벨 &
+\textbf{Caesar, Vigenère, Vigenère, Caesar} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Caesar와 Vigenère}
+
+알파벳을 $A=0,\ldots,Z=25$로 나타내면 Caesar는 하나의 shift $k$를
+모든 위치에 적용한다.
+\[
+ C_i=P_i+k\pmod {26},\qquad P_i=C_i-k\pmod {26}.
+\]
+따라서 영어의 불균등한 단문자 빈도와 IC가 보존되고, 빈도표의 문자
+이름만 이동한다. key 공간도 26개다.
+
+Vigenère는 길이 $r$인 key를 반복한다.
+\[
+ C_i=P_i+K_{i\bmod r}\pmod {26}.
+\]
+서로 다른 shift의 빈도분포가 섞여 전체 IC는 균등분포의
+$1/26\simeq0.0385$ 쪽으로 낮아진다. 반대로 같은 $i\bmod r$ 위치끼리
+모으면 각 열이 다시 Caesar가 된다. 길이 1 Vigenère는 Caesar와
+수학적으로 완전히 같다는 포함 관계가 마지막 분류 문항에서 중요하다.
+
+\section{IC와 Caesar 복원}
+
+문자별 횟수를 $n_i$, 전체 길이를 $N$이라 하면
+\[
+ \operatorname{IC}=\frac{\sum_i n_i(n_i-1)}{N(N-1)}
+\]
+를 계산했다. A--Z 이외 문자를 제거한 두 파일은 각각 19,897자다.
+
+\begin{center}
+\begin{tabular}{lrrl}
+\toprule
+파일 & IC & 요구 반올림 & 판정 \\
+\midrule
+\texttt{ciphertexts1.txt} & 0.067638 & 0.068 & Caesar \\
+\texttt{ciphertexts2.txt} & 0.043972 & 0.044 & Vigenère \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+첫 파일은 26개 shift를 모두 복호화하고 문제의 영어 기대빈도와
+Pearson $\chi^2$ 값을 비교했다.
+\[
+ \chi^2(k)=\sum_i\frac{(O_i-E_i)^2}{E_i}.
+\]
+
+\begin{center}
+\small
+\begin{tabular}{rr@{\hspace{9mm}}rr}
+\toprule
+$k$ & $\chi^2$ & $k$ & $\chi^2$ \\
+\midrule
+0 & 370761.744 & 13 & 240028.196 \\
+1 & 349320.551 & 14 & 150543.659 \\
+2 & 157067.547 & 15 & 275292.814 \\
+3 & 135052.934 & 16 & 301101.219 \\
+4 & 185318.110 & 17 & 100815.401 \\
+5 & 118927.980 & 18 & 123254.119 \\
+\textbf{6} & \textbf{921.545} & 19 & 73448.724 \\
+7 & 290533.928 & 20 & 508237.438 \\
+8 & 167609.763 & 21 & 199549.637 \\
+9 & 357275.877 & 22 & 117261.345 \\
+10 & 144992.519 & 23 & 220336.935 \\
+11 & 564891.560 & 24 & 259621.119 \\
+12 & 68513.462 & 25 & 176043.833 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+$k=6$의 값이 압도적으로 작고 평문은 대한민국 헌법 영문본으로
+시작한다. 지정 암호문 역시 shift 6으로 복호화해 요약 표의 평문을
+얻었다. 첨부 \texttt{classifier.py --full-caesar-table}은 각 후보의
+A--Z 횟수까지 출력하며, \texttt{--dump-caesar-dir DIR}은 26개 전체
+복호문과 TSV를 생성한다.
+
+\section{Vigenère key와 평문 복원}
+
+원본 두 파일은 157개 줄이고 대응 줄 길이가 같다. 반복 5-gram의
+인접 출현 거리를 줄 경계를 넘지 않게 수집한 결과는 다음과 같다.
+
+\begin{center}
+\begin{tabular}{rrr}
+\toprule
+후보 period & 나누어떨어지는 거리 & 비율 \\
+\midrule
+2 & 178/261 & 68.199\% \\
+3 & 60/261 & 22.989\% \\
+4 & 56/261 & 21.456\% \\
+\textbf{5} & \textbf{260/261} & \textbf{99.617\%} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+우연한 반복 하나 때문에 전체 거리 GCD는 1이지만, 260/261이 5의
+배수이고 문제의 $|k|\le5$ 조건이 있으므로 period는 5다. 줄마다
+position modulo 5가 같은 문자를 합쳐 26개 Caesar shift를 비교했다.
+
+\begin{center}
+\begin{tabular}{rrrrr}
+\toprule
+위치 & 열 길이 & shift & key & 최소 $\chi^2$ \\
+\midrule
+0 & 4047 & 10 & K & 222.518 \\
+1 & 4016 & 11 & L & 179.146 \\
+2 & 3975 & 21 & V & 406.928 \\
+3 & 3942 & 14 & O & 231.591 \\
+4 & 3917 & 9 & J & 165.249 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+따라서 key는 \texttt{KLVOJ}다. 이 key를 각 줄 처음부터 다시 적용해야
+한다는 사실도 두 방식의 문자별 대조로 검증했다.
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+key 적용 방식 & Caesar 평문과 일치 \\
+\midrule
+줄마다 position 초기화 & 19,897 / 19,897 \\
+줄을 이은 연속 key & 3,076 / 19,897 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{학습 분류기}
+
+\subsection{데이터 분할과 feature}
+
+50자 이상인 대응 줄 쌍을 하나의 단위로 묶었다. 원래 줄 index가
+5의 배수인 쌍은 holdout, 나머지는 train으로 보내 같은 평문 Caesar
+버전이 train에 있고 Vigenère 버전이 holdout에 있는 직접 누출을
+막았다. 최종 표본은 train 218개, holdout 58개이며 class가 균형이다.
+
+각 줄에서 전체 IC, Shannon entropy, 최적 Caesar 정규화 $\chi^2$,
+최빈 문자 비율, lag 1--10 일치율 10개, period 2--5 열의 가중 평균
+IC 4개로 총 18개 feature를 만든다. 이 feature들은 전역 shift에
+불변이라 특정 Caesar shift 6은 제거된다. train 평균/표준편차로
+표준화한 뒤 L2 logistic regression을 외부 패키지 없이 full-batch
+gradient descent로 1,500 epoch 학습했다.
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+ & predicted Caesar & predicted Vigenère \\
+\midrule
+actual Caesar & 29 & 0 \\
+actual Vigenère & 0 & 29 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+정확도 $58/58$은 \emph{동일한 대한민국 헌법 corpus와 동일한 두
+암호화 key 안의 paired line holdout} 결과다. 새로운 corpus, key,
+Vigenère 길이에 대한 일반화 성능으로 해석할 수 없다. 전역 shift는
+제거했지만 고정 period 5와 corpus에 특화될 가능성은 남아 있다.
+배포물에 외부 corpus가 없으므로 별도 corpus/key 실험 결과를
+만들어 적지 않았다.
+
+\subsection{네 짧은 암호문과 최종 라벨}
+
+\begin{center}
+\small
+\begin{tabular}{rrrrl}
+\toprule
+번호 & $P(V)$ & 모델 구조 판정 & 최적 shift & 출제 의도 추정 \\
+\midrule
+1 & 0.017058 & Caesar-like & 6 & Caesar \\
+2 & 0.017058 & Caesar-like & 10 & Vigenère \\
+3 & 0.089193 & Caesar-like & 10 & Vigenère \\
+4 & 0.089193 & Caesar-like & 6 & Caesar \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+네 암호문은 모두 하나의 고정 shift로 자연스러운 영어가 되어 관측
+구조는 period-1이다.
+
+2번을 Vigenère key \texttt{K}로 만들었다는 가설과 Caesar shift
+10으로 만들었다는 가설은 암호문만으로 구별할 수 없다. 다만 shift
+6이 복원된 Caesar key, shift 10이 \texttt{KLVOJ}의
+첫 글자 K와 일치한다. 이 생성기 단서에 따른 출제 의도상 직접 답은
+\[
+ \boxed{\text{Caesar,\ Vigenère,\ Vigenère,\ Caesar}}
+\]
+로 제출한다. 동시에 이 목록은 식별 가능한 암호 구조가 아니라 숨은
+생성 방식을 추정한 값임을 명시한다.
+
+\section{재현}
+
+Python 3.10 이상 표준 라이브러리만 필요하다.
+
+\begin{lstlisting}
+python3 classifier.py --problem-zip 1_암호분석.zip
+python3 classifier.py --problem-zip 1_암호분석.zip --full-caesar-table
+\end{lstlisting}
+
+실행은 다음을 출력하고 검증한다.
+
+\begin{itemize}
+  \item IC, 모든 Caesar 후보, Kasiski와 열별 key
+  \item line-reset 대조와 paired holdout confusion matrix
+  \item 네 표본의 확률, shift, 평문
+\end{itemize}
+
+마지막 \texttt{self-checks: PASS}가 모든 수치와 답을 검증한다.
+
+\end{document}
