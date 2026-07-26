@@ -256,6 +256,20 @@ def gcm_mul(a: int, b: int) -> int:
     return reverse_bits_128(gf_mul(reverse_bits_128(a), reverse_bits_128(b)))
 
 
+def check_gcm_bit_ordering() -> None:
+    """Check the boundary between NIST's MSB-first and polynomial encodings."""
+
+    # In SP 800-38D's bit-string convention, the leftmost bit is the
+    # coefficient of x^0.  Thus 0x8000...00 is the field identity, while the
+    # ordinary integer-polynomial implementation represents that identity as 1.
+    nist_identity = 1 << 127
+    probe = 0x0123456789ABCDEFFEDCBA9876543210
+    if reverse_bits_128(nist_identity) != 1:
+        raise RuntimeError("GCM bit-order conversion does not map the identity")
+    if gcm_mul(nist_identity, probe) != probe:
+        raise RuntimeError("GCM multiplication failed the MSB-first identity test")
+
+
 def ghash(h: int, blocks: list[int]) -> int:
     y = 0
     for block in blocks:
@@ -265,6 +279,7 @@ def ghash(h: int, blocks: list[int]) -> int:
 
 def main() -> None:
     random.seed(3)
+    check_gcm_bit_ordering()
     root = Path(__file__).resolve().parents[1]
     with ZipFile(root / "problems" / "3_네트워크보안.zip") as archive:
         pcap = archive.read("tls_live.pcap")
@@ -372,11 +387,21 @@ def main() -> None:
     if len(set(authentication_masks)) != 1:
         raise RuntimeError("reused-nonce records do not share E_K(J0)")
     authentication_mask = authentication_masks[0]
+    print(
+        "GCM bit ordering check: "
+        "0x8000...00 (NIST representation) maps to polynomial 1"
+    )
     print(f"GHASH equation degree = {len(equation) - 1}")
+    print(
+        f"field roots from records 1-2 = {len(roots)}; "
+        f"survivors after record 3 = {len(valid)}"
+    )
     print(f"GHASH H = {h:032x}")
     print(f"E_K(J0) = {authentication_mask:032x}")
 
     target = reused[2]
+    # The original plaintext is supplied verbatim in the problem statement; it
+    # is known plaintext, not something recovered by decrypting the pcap.
     original = b"action=set_salary&uid=0007&amt=0100&month=202603"
     wanted = b"action=set_salary&uid=0007&amt=0500&month=202603"
     ciphertext = bytes(target["ciphertext"])
@@ -430,6 +455,7 @@ def main() -> None:
         + len(ciphertext).to_bytes(2, "big")
     )
     print(f"target AAD = {target_aad.hex()}")
+    print("known plaintext source = problem statement (not decrypted from pcap)")
     print(f"plaintext change offsets = {changed_offsets} (0-based)")
     print(f"original ciphertext = {ciphertext.hex()}")
     print(f"original tag = {old_tag:032x}")

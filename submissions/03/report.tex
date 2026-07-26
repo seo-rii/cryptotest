@@ -178,7 +178,29 @@ solver는
 로 $\mathbb F_{2^{128}}$ 안의 선형 인수만 분리한 뒤 근을 나눈다.
 NIST GCM은 field element를 MSB-first로 표현하고 구현의 일반 다항식
 연산은 bit 0을 상수항 계수로 사용하므로, 표현 경계에서 128비트
-bit reverse를 적용했다.
+bit reverse를 적용했다. 구체적으로 NIST 표현의 왼쪽 bit가 $x^0$의
+계수이므로 다음 경계 대응을 사용한다.
+
+\begin{lstlisting}
+NIST 0x80000000000000000000000000000000 <-> polynomial integer 1
+NIST 0x40000000000000000000000000000000 <-> polynomial integer 2 (= x)
+\end{lstlisting}
+
+solver는 첫 번째 값을 GCM 곱셈 항등원으로 사용해 임의 probe와 곱한
+결과가 probe 그대로인지 실행 시 self-test한다. 1번과 2번 record로 만든
+6차식에서 체 내부 root는 1개였고, 3번 record의 동일 $S$ 조건까지
+통과한 후보도 1개였다.
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+검증 단계 & 후보 수 \\
+\midrule
+$F_{12}$의 $\mathbb F_{2^{128}}$ root & 1 \\
+3번 record의 동일 $S$ 조건 통과 & 1 \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 각 후보는 재사용 record 세 개 모두에서
 
@@ -201,7 +223,9 @@ ciphertext와 tag를 만들 수 있다.
 
 \subsection{Ciphertext 변경}
 
-두 평문은 모두 48바이트이고 0-based offset 32의 한 바이트만 다르다.
+원래 평문은 문제 본문에 직접 주어진 known plaintext이며, pcap을
+별도로 복호화해 얻은 값이 아니다. 두 평문은 모두 48바이트이고
+0-based offset 32의 한 바이트만 다르다.
 
 \begin{lstlisting}
 old: action=set_salary&uid=0007&amt=0100&month=202603
