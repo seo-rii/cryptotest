@@ -11,6 +11,46 @@
 - `writeups/`: 문제별 풀이 문서
 - `submissions/`: 제출용 코드·답안·PDF·계수 파일과 색인
 
+## 빠른 검증과 벤치마크
+
+개발용 Python 의존성에는 pytest, Z3와 7번 Coppersmith 테스트의
+`sympy`/`fpylll` fallback이 들어 있다. `gmpy2` 가속 경로까지 재현할 때만
+두 번째 파일을 추가로 설치하면 된다.
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/pip install -r requirements-fast.txt  # 선택
+```
+
+C/C++ 검증에는 GCC/G++, OpenMP, `make`, `unzip`이 필요하고,
+`make bench-06`의 GMP 대조군에는 GMP 개발 라이브러리도 필요하다.
+저장소 루트의 공통 진입점은 다음과 같다.
+
+```bash
+make test      # pytest.ini에 따라 역사 보관용 *.old 트리는 수집하지 않음
+make check-02  # 2번 회귀 테스트와 공식 벡터/제출 harness
+make check-06  # Python, native self-test, UBSan 전체 1-thread 실행
+make bench-02  # scalar와 lane-wise AVX2의 검증된 교차 측정
+make bench-06  # native thread/schedule 측정
+```
+
+벤치마크 기본 출력은 `/tmp/cryptotest-bench-0{2,6}.json`이며 CPU, compiler,
+플래그, affinity/thread 수, warm-up, 원시 표본, median/MAD, source hash와
+Git 상태를 기록한다. 255H에서는 논리 CPU 번호를 먼저 확인한 뒤 서로 다른
+시점에 코어 종류별로 실행해야 한다.
+
+```bash
+make bench-02 BENCH02_CPU=3 \
+  BENCH02_OUTPUT=/tmp/ch2-pcore-session1.json
+taskset -c 0-5 make bench-06 BENCH06_THREADS=6 \
+  BENCH06_OUTPUT=/tmp/ch6-ponly-session1.json
+```
+
+`BENCH06_THREADS`, `BENCH06_SCHEDULES`, `BENCH06_BLOCK_SIZE`를 바꾸어
+P-only/E-only/P+E/all-core 및 block-size 후보를 각각 별도 JSON으로
+보존한다. 16 thread가 14 thread보다 빠르다고 가정하지 않는다.
+
 문제 7의 장기 연구는 별도 `soinsu` 프로젝트에서 진행했다. 이 저장소에서는 아래 최종 solver와 writeup을 정본으로 삼고, `solutions/07_sat_cas_explore*`는 해결 전 탐색의 역사 기록으로만 보존한다.
 
 - [문제 7 최종 writeup](writeups/07_소인수분해.md)

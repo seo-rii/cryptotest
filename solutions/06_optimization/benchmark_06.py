@@ -268,6 +268,34 @@ def main() -> None:
                 "OMP_PLACES": "THREADS",
             }
         )
+        repository_root = directory.parents[1]
+        git_commit: str | None = None
+        git_dirty: bool | None = None
+        git_executable = shutil.which("git")
+        if git_executable is not None:
+            commit_process = subprocess.run(
+                [git_executable, "rev-parse", "HEAD"],
+                cwd=repository_root,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            status_process = subprocess.run(
+                [
+                    git_executable,
+                    "status",
+                    "--porcelain=v1",
+                    "--untracked-files=normal",
+                ],
+                cwd=repository_root,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            if commit_process.returncode == 0:
+                git_commit = commit_process.stdout.strip()
+            if status_process.returncode == 0:
+                git_dirty = bool(status_process.stdout)
         if needs_native:
             self_test = subprocess.run(
                 (str(native_binary), "--self-test", "--json"),
@@ -481,6 +509,8 @@ def main() -> None:
                 "platform": platform.platform(),
                 "python": platform.python_version(),
                 "compiler": compiler_version(compiler) if compiler and needs_cpp else None,
+                "git_commit": git_commit,
+                "git_dirty": git_dirty,
             },
             "protocol": {
                 "warmup": args.warmup,

@@ -424,6 +424,28 @@ def main() -> None:
         )
 
     root = Path(__file__).resolve().parents[1]
+    git_commit: str | None = None
+    git_dirty: bool | None = None
+    git_executable = shutil.which("git")
+    if git_executable is not None:
+        commit_process = subprocess.run(
+            [git_executable, "rev-parse", "HEAD"],
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        status_process = subprocess.run(
+            [git_executable, "status", "--porcelain=v1", "--untracked-files=normal"],
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if commit_process.returncode == 0:
+            git_commit = commit_process.stdout.strip()
+        if status_process.returncode == 0:
+            git_dirty = bool(status_process.stdout)
     specifications = args.case or [
         "before=solutions/02_optimization/contest_before.c",
         "optimized=submissions/02/contest.c",
@@ -1359,6 +1381,8 @@ def main() -> None:
                 "flags": flags,
                 "inner_timer": "clock()",
                 "outer_timer": "time.perf_counter_ns",
+                "git_commit": git_commit,
+                "git_dirty": git_dirty,
             },
             "config": {
                 "iterations": args.iterations,

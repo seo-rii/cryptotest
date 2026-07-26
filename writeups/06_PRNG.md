@@ -1,5 +1,25 @@
 # 6. PRNG - Dual_EC_DRBG 백도어 복원과 최적화
 
+## 현재 구현 상태
+
+- 정답 `r3`, 복원한 `d`, `s2/s3`와 원래 곡선의 점 관계는 확정했다.
+- 최종 native source는 `solutions/06_optimization/deep_native_06.cpp`다.
+  범용 carry loop 대신 고정 2-limb Montgomery REDC를 사용하고, 임의점
+  scan은 원곡선과 교차 검증되는 동형 `a=-3` 곡선에서 수행한다.
+- field 2,000개, 경계 pair 64개, point/table 256개와 실제 lift 128개의
+  self-test 및 known-answer 전체 실행을 timing 전에 통과해야 한다.
+- 현재 VM의 순위는 Core Ultra 7 255H 결론이 아니다. P-only, E-only,
+  P+E, all-core와 table/block 크기는 타깃에서 별도로 재측정한다.
+
+score 후보의 기본 build와 검증은 다음과 같다.
+
+```bash
+g++ -O3 -DNDEBUG -march=native -std=c++20 -fopenmp \
+  solutions/06_optimization/deep_native_06.cpp -o /tmp/deep_native_06
+/tmp/deep_native_06 --self-test --json
+/tmp/deep_native_06 --threads 1 --json
+```
+
 ## 문제와 결론
 
 문제의 생성기는 다음과 같다.

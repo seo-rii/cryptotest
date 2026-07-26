@@ -10,6 +10,7 @@ the corresponding lift bits.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -356,6 +357,42 @@ def main() -> None:
     if compiler is None:
         parser.error(f"compiler not found: {args.compiler}")
     directory = Path(__file__).resolve().parent
+    repository_root = directory.parents[1]
+    native_source = directory / "deep_native_06.cpp"
+    gmp_source = directory / "solve_06_gmp.cpp"
+    runner_path = Path(__file__).resolve()
+    source_hashes = {
+        "native": hashlib.sha256(native_source.read_bytes()).hexdigest(),
+        "gmp": hashlib.sha256(gmp_source.read_bytes()).hexdigest(),
+        "runner": hashlib.sha256(runner_path.read_bytes()).hexdigest(),
+    }
+    affinity = (
+        sorted(os.sched_getaffinity(0))
+        if hasattr(os, "sched_getaffinity")
+        else None
+    )
+    git_commit: str | None = None
+    git_dirty: bool | None = None
+    git_executable = shutil.which("git")
+    if git_executable is not None:
+        commit_process = subprocess.run(
+            [git_executable, "rev-parse", "HEAD"],
+            cwd=repository_root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        status_process = subprocess.run(
+            [git_executable, "status", "--porcelain=v1", "--untracked-files=normal"],
+            cwd=repository_root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if commit_process.returncode == 0:
+            git_commit = commit_process.stdout.strip()
+        if status_process.returncode == 0:
+            git_dirty = bool(status_process.stdout)
     environment = os.environ.copy()
     environment.update(
         {
@@ -370,11 +407,11 @@ def main() -> None:
         native_binary = temporary / "deep_native_06"
         gmp_binary = temporary / "solve_06_gmp"
         native_build = compile_source(
-            compiler, directory / "deep_native_06.cpp", native_binary
+            compiler, native_source, native_binary
         )
         gmp_build = compile_source(
             compiler,
-            directory / "solve_06_gmp.cpp",
+            gmp_source,
             gmp_binary,
             ("-lgmpxx", "-lgmp"),
         )
@@ -613,9 +650,12 @@ def main() -> None:
             "environment": {
                 "cpu": cpu_model(),
                 "logical_cpus": os.cpu_count() or 1,
+                "affinity": affinity,
                 "platform": platform.platform(),
                 "python": platform.python_version(),
                 "compiler": compiler_version(compiler),
+                "git_commit": git_commit,
+                "git_dirty": git_dirty,
                 "openmp_environment": {
                     key: environment[key]
                     for key in ("OMP_DYNAMIC", "OMP_PROC_BIND", "OMP_PLACES")
@@ -644,6 +684,7 @@ def main() -> None:
                 },
                 "native_build": list(native_build),
                 "gmp_build": list(gmp_build),
+                "source_sha256": source_hashes,
                 "block_size": args.block_size,
             },
             "metadata": metadata,

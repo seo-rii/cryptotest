@@ -584,6 +584,29 @@ def main() -> None:
     cpu_model, cpu_flags = cpu_model_and_flags()
     runner_path = Path(__file__).resolve()
     runner_hash = sha256(runner_path)
+    repository_root = runner_path.parents[2]
+    git_commit: str | None = None
+    git_dirty: bool | None = None
+    git_executable = shutil.which("git")
+    if git_executable is not None:
+        commit_process = subprocess.run(
+            [git_executable, "rev-parse", "HEAD"],
+            cwd=repository_root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        status_process = subprocess.run(
+            [git_executable, "status", "--porcelain=v1", "--untracked-files=normal"],
+            cwd=repository_root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if commit_process.returncode == 0:
+            git_commit = commit_process.stdout.strip()
+        if status_process.returncode == 0:
+            git_dirty = bool(status_process.stdout)
     preserved_source = (
         args.output.resolve().with_name(args.output.name + ".source.cpp")
         if args.output
@@ -771,6 +794,8 @@ def main() -> None:
                 "python": platform.python_version(),
                 "compiler": compiler_version(compiler),
                 "compiler_native_bmi2_adx": native_bmi2_adx,
+                "git_commit": git_commit,
+                "git_dirty": git_dirty,
                 "cpu_model": cpu_model,
                 "cpu_flags": cpu_flags,
                 "allowed_cpus": sorted(allowed_cpus),
