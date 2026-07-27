@@ -76,6 +76,20 @@ constexpr U128 SUBGROUP_TANGENT_M2 =
     parse_hex("3a7862416ae71b5fea671e");
 constexpr U128 SUBGROUP_RATIONAL_TORSION_X =
     parse_hex("20b363e845196f8282e59d");
+// If z=(x-alpha)^-1, cancellation of the common (x-gamma)^4
+// factor in the Frobenius--Tate trace gives
+//
+//   tau = 2 + c[0]z + c[1]z^2 + ... + c[4]z^5.
+//
+// The expanded formula remains available as an independent ablation and
+// self-test oracle under CH6_EXPANDED_SUBGROUP_TRACE.
+constexpr std::array<U128, 5> SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS{
+    parse_hex("c97682b97af7f9b83508b1"),
+    parse_hex("6f977142976da7c6e471f8"),
+    parse_hex("b56d7f4f899680f860ef2b"),
+    parse_hex("a70788aa8b9edb2fe870f2"),
+    parse_hex("a1a50d0fa2d3c77e33b7da"),
+};
 constexpr U128 SUBGROUP_LUCAS_EXPONENT = (FIELD + 1U) / 5U;
 constexpr U128 SUBGROUP_PRAC_EXPONENT =
     SUBGROUP_LUCAS_EXPONENT / 20U;
@@ -315,6 +329,13 @@ constexpr std::string_view SUBGROUP_BATCH_LAYOUT =
 #else
 constexpr std::string_view SUBGROUP_BATCH_LAYOUT = "xy-separated";
 #endif
+#if defined(CH6_EXPANDED_SUBGROUP_TRACE)
+constexpr std::string_view SUBGROUP_TRACE_FORMULA =
+    "expanded-miller-fraction";
+#else
+constexpr std::string_view SUBGROUP_TRACE_FORMULA =
+    "degree-5-reciprocal-polynomial";
+#endif
 #if defined(CH6_VARIABLE_U128_LUCAS_BITS)
 constexpr std::string_view SUBGROUP_LUCAS_BIT_SCAN =
     "variable-u128-shift";
@@ -464,6 +485,24 @@ constexpr FieldElement SUBGROUP_TANGENT_M1_MONT = split(mul_mod_reference(
     SUBGROUP_TANGENT_M1, MONTGOMERY_ONE_CANON, FIELD));
 constexpr FieldElement SUBGROUP_TANGENT_M2_MONT = split(mul_mod_reference(
     SUBGROUP_TANGENT_M2, MONTGOMERY_ONE_CANON, FIELD));
+constexpr std::array<FieldElement, 5>
+    SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS_MONT{
+        split(mul_mod_reference(
+            SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS[0],
+            MONTGOMERY_ONE_CANON, FIELD)),
+        split(mul_mod_reference(
+            SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS[1],
+            MONTGOMERY_ONE_CANON, FIELD)),
+        split(mul_mod_reference(
+            SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS[2],
+            MONTGOMERY_ONE_CANON, FIELD)),
+        split(mul_mod_reference(
+            SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS[3],
+            MONTGOMERY_ONE_CANON, FIELD)),
+        split(mul_mod_reference(
+            SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS[4],
+            MONTGOMERY_ONE_CANON, FIELD)),
+    };
 constexpr FieldElement CURVE_A_MONT = split(mul_mod_reference(
     CURVE_A_CANON, MONTGOMERY_ONE_CANON, FIELD));
 constexpr FieldElement CURVE_B_MONT = split(mul_mod_reference(
@@ -983,6 +1022,23 @@ const std::array<FieldElement, 11>& subgroup_20th_root_traces() {
 #endif
 }
 
+const std::array<FieldElement, 5>&
+subgroup_trace_reciprocal_coefficients() {
+#if defined(CH6_RUNTIME_SUBGROUP_CONSTANTS)
+    static const auto values = [] {
+        std::array<FieldElement, 5> result{};
+        for (std::size_t index = 0; index < result.size(); ++index) {
+            result[index] = to_montgomery(
+                SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS[index]);
+        }
+        return result;
+    }();
+    return values;
+#else
+    return SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS_MONT;
+#endif
+}
+
 inline FieldElement transformed_curve_rhs(
     const FieldElement& x, const FieldElement& x_squared) {
     const FieldElement three_x = field_add(x, field_double(x));
@@ -1360,7 +1416,7 @@ struct SubgroupTraceFraction {
     FieldElement denominator;
 };
 
-SubgroupTraceFraction subgroup_trace_fraction(
+SubgroupTraceFraction subgroup_trace_fraction_expanded(
     const FieldElement& x, const FieldElement& rhs) {
 #if defined(CH6_RUNTIME_SUBGROUP_CONSTANTS)
     static const FieldElement alpha = to_montgomery(SUBGROUP_ALPHA);
@@ -1399,6 +1455,103 @@ SubgroupTraceFraction subgroup_trace_fraction(
         field_double(field_add(u, v)),
         field_subtract(u, v),
     };
+}
+
+SubgroupTraceFraction subgroup_trace_reciprocal_input(
+    const FieldElement& x) {
+#if defined(CH6_RUNTIME_SUBGROUP_CONSTANTS)
+    static const FieldElement alpha = to_montgomery(SUBGROUP_ALPHA);
+    static const FieldElement gamma = to_montgomery(SUBGROUP_GAMMA);
+#else
+    constexpr FieldElement alpha = SUBGROUP_ALPHA_MONT;
+    constexpr FieldElement gamma = SUBGROUP_GAMMA_MONT;
+#endif
+    // The expanded numerator and denominator both contain
+    // (x-gamma)^4. Preserve its original 0/0 fail-closed semantics instead
+    // of evaluating the removable singularity in the cancelled formula.
+    if (field_equal(x, gamma)) {
+        return {field_zero(), field_zero()};
+    }
+    return {field_zero(), field_subtract(x, alpha)};
+}
+
+FieldElement subgroup_trace_from_reciprocal(
+    const FieldElement& reciprocal) {
+    const auto& coefficients =
+        subgroup_trace_reciprocal_coefficients();
+    FieldElement trace = coefficients.back();
+    for (std::size_t index = coefficients.size() - 1U;
+         index-- > 0;) {
+        trace = field_add(
+            field_multiply(trace, reciprocal), coefficients[index]);
+    }
+    return field_add(
+        field_multiply(trace, reciprocal), field_double(field_one()));
+}
+
+SubgroupTraceFraction subgroup_trace_fraction_reciprocal_polynomial(
+    const FieldElement& x) {
+    const SubgroupTraceFraction input =
+        subgroup_trace_reciprocal_input(x);
+    if (field_is_zero(input.denominator)) {
+        return input;
+    }
+    const FieldElement& y = input.denominator;
+    FieldElement numerator = field_double(field_one());
+    for (const FieldElement& coefficient :
+         subgroup_trace_reciprocal_coefficients()) {
+        numerator =
+            field_add(field_multiply(numerator, y), coefficient);
+    }
+    const FieldElement y_squared = field_square(y);
+    const FieldElement y_fourth = field_square(y_squared);
+    return {numerator, field_multiply(y_fourth, y)};
+}
+
+SubgroupTraceFraction subgroup_trace_fraction(
+    const FieldElement& x, const FieldElement& rhs) {
+#if defined(CH6_EXPANDED_SUBGROUP_TRACE)
+    return subgroup_trace_fraction_expanded(x, rhs);
+#else
+    (void)rhs;
+    return subgroup_trace_reciprocal_input(x);
+#endif
+}
+
+FieldElement subgroup_trace_from_inverse_denominator(
+    const SubgroupTraceFraction& fraction,
+    const FieldElement& inverse_denominator) {
+#if defined(CH6_EXPANDED_SUBGROUP_TRACE)
+    return field_multiply(fraction.numerator, inverse_denominator);
+#else
+    (void)fraction;
+    return subgroup_trace_from_reciprocal(inverse_denominator);
+#endif
+}
+
+bool subgroup_trace_expanded_normalized(
+    const FieldElement& x, const FieldElement& rhs,
+    FieldElement& trace) {
+    const SubgroupTraceFraction fraction =
+        subgroup_trace_fraction_expanded(x, rhs);
+    if (field_is_zero(fraction.denominator)) {
+        return false;
+    }
+    trace = field_multiply(
+        fraction.numerator, field_inverse(fraction.denominator));
+    return true;
+}
+
+bool subgroup_trace_reciprocal_normalized(
+    const FieldElement& x, FieldElement& trace) {
+    const SubgroupTraceFraction input =
+        subgroup_trace_reciprocal_input(x);
+    if (field_is_zero(input.denominator)) {
+        return false;
+    }
+    trace = subgroup_trace_from_reciprocal(
+        field_inverse(input.denominator));
+    return true;
 }
 
 bool subgroup_member_from_trace_binary(const FieldElement& trace) {
@@ -1592,8 +1745,8 @@ bool subgroup_member_scalar(
     if (field_is_zero(fraction.denominator)) {
         return false;
     }
-    const FieldElement trace = field_multiply(
-        fraction.numerator, field_inverse(fraction.denominator));
+    const FieldElement trace = subgroup_trace_from_inverse_denominator(
+        fraction, field_inverse(fraction.denominator));
     return subgroup_member_from_trace(trace);
 }
 
@@ -1662,13 +1815,17 @@ void batch_subgroup_membership(
 #if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
         inverse_product = field_multiply(
             inverse_product, fractions[active].denominator);
-        const FieldElement trace = field_multiply(
-            fractions[active].numerator, inverse_denominator);
+        const FieldElement trace =
+            subgroup_trace_from_inverse_denominator(
+                fractions[active], inverse_denominator);
 #else
         inverse_product =
             field_multiply(inverse_product, denominators[active]);
         const FieldElement trace =
-            field_multiply(numerators[active], inverse_denominator);
+            subgroup_trace_from_inverse_denominator(
+                SubgroupTraceFraction{
+                    numerators[active], denominators[active]},
+                inverse_denominator);
 #endif
         members[indices[active]] = subgroup_member_from_trace(trace);
     }
@@ -1679,13 +1836,16 @@ void batch_subgroup_membership(
 #if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
         inverse_product = field_multiply(
             inverse_product, fractions[active].denominator);
-        fractions[active].numerator = field_multiply(
-            fractions[active].numerator, inverse_denominator);
+        fractions[active].numerator =
+            subgroup_trace_from_inverse_denominator(
+                fractions[active], inverse_denominator);
 #else
         inverse_product =
             field_multiply(inverse_product, denominators[active]);
-        numerators[active] =
-            field_multiply(numerators[active], inverse_denominator);
+        numerators[active] = subgroup_trace_from_inverse_denominator(
+            SubgroupTraceFraction{
+                numerators[active], denominators[active]},
+            inverse_denominator);
 #endif
     }
 
@@ -3063,6 +3223,17 @@ void run_self_test() {
         throw std::runtime_error(
             "subgroup Montgomery constant self-test failed");
     }
+    for (std::size_t index = 0;
+         index < SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS.size();
+         ++index) {
+        if (!field_equal(
+                subgroup_trace_reciprocal_coefficients()[index],
+                to_montgomery(
+                    SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS[index]))) {
+            throw std::runtime_error(
+                "subgroup reciprocal-trace constant self-test failed");
+        }
+    }
     const FieldElement subgroup_two = field_double(field_one());
     for (std::size_t index = 0;
          index < SUBGROUP_20TH_ROOT_TRACES.size();
@@ -3187,6 +3358,101 @@ void run_self_test() {
         const U128 right =
             ((static_cast<U128>(random64()) << 64U) | random64()) % FIELD;
         check_field_pair(left, right);
+    }
+
+    const auto check_subgroup_trace_identity =
+        [](const FieldElement& x, bool check_normalized_trace) {
+        const FieldElement rhs = transformed_curve_rhs(x);
+        const SubgroupTraceFraction expanded =
+            subgroup_trace_fraction_expanded(x, rhs);
+        const SubgroupTraceFraction reciprocal =
+            subgroup_trace_fraction_reciprocal_polynomial(x);
+        const bool expanded_undefined =
+            field_is_zero(expanded.denominator);
+        const bool reciprocal_undefined =
+            field_is_zero(reciprocal.denominator);
+        if (expanded_undefined != reciprocal_undefined) {
+            throw std::runtime_error(
+                "subgroup trace singularity self-test failed");
+        }
+        if (!expanded_undefined) {
+            const FieldElement expanded_cross =
+                field_multiply(
+                    expanded.numerator, reciprocal.denominator);
+            const FieldElement reciprocal_cross =
+                field_multiply(
+                    reciprocal.numerator, expanded.denominator);
+            if (!field_equal(expanded_cross, reciprocal_cross)) {
+                throw std::runtime_error(
+                    "subgroup trace rational identity self-test failed");
+            }
+        }
+        if (!check_normalized_trace) {
+            return;
+        }
+        FieldElement expanded_trace{};
+        FieldElement reciprocal_trace{};
+        const bool expanded_defined =
+            subgroup_trace_expanded_normalized(x, rhs, expanded_trace);
+        const bool reciprocal_defined =
+            subgroup_trace_reciprocal_normalized(x, reciprocal_trace);
+        if (
+            expanded_defined != reciprocal_defined ||
+            (expanded_defined &&
+             !field_equal(expanded_trace, reciprocal_trace))) {
+            throw std::runtime_error(
+                "subgroup normalized trace self-test failed");
+        }
+    };
+    constexpr std::array<U128, 11> SUBGROUP_TRACE_BOUNDARIES{
+        0,
+        1,
+        2,
+        FIELD - 2U,
+        FIELD - 1U,
+        SUBGROUP_ALPHA - 1U,
+        SUBGROUP_ALPHA,
+        SUBGROUP_ALPHA + 1U,
+        SUBGROUP_GAMMA - 1U,
+        SUBGROUP_GAMMA,
+        SUBGROUP_GAMMA + 1U,
+    };
+    for (const U128 canonical_x : SUBGROUP_TRACE_BOUNDARIES) {
+        check_subgroup_trace_identity(
+            to_montgomery(canonical_x), true);
+    }
+    for (const U128 singular_x :
+         {SUBGROUP_ALPHA, SUBGROUP_GAMMA}) {
+        const FieldElement x = to_montgomery(singular_x);
+        const FieldElement rhs = transformed_curve_rhs(x);
+        if (
+            !field_is_zero(
+                subgroup_trace_fraction_expanded(x, rhs).denominator) ||
+            !field_is_zero(
+                subgroup_trace_reciprocal_input(x).denominator) ||
+            !field_is_zero(
+                subgroup_trace_fraction(x, rhs).denominator)) {
+            throw std::runtime_error(
+                "subgroup trace singularity must fail closed");
+        }
+    }
+    for (int iteration = 0; iteration < 512; ++iteration) {
+        const U128 canonical_x =
+            ((static_cast<U128>(random64()) << 64U) | random64()) %
+            FIELD;
+        check_subgroup_trace_identity(
+            to_montgomery(canonical_x), true);
+    }
+    for (const U128 output_prefix : KNOWN_OUTPUTS) {
+        for (unsigned low = 0; low < (1U << 16U); ++low) {
+            const U128 canonical_x =
+                (output_prefix << 16U) | low;
+            if (canonical_x >= FIELD) {
+                continue;
+            }
+            check_subgroup_trace_identity(
+                transformed_x_to_montgomery(canonical_x), false);
+        }
     }
 
     const AffinePoint q = point_q();
@@ -3568,6 +3834,8 @@ int main(int argc, char** argv) {
                       << SUBGROUP_CONSTANT_LAYOUT
                       << "\",\"subgroup_batch_layout\":\""
                       << SUBGROUP_BATCH_LAYOUT
+                      << "\",\"subgroup_trace_formula\":\""
+                      << SUBGROUP_TRACE_FORMULA
                       << "\",\"subgroup_lucas_bit_scan\":\""
                       << SUBGROUP_LUCAS_BIT_SCAN
                       << "\",\"subgroup_lucas_step\":\""
@@ -3624,6 +3892,8 @@ int main(int argc, char** argv) {
                       << SUBGROUP_CONSTANT_LAYOUT << '\n'
                       << "subgroup batch layout = "
                       << SUBGROUP_BATCH_LAYOUT << '\n'
+                      << "subgroup trace formula = "
+                      << SUBGROUP_TRACE_FORMULA << '\n'
                       << "subgroup Lucas bit scan = "
                       << SUBGROUP_LUCAS_BIT_SCAN << '\n'
                       << "subgroup Lucas step = "
