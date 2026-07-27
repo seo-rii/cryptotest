@@ -138,11 +138,11 @@ The flag is: CRYPTO{G00D_J0B!_y0u_f0und_7h3_h1dd3n_s3cr37_1n_LLM}
 
 ## 7. 재현성 주의
 
-이 저장소에는 공식 모델과 17GB 로그가 없으므로 제출본 정리 시 실제 대형 원본을 재실행하지 못했다. 공식 입력으로 생성한 다음 두 파일을 함께 보존하면 로그 단서와 tensor 발견 과정을 blind하게 검증할 수 있다.
+문제에서 제공한 다섯 모델 가운데 분석 대상은 `TinyLlama-1.1B-Chat-v1.0.zip`이다. 제출 패키지에는 이 대상 ZIP과 17GB `server.zip`을 포함하지 않으며, 보고서 검증 환경에도 두 대상 입력이 없었다. 다른 후보 모델은 대상 TinyLlama와 로그를 대신할 수 없다. 대상 입력으로 생성한 다음 두 파일을 함께 보존하면 로그 단서와 tensor 발견 과정을 blind하게 검증할 수 있다.
 
 ```text
 log-evidence.jsonl
 discovery.json
 ```
 
-별도 합성 회귀 테스트는 ZIP discovery/extract, nibble chunk 경계, SafeTensors padding/range 거부, 긴 로그 line skip과 exact line/record evidence를 검증한다. 이는 공식 원본에 대한 독립 재실행을 대신하지 않는다.
+별도 합성 회귀 테스트는 ZIP discovery/extract, nibble chunk 경계, SafeTensors padding/range 거부, 긴 로그 line skip과 exact line/record evidence를 검증한다. 이는 대상 TinyLlama와 서버 로그에 대한 독립 재실행을 대신하지 않는다.

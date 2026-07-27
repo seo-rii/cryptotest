@@ -216,9 +216,12 @@ CRYPTO{G00D_J0B!_y0u_f0und_7h3_h1dd3n_s3cr37_1n_LLM}
 
 \section{재현성 주의}
 
-제출 저장소에는 공식 모델과 17GB 로그가 없어 보고서 정리 시 대형 원본을
-재실행하지 못했다. 따라서 검증하지 못한 raw record, offset, line hash나
-생성 환경을 지어 넣지 않았다. 공식 입력으로 생성한
+문제에서 제공한 다섯 모델 가운데 분석 대상은
+\texttt{TinyLlama-1.1B-Chat-v1.0.zip}이다. 제출 패키지에는 이 대상 ZIP과
+17GB \texttt{server.zip}을 포함하지 않으며, 보고서 검증 환경에도 두 대상
+입력이 없었다. 다른 후보 모델은 대상 TinyLlama와 로그를 대신할 수 없다.
+따라서 검증하지 못한 raw record, offset, line hash나 생성 환경을 지어
+넣지 않았다. 대상 입력으로 생성한
 \texttt{log-evidence.jsonl}과 \texttt{discovery.json}을 보존하면 기존
 분석의 \texttt{chat-000005}, 비영 nibble 수 345, payload를 blind
 discovery부터 독립 검증할 수 있다. 합성 회귀 테스트만으로 이 재실행을
