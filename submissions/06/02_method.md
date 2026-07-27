@@ -102,10 +102,24 @@ canonical 변환 없이도 symbol이 같다. denominator 예외에서 NAF fallba
 basic-field 조건 `5 | p-1`은 성립하지 않으므로, `Fp2` Frobenius `-1`
 eigenspace의 order-5 점으로 Tate/Miller 값을 전개했다.
 `W=f(T)^p/f(T)`의 trace `tau=W+W^-1`는 y가 소거되어 x만으로 계산되고,
-`e=(p+1)/5`에 대한 Lucas ladder가 `W^e=1`인지 판정한다. block 안의 trace
-분모는 한 번에 batch-invert한다. 정답 prefix의 curve-valid 7,713개 중
-직접 `[n]T=O`인 1,547개와 trace 결과가 모두 일치해 Hamburg 호출의
-79.94%를 제거한다.
+`W^p=W^-1`이므로 norm-one 군에 있다. `E=(p+1)/5=20H`라 두면
+`L_E=2`는 `z=W^H`에 대해 `z^20=1`과 동치다. 따라서 fixed PRAC으로
+`L_H`를 계산하고 `mu_20/{z~z^-1}`의 정확히 11개 trace와 비교한다.
+115-byte schedule은 `118M+6S=124` products로 binary Lucas의
+`85M+85S=170`보다 27.1% 적다. block은 trace fraction을 직접 준비하고
+in-place compact한 뒤 모든 분모를 한 번에 batch-invert한다. 정답
+prefix의 curve-valid 7,713개 중 직접 `[n]T=O`인 1,547개와 trace 결과가
+모두 일치해 Hamburg 호출의 79.94%를 제거한다.
+
+binary/separate-array 기준과 PRAC/direct-fraction 기본 경로의 1-thread
+40-pair campaign은 두 번 모두 통과했다. paired median과 CI는 각각
+`1.0345x`(`1.0271..1.0448`), `1.0311x`
+(`1.0268..1.0376`)였다.
+최종 감사 뒤 같은 비교는 median `1.0289x`였지만 CI
+`0.9791..1.0878`와 53.8%/72.1%의 절대 block spread로 stationarity를
+실패해 audit-snapshot correctness 확인용 진단으로만 남겼다. 이후
+최종 변경은 timed path가 아니라 direct-fraction 경계 self-test만
+강화했다.
 
 연속 candidate block은 atomic counter로 배분한다. 최종 adaptive 정책은
 1 thread에서 block/batch inverse 64개, 2 threads에서 block 32개, 3 threads
@@ -123,8 +137,16 @@ compile-time fallback과 실제 lift 교차 검증을 함께 유지한다.
 CI가 parity를 포함했다. 두 후보는 실험 macro만 남기고 unsigned w8 table과
 Euclidean Jacobi를 유지했다. 부분군 필터의 직접 `Fp2` character 변형은
 sqrt가 필요해 paired `1.1643x`에 그쳤고, x-only trace의 `1.9444x`보다
-느려 기각했다. 완전 unroll Lucas도 code-size 증가와 넓은 CI 때문에
-채택하지 않았다.
+느려 기각했다. elliptic-point scalar PRAC은 고정 `d`의 Hamburg보다
+불리했지만, 이는 채택한 Lucas-recurrence PRAC과 별개다.
+
+Lucas 쪽에서는 `E/4` 뒤 `mu_4` trace 비교가 128 products,
+factor composition이 약 136이라 최종 124보다 길었다. dynamic PRAC은
+hot U128 division/remainder가 필요했고, 84-step binary 완전 unroll과
+fused PRAC은 code-size/dispatch 비용 때문에 느렸다. binary 2-lane은
+`1.0180x`, branchless mask-select는 `0.9770x`, U64 bit stream은
+`1.0068x`라 기본값으로 승격하지 않았다. direct fraction layout 단독도
+`1.0007x`였지만 compact PRAC과 결합했을 때만 반복 PASS했다.
 
 복잡도는 telemetry가 이 인스턴스에서 `O(log B log n)`, 상태 탐색 work가
 최악 `O(2^16 log n)`이다. native 고정 table 외 탐색 메모리는 worker마다
@@ -171,8 +193,8 @@ host 포화로 stationarity는 실패해 절대 시간은 diagnostic-only다.
 이는 source SHA-256
 `5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`을
 고정한 campaign이다. 이후 최종 source의 중복 `PreparedLift` 저장과
-`x^2` 계산을 제거하고 correctness를 재검증했지만, 포화된 host에서 새
-성능 수치는 만들지 않았다.
+`x^2` 계산을 제거하고 correctness를 재검증했지만, 포화된 host에서 같은
+no-subgroup-filter/trace-filter ablation은 다시 수치화하지 않았다.
 Jacobi와 새 2-thread 정책 전 source의 전체 legacy/당시-final holdout은
 warm-up 10쌍 뒤 paired `3.7126x`(95% CI `3.7106..3.7251`)였다. 이는 현재
 전체 stack의 합산 수치가 아니라 이전 단계의 역사적 같은-source 비교다.
@@ -182,7 +204,11 @@ timing 전에 독립 canonical arithmetic와 affine reference로 field 2,000개,
 scalar/batched subgroup 128개를 교차 검증했다. Sage에서도 무작위 200점과
 실제 prefix 전부를 직접 `[n]T`와 비교해 mismatch 0을 확인했다. signed
 carry와 subgroup order 경계도 point vector에 넣고, 모든 Jacobi 변형을
-Fermat/Legendre와 비교했다. 모든 측정
+Fermat/Legendre와 비교했다. 11개 `mu_20` trace의 uniqueness와
+`L_20=2`, runtime Montgomery 변환, 2,000 random+boundary trace의
+binary/PRAC 일치도 검사했다. direct-fraction batch는 256-entry 경계와
+분모 0을 주입한 compaction/fail-closed 경로도 검사했다.
+pattern-initialized build도 전체 self-test/KAT를 통과했다. 모든 측정
 process도 `P=dQ`, `d`, `r3`, `state_label`별 `s2/s3`, 정답 low bits와
 요청/실제 thread·schedule·table·residue metadata를 다시 검사했다.
 
@@ -198,6 +224,10 @@ process도 `P=dQ`, `d`, `r3`, `state_label`별 `s2/s3`, 정답 low bits와
 - [Möller, *Efficient computation of the Jacobi symbol*](https://arxiv.org/abs/1907.07795), [GNU MP Jacobi algorithm](https://gmplib.org/manual/Jacobi-Symbol.html): Euclidean reduction 중 quadratic-reciprocity 부호 갱신.
 - [Koshelev, *Subgroup membership testing on elliptic curves via the Tate pairing*](https://eprint.iacr.org/2022/037.pdf): small-cofactor pairing test의 출발점. basic-field 조건은 성립하지 않아 `Fp2`로 확장했다.
 - [Enge, *Bilinear pairings on elliptic curves*](https://arxiv.org/abs/1301.5520): Miller recurrence와 reduced Tate pairing을 x-only Frobenius trace로 전개할 때 참고했다.
+- [Montgomery, *Evaluating recurrences via Lucas chains*](https://cr.yp.to/bib/1992/montgomery-lucas.pdf): differential Lucas chain과 PRAC rule.
+- [Zimmermann--Dodson, *20 years of ECM*, Section 2.2](https://members.loria.fr/PZimmermann/papers/ecm-submitted.pdf): PRAC seed와 operation-cost 탐색.
+- [Kutz, *Lower Bounds for Lucas Chains*](https://epubs.siam.org/doi/10.1137/S0097539700379255): Fibonacci형 길이 하한의 맥락; 124-product chain의 최적성 증명으로 쓰지는 않았다.
+- [GMP-ECM `lucas.c`](https://sources.debian.org/src/gmp-ecm/7.0.6%2Bds-2/lucas.c/): production PRAC rule update와 대조.
 - [Bernstein et al., *OpenSSLNTRU*](https://opensslntru.cr.yp.to/opensslntru-20211006.pdf): prefix/reverse batch inversion 비용.
 - [Montgomery, *Modular Multiplication Without Trial Division*](https://doi.org/10.1090/S0025-5718-1985-0777282-X): 2-limb REDC와 Montgomery 표현.
 - [GNU MP Manual](https://gmplib.org/manual/) 및 [OpenMP 5.2](https://www.openmp.org/spec-html/5.2/openmp.html): C++ arithmetic와 병렬 구현.

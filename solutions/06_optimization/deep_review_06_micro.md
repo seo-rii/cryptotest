@@ -22,7 +22,9 @@ batch-normalize했다. 두 번째 최적화 pass에서 scan과 고정 `d` 곱까
   전환하는 Euclidean Jacobi; Hamburg exceptional NAF에서만 width-4
   sqrt를 지연 실행
 - subgroup: `Fp2` Frobenius--Tate trace의 x-only cofactor-5 판정,
-  block마다 trace 분모를 한 번에 batch-invert
+  `E=20H`의 115-byte fixed Lucas-PRAC과 11개 `mu_20` trace 비교
+- subgroup batch layout: fraction을 caller에서 직접 만들고 in-place로
+  compact한 뒤 block마다 분모를 한 번에 batch-invert
 - scan curve: 원곡선과 동형인 `a=-3` 모델, 결과 x는 원래 좌표로 환산
 - 역원: canonical `unsigned __int128` binary extended GCD
 - 제곱근 fallback: 고정 지수 `(p+1)/4`의 width-4 sliding window
@@ -216,10 +218,24 @@ stationarity gate는 실패해 보조 자료로만 쓴다.
 Hamburg 앞에는 cofactor-5 x-only membership filter를 둔다. `Fp2`의
 Frobenius `-1` eigenspace에 있는 order-5 점으로 Miller 함수를 전개한 뒤
 `W+W^-1` trace를 취해 y좌표를 없앴다. 고정
-`e=(p+1)/5`의 Lucas ladder가 `W^e=1`인지 검사한다. 한 block의 모든 trace
-분모는 Montgomery trick으로 함께 invert하므로 후보당 비용은 약 183
-field M/S이고, `[d]T` Hamburg 약 930 M/S보다 작다. 실제 정답 prefix에서
-curve-valid 7,713개 중 1,547개만 통과해 79.94%를 미리 버린다.
+`E=(p+1)/5=20H`에 대해 115-byte fixed Lucas-PRAC으로 `L_H`를 계산하고
+11개 `mu_20` trace와 비교한다. binary 기준의 `85M+85S=170` products를
+`118M+6S=124`로 줄였고, trace 준비와 batch normalization까지 후보당
+약 137 field M/S다. 초기화와 마무리를 포함한 `[d]T` Hamburg 전체는
+약 930 products이고, 79.94% reject율을 반영한 손익분기점 약 743보다
+작다. 실제 정답
+prefix에서 curve-valid 7,713개 중 1,547개만 통과해 79.94%를 미리
+버린다.
+
+caller가 `SubgroupTraceFraction`을 직접 만들고 batch 함수가 이를
+in-place compact한다. 최종 1-lane은 normalized trace를 지역값으로
+계산하고 multi-lane ablation만 numerator를 덮어쓴다. x/RHS와
+numerator/denominator를 각각 따로 staging하던 배열을 없애 GCC 12의
+raw `batch_subgroup_membership` prologue allocation을 `0x38a8`에서
+`0x1180`으로 줄였다. 이 layout 단독 성능은 `1.0007x`(CI
+`0.9912..1.0082`)로
+동률이었지만 compact PRAC과 결합한 두 campaign은 각각 `1.0345x`와
+`1.0311x`로 승격 gate를 통과했다.
 
 필터 없음/있음 40-pair 결과는 1 thread에서
 `0.085280/0.044124 s`, paired `1.9444x`(CI `1.9113..1.9687`), 2
@@ -232,7 +248,7 @@ stationarity는 실패했지만, 네 effect block은 1 thread에서
 `5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`을
 고정한 campaign이다. 이후 최종 source는 중복 `PreparedLift` 저장과
 중복 `x^2` 계산을 제거했고 correctness suite를 다시 통과했지만, 포화된
-host에서 최종 source를 다시 수치화하지는 않았다.
+host에서 같은 no-filter/filter ablation을 다시 수치화하지는 않았다.
 
 ### 4. block scheduling과 batch affine-x
 
@@ -302,8 +318,10 @@ r3                 = 0x2443c8daf1a9d52b09
 `d`, `P=dQ`, `s2`, `r3`를 검증한다. GMP/native process는 low bits까지
 검증한다. native는 `state_label`, lift/filter output index,
 `field_backend`, curve model, `d` multiplication, lift residue, subgroup
-membership test, table width/encoding/multiplication, 요청/실효 block, 요청/실제 thread,
-schedule, inverse와 sqrt까지 출력한다. runner는 요청한 후보와 이
+membership test와 constant/batch layout, Lucas bit scan/step,
+scan-buffer/curve-constant layout, table width/encoding/multiplication,
+요청/실효 block, 요청/실제 thread, schedule, inverse와 sqrt까지 출력한다.
+runner는 요청한 후보와 이
 metadata가 다르면 timing 전에 실패한다. 기존 원본의 출력 이름 `s1`은
 수학적으로 `s2`이고 runner는 그 값만 정상화한다.
 
@@ -392,6 +410,14 @@ VM 부하로 특히 8-thread MAD가 컸으므로 큰 효과의 sanity check일 �
 | 2T scalar64 / adaptive block32 | 1.2121x | 1.2051..1.2163 | PASS | 2T 정책 채택 |
 | no subgroup filter / Frobenius--Tate trace, 1T | 1.9444x | 1.9113..1.9687 | FAIL | 큰 전 구간 이득, diagnostic timing |
 | no subgroup filter / Frobenius--Tate trace, 2T | 1.7448x | 1.7161..1.7904 | FAIL | 큰 전 구간 이득, diagnostic timing |
+| binary/xy / PRAC20/direct, 1T run 1 | 1.0345x | 1.0271..1.0448 | PASS | 기본값 승격 |
+| binary/xy / PRAC20/direct, 1T run 2 | 1.0311x | 1.0268..1.0376 | PASS | 독립 재현 |
+| binary/xy / PRAC20/direct, post-audit | 1.0289x | 0.9791..1.0878 | FAIL | 포화 host 진단 |
+| binary branch / branchless select | 0.9770x | 0.9609..0.9914 | FAIL | branch 유지 |
+| U128 bit scan / U64 stream | 1.0068x | 1.0001..1.0191 | FAIL | 2% 미달, U128 유지 |
+| xy-separated / direct fraction only | 1.0007x | 0.9912..1.0082 | PASS | 단독 승격 안 함 |
+| binary 1-lane / binary 2-lane | 1.0180x | 1.0015..1.0316 | FAIL | 2% 미달 |
+| binary / compact PRAC only | 1.0180x | 1.0117..1.0286 | FAIL | 결합 후보로 이동 |
 | full-U128 / Montgomery-hybrid Jacobi | 1.0013x | 0.9699..1.0315 | FAIL | micro 개선만 확인 |
 | unsigned w8 / signed-w9 | 1.0065x | 1.0035..1.0094 | PASS | 2% 미달 |
 | Euclidean / subtractive Jacobi | 1.0072x | 0.9851..1.0225 | FAIL | Euclidean 유지 |
@@ -401,6 +427,27 @@ VM 부하로 특히 8-thread MAD가 컸으므로 큰 효과의 sanity check일 �
 | block 64 / block 128 | 0.9948x | 0.9093..1.0473 | FAIL | 64 유지 |
 | subgroup stack block64 / block256 | 1.0365x | 1.0173..1.0503 | FAIL | stationarity 재측정 필요 |
 | generic carry / BMI2+ADX | 2.9808x | 2.7330..3.2589 | FAIL | 큰 방향성만 확인 |
+
+PRAC/direct 승격 뒤 최종 기본 매크로로 다시 실행한 1-thread campaign도
+paired `1.0382x`(CI `1.0248..1.0537`)였지만, 후반 host phase가 바뀌어
+stationarity만 실패했다. 앞의 독립 PASS 두 번과 hot-path code가 같은
+보조 확인으로만 쓴다. 8-thread median도 `1.0381x`였지만 CI
+`0.9070..1.1621`로 너무 넓어 결론을 내리지 않았다.
+최종 감사 source SHA-256
+`840999f697112a17c7ebe6809351b4971b1a713d021e4c356334e3c4462ae073`의
+seed `0x44444444` 재실행도 median `1.0289x`, CI
+`0.9791..1.0878`이었다. baseline/candidate block spread가 각각
+53.8%/72.1%라 stationarity가 실패했으므로 audit-snapshot 성능 근거로
+추가하지 않는다. 뒤의 최종 변경은 timed path가 아닌 direct-fraction
+self-test fixture만 강화했다.
+
+코드생성 쪽에서는 subgroup/curve Montgomery 상수를 compile-time으로
+만들어 local-static guard를 없앴고, write-before-read가 증명된 scan
+buffer의 eager zero-fill을 제거했다. `-ftrivial-auto-var-init=pattern`
+self-test/KAT로 초기화 누락을 확인했다. 정식 wall-clock은 각각 host
+stationarity를 통과하지 못해 별도 속도 수치를 주장하지 않는다.
+최종-source block256은 `1.0183x`, LTO는 `1.0083x`, 전체 codegen cleanup
+ablation은 `1.0140x`로 모두 2% promotion rule을 넘지 못했다.
 
 마지막 arithmetic holdout은 40쌍 모두 BMI2/ADX가 `2.04x` 이상
 이겼지만 host load average가 16을 넘으며 block spread gate가 실패했다.
@@ -547,7 +594,7 @@ inverse나 generic Jacobian addition 비용 때문에 width-2 mixed NAF가
 두 cross term을 공통 부분식으로 합쳤기 때문이다. `join(left)+join(right)`
 형태의 direct U128 add도 carry intrinsic보다 빠르지 않았다.
 
-새 부분군 Lucas ladder가 square를 많이 쓰므로 두 구현을 다시 측정했지만
+당시 binary 부분군 Lucas ladder가 square를 많이 써 두 구현을 다시 측정했지만
 오히려 portable specialized square는 paired `0.7111x`(CI
 `0.6640..0.8047`), BMI2 intrinsic square는 `0.9230x`(CI
 `0.8584..0.9899`)로 명확히 느렸다. 일반 multiply-as-square를 유지한다.
@@ -628,15 +675,39 @@ GPR spill과 stack traffic이 이득을 압도했다. 논문의 Figure 4는 Figu
 `3T+=scalar64`만 자동 선택한다. 명시적 `block/scalar/static` 모드는 후속
 target별 재측정을 위해 유지한다.
 
-### PRAC, GLV와 더 넓은 고정 chain
+### elliptic scalar PRAC, GLV와 더 넓은 고정 chain
 
-PRAC은 임의 scalar multiplication의 addition chain을 줄일 수 있지만 이
-문제의 hot scalar `d`는 고정이고 Hamburg ladder가 이미 더 규칙적인
-x-only 경로를 제공한다. GLV/endomorphism 분해는 이 generic-j
+elliptic-point PRAC은 임의 scalar multiplication의 addition chain을 줄일
+수 있지만 이 문제의 hot scalar `d`는 고정이고 Hamburg ladder가 이미 더
+규칙적인 x-only 경로를 제공한다. GLV/endomorphism 분해는 이 generic-j
 short-Weierstrass curve에서 쓸 수 있는 효율적인 endomorphism과 subgroup
 구조가 주어지지 않았다. 매우 넓은 고정 addition chain도 code size,
 per-lift precomputation과 exceptional case를 포함하면 NAF/Hamburg를
 넘지 못해 구현 후보에서 제외했다.
+
+이 실패는 아래의 trace recurrence용 Lucas-PRAC과 다른 문제다.
+
+### Lucas-PRAC과 `mu_20` campaign
+
+binary Lucas 기준은 `E=(p+1)/5`의 84개 남은 bit마다 multiply와 square를
+실행해 170 products를 썼다. `E/4`를 PRAC으로 계산한 뒤 `mu_4` traces
+`{0,2,-2}`와 비교하는 후보는 약 128 products, factor별 composition은
+약 136이었다. 최종 `E=20H`와 11개 `mu_20` trace 방식이
+`118M+6S=124`로 가장 짧았다. 이는 찾은 chain 중 최선이지 전역 최적성
+증명은 아니며, Fibonacci형 하한 맥락 약 117과 일곱 product 차이다.
+
+dynamic PRAC은 후보마다 U128 division/remainder와 rule 선택을 수행하므로
+고정 지수에 맞지 않았다. offline에서 만든 115-byte schedule을 compact
+loop로 해석했다. 큰 opcode switch를 복제한 fused interpreter는
+`0.9880x`, 2-lane PRAC은 `0.9941x`로 졌다. compact interpreter만 쓰면
+`1.0180x`로 문턱 아래였고, direct in-place fraction layout과 결합한 뒤
+두 독립 run에서 `1.0345x`, `1.0311x`로 PASS해 기본값에 넣었다.
+
+84-step binary loop의 완전 template unroll은 code bloat로 실패했다.
+binary 2-lane interleaving은 `1.0180x`, U64 MSB bit stream은
+`1.0068x`라 2%에 못 미쳤다. mask-select branchless binary step은 함수
+크기를 줄였지만 매 step의 네 limb 선택 때문에 `0.9770x`로 명확히
+느렸다. 이 후보들은 binary oracle/ablation macro로만 남겼다.
 
 ### `mpz_legendre`와 exponentiation 선필터
 
@@ -659,9 +730,11 @@ recurrence는 `deep_review_06_algorithm.md`에 적었다.
 `(p+1)/5`승하고 허수부가 0인지 검사했다. 판정은 맞지만 먼저 y를
 구하기 위한 sqrt와 Fp2 연산이 필요해 no-filter 대비 paired
 `1.1643x`에 그쳤다. x-only trace+block batch inversion의 `1.9444x`보다
-낮아 기각했다. Lucas bit loop를 84단계 template로 완전히 펼치는 후보도
+낮아 기각했다. 역사적 binary Lucas bit loop를 84단계 template로 완전히
+펼치는 후보도
 함수가 약 `0x510`에서 `0x298e`바이트로 커졌고 paired `1.0451x`, CI
-`0.9133..1.1072`로 불확실해 loop를 유지했다.
+`0.9133..1.1072`로 불확실했다. 이후의 fixed PRAC/direct-fraction
+선택 과정은 바로 위 campaign에 정리했다.
 
 ### BMI2/ADX 이후의 carry chain
 
@@ -677,6 +750,33 @@ REDC dependency와 추가 move/carry가 dual chain 이득을 상쇄했다.
 요청한 두 thread를 만들지 못했으므로 결과에서 제외했다. compiler 교체는
 libomp 의존성과 현재 host 포화가 해소된 뒤 별도 40-pair campaign으로
 판정한다.
+
+### constant guard와 scan-buffer 초기화
+
+subgroup 여섯 상수, 곡선 네 상수와 11개 `mu_20` trace를
+`constexpr` Montgomery residue로 만들었다. 이전 function-local static
+초기화 guard가 hot `subgroup_trace_fraction`과 curve accessor에
+들어오지 않는다. self-test는 각 compile-time 값을 runtime
+`to_montgomery` 결과와 다시 비교한다. 이 변경은 code layout을
+단순화하지만 noisy 전체 ablation이 promotion gate를 통과하지 않아
+독립적인 속도 수치는 주장하지 않는다. 재현용
+`CH6_RUNTIME_SUBGROUP_CONSTANTS`는 rational-map 상수뿐 아니라 11개
+root trace의 Montgomery 변환도 function-local static으로 되돌려 JSON
+layout label과 실제 codegen을 맞춘다.
+
+block evaluator의 큰 POD 배열도 실제 write 순서를 감사했다.
+`PreparedLift::y`는 `y_available`가 참인 fallback에서만 읽고, caller의
+목적지에 직접 prepare한다. members의 필요한 false fill을 제외하면
+evaluator와 subgroup batch의 eager zero-fill을 제거했다. default와
+`-ftrivial-auto-var-init=pattern` build가 field/point/subgroup self-test와
+전체 KAT를 모두 통과했다. 재현용 `CH6_EAGER_ZERO_SCAN_BUFFERS`는
+기존 초기화를 되살린다.
+
+binary oracle의 128-bit variable shift를 U64 MSB stream으로 바꾸는 후보도
+`shrd/shrx`를 줄였지만 함수 크기는 오히려 늘었다. paired `1.0068x`
+(CI `1.0001..1.0191`)로 2% 문턱과 stationarity를 놓쳐 최종 기본값은
+U128 scan을 유지한다. GCC LTO도 text와 일부 함수 크기를 줄였지만
+`1.0083x`에 그쳐 기본 build flag에 넣지 않았다.
 
 ### cache hint, padding과 compiler flag
 
@@ -737,6 +837,20 @@ AVX-512 IFMA52가 있는 다른 CPU라면 radix-44/52 multi-buffer field를
   [“Bilinear pairings on elliptic curves”](https://arxiv.org/abs/1301.5520).
   Miller recurrence, reduced Tate pairing과 Frobenius 관계를 이용해
   order-5 Miller 값을 x-only trace로 전개할 때 참고했다.
+- Peter L. Montgomery,
+  [“Evaluating recurrences of form X_(m+n)=f(X_m,X_n,X_(m-n)) via
+  Lucas chains”](https://cr.yp.to/bib/1992/montgomery-lucas.pdf).
+  differential Lucas chain과 PRAC rule의 원자료다.
+- Paul Zimmermann and Bruce Dodson,
+  [“20 years of ECM”, Section
+  2.2](https://members.loria.fr/PZimmermann/papers/ecm-submitted.pdf).
+  golden-ratio 및 transformed-alpha PRAC seed와 비용 탐색을 대조했다.
+- Martin Kutz,
+  [“Lower Bounds for Lucas Chains”](https://epubs.siam.org/doi/10.1137/S0097539700379255),
+  *SIAM Journal on Computing* 31(6), 2002. Fibonacci형 길이 하한의
+  맥락이며, 현재 124-op chain의 전역 최적성을 뜻하지는 않는다.
+- [GMP-ECM `lucas.c`](https://sources.debian.org/src/gmp-ecm/7.0.6%2Bds-2/lucas.c/).
+  production `pp1_mul_prac`의 rule 순서와 alias-safe update를 확인했다.
 - François Morain and Jorge Olivos,
   [“Speeding up the computations on an elliptic curve using
   addition-subtraction chains”](https://www.numdam.org/item/ITA_1990__24_6_531_0/),

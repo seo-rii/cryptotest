@@ -45,10 +45,15 @@ The default `deep_native_06.cpp` combines:
 8. a hybrid 128/64-bit Jacobi test run directly on the Montgomery residue,
    deferring the square root to the exceptional NAF fallback;
 9. an exact x-only cofactor-5 subgroup filter derived from a Frobenius/Tate
-   trace over `Fp2`; block scans batch-invert all trace denominators before the
-   expensive Hamburg multiplication;
-10. a width-8 fixed-`Q` affine comb table and mixed Jacobian addition;
-11. monotone OpenMP work assignment: block-64 at one thread, block-32 at two
+   trace over `Fp2`; it evaluates `H=(p+1)/100` with a fixed 115-byte
+   Lucas-PRAC schedule and compares the result with the 11 traces of
+   `mu_20`, replacing the former 170-product binary Lucas ladder with a
+   124-product chain;
+10. direct in-place trace-fraction preparation: block scans compact the
+    surviving fractions and batch-invert their denominators without staging
+    separate x, curve-RHS, numerator, and denominator arrays;
+11. a width-8 fixed-`Q` affine comb table and mixed Jacobian addition;
+12. monotone OpenMP work assignment: block-64 at one thread, block-32 at two
     threads, and the scalar pipeline at three or more threads.
 
 The fixed field element is 16 bytes, a Jacobian point is 48 bytes, and the
@@ -68,14 +73,20 @@ Before timing, the native self-test checks:
 The same field vectors compare full-U128, hybrid-U64, Montgomery-residue,
 canonical-input, Euclidean, and subtractive Jacobi variants with a
 Fermat/Legendre reference. The subgroup preflight also checks known positive
-and rational 5-torsion negative vectors.
+and rational 5-torsion negative vectors, converts all 11 `mu_20` traces to
+Montgomery form independently, and compares the fixed PRAC chain with the
+binary Lucas oracle on every boundary and random field trace. A
+`-ftrivial-auto-var-init=pattern` build passes the same self-test and known
+answer, guarding the write-before-read scan buffers.
 
 Every timed JSON result also reports the selected field backend, curve model,
 `d` multiplication, lift residue test, subgroup membership test, table
 width/encoding, scan label and output indices, requested and actual threads,
 schedule, inverse, and square-root method, plus requested/effective block size
-and fixed-`Q` multiplication layout. The solver rejects a smaller OpenMP team,
-and the benchmark rejects metadata mismatches instead of timing an accidentally
+and fixed-`Q` multiplication layout. It additionally identifies the subgroup
+constant layout, batch layout, Lucas bit scan/step, scan-buffer initialization,
+and curve-constant layout. The solver rejects a smaller OpenMP team, and the
+benchmark rejects metadata mismatches instead of timing an accidentally
 inactive macro.
 
 ## Reproduce
@@ -116,16 +127,16 @@ python3 solutions/06_optimization/benchmark_deep_native_06.py \
   --output /tmp/ch6-broad.json
 ```
 
-Use the promotion runner for a small candidate. This example isolates the
-NAF/Hamburg change by forcing the same square-root lift in both builds:
+Use the promotion runner for a small candidate. This example reproduces the
+old binary-Lucas/separate-x-RHS baseline against the promoted default:
 
 ```bash
 python3 solutions/06_optimization/benchmark_06_promotion.py \
-  --baseline-label naf --candidate-label hamburg \
-  --baseline-define CH6_NAF_D_MULTIPLICATION \
-  --candidate-define CH6_SQRT_LIFT \
-  --threads 1 --warmup-pairs 2 --pairs 40 \
-  --output /tmp/ch6-hamburg.json
+  --baseline-label binary-xy --candidate-label prac20-direct \
+  --baseline-define CH6_BINARY_SUBGROUP_LUCAS \
+  --baseline-define CH6_XY_SUBGROUP_BATCH \
+  --threads 1 --warmup-pairs 3 --pairs 40 \
+  --output /tmp/ch6-prac20-direct.json
 ```
 
 The promotion protocol uses four chronological blocks, each with five AB and
@@ -135,7 +146,11 @@ gate. It rejects identical build/runtime configurations unless
 `--null-calibration` is explicit. All runners clear inherited OpenMP thread and
 affinity overrides, use the current affinity mask for `auto`, and record what
 was cleared. The measured source is preserved beside the report as
-`/tmp/ch6-hamburg.json.source.cpp`.
+`/tmp/ch6-prac20-direct.json.source.cpp`. Variant-specific compiler flags can
+also be isolated with repeated `--baseline-cxxflag` and
+`--candidate-cxxflag` options. The runner queries compiler predefines again
+with each variant's flags, so ISA ablations such as `-mno-bmi2 -mno-adx` are
+validated against their actual portable-backend metadata.
 
 ## Selection results
 
@@ -147,6 +162,30 @@ The stationarity-gated wins now include:
 | Hamburg co-Z vs width-2 NAF | 1.1716x | 1.1682..1.1764 | adopted |
 | Jacobi lift vs square-root lift, 1T | 1.0819x | 1.0769..1.0842 | adopted |
 | adaptive block-32 vs scalar-64, 2T | 1.2121x | 1.2051..1.2163 | adopted |
+| binary/xy vs Lucas-PRAC/direct, 1T run 1 | 1.0345x | 1.0271..1.0448 | adopted |
+| binary/xy vs Lucas-PRAC/direct, 1T run 2 | 1.0311x | 1.0268..1.0376 | reproduced |
+
+The subgroup-chain promotion is deliberately a combined change. For
+`E=(p+1)/5=20H`, the fixed chain computes `L_H` in `118M+6S=124` field
+products and accepts exactly the 11 values `z+z^-1` for `z` in `mu_20`.
+The binary baseline needs `85M+85S=170` products. Direct fraction preparation
+also reduces GCC 12's raw batch-function prologue allocation from `0x38a8` to
+`0x1180`, about 10 KiB, although that layout alone was timing parity at
+`1.0007x` (CI
+`0.9912..1.0082`). Two independent combined campaigns passed every promotion
+gate at `1.0345x` and `1.0311x`. A later final-default-source run remained
+positive at `1.0382x` (CI `1.0248..1.0537`) but failed stationarity during a
+host-load shift; it is recorded as a noisy confirmation, not a third PASS.
+An additional post-audit run on source SHA-256
+`840999f697112a17c7ebe6809351b4971b1a713d021e4c356334e3c4462ae073`
+had median `1.0289x` but CI `0.9791..1.0878`; absolute block spreads of
+53.8%/72.1% and a sign-changing effect made it diagnostic-only as well.
+The final source SHA-256
+`a97d24e5d6a581da586c0df48beb64abdeb6ab60273f2cdd00a352b74aa8df16`
+differs only in stronger self-test fixtures for positive index 255,
+zero-denominator compaction, and multi-lane tails; the timed path is unchanged.
+The 8-thread diagnostic median was `1.0381x`, but its CI
+`0.9070..1.1621` and stationarity both failed on the saturated shared VM.
 
 The new cofactor-5 filter was compared in frozen source snapshot SHA-256
 `5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`,
@@ -162,7 +201,7 @@ absolute-speed claims.
 
 The maintained source subsequently removed duplicate `PreparedLift` storage
 and reuses its precomputed x-square. Its full correctness suite was rerun, but
-no new final-source timing claim was produced on the saturated host.
+that exact no-filter/filter ablation was not repeated on the saturated host.
 
 After ten warm-up pairs, the pre-Jacobi source comparison of the complete
 legacy stack (generic carry, legacy scan, original curve, NAF) against the
@@ -180,8 +219,21 @@ did not beat block 64 before the subgroup filter (`0.9948x`, CI
 (CI `1.0173..1.0503`) but missed stationarity, so block 64 remains automatic.
 Specialized square,
 direct U128 add, a straight-line sqrt chain, w9, field-multiply `noinline`,
-Hamburg inline, PRAC, and GLV/endomorphism variants were also rejected or kept
-diagnostic-only.
+Hamburg inline, elliptic-point scalar PRAC, and GLV/endomorphism variants were
+also rejected or kept diagnostic-only. This elliptic-point PRAC experiment is
+separate from the adopted Lucas-recurrence PRAC chain.
+
+The Lucas follow-up also rejected binary two-lane interleaving (`1.0180x`, CI
+`1.0015..1.0316`), the fused large-switch PRAC interpreter (`0.9880x`), and
+PRAC two-lane interleaving (`0.9941x`). The compact PRAC interpreter alone was
+promising at `1.0180x` (CI `1.0117..1.0286`) but remained below the 2% gate
+and failed stationarity; only its direct-fraction combination reproduced a
+promotion-grade win. A branchless binary step reduced the Lucas symbol from
+`0x579` to `0x44c` bytes but lost at `0.9770x` (CI
+`0.9609..0.9914`). The U64 exponent-bit stream reached `1.0068x` (CI
+`1.0001..1.0191`) but missed the threshold and stationarity, so the default
+keeps the former U128 bit scan. Final-source block-256 (`1.0183x`) and LTO
+(`1.0083x`) likewise stayed below the promotion rule.
 
 The hybrid Jacobi kernel itself reduced a dedicated Jacobi microbenchmark from
 `0.08616 s` for full U128 Euclidean reduction to `0.05543 s`; using the

@@ -3,7 +3,7 @@
 ## 결론
 
 첫 GMP 후보군에서는 안정적인 개선을 찾지 못했지만, native 경로를 다시
-검토해 서로 독립적인 네 알고리즘 개선을 채택했다.
+검토해 서로 독립적인 다섯 알고리즘 개선을 채택했다.
 
 1. `r0`를 lift해 `r1`로 거르는 대신 **`r1`을 lift해 `r2`로 거른다**.
    이 인스턴스의 순차 검사량은 21,305개에서 15,595개로 26.8% 줄었다.
@@ -16,6 +16,10 @@
 4. `#E(Fp)=5n`의 작은 cofactor를 이용해, `Fp2`의 비유리 5-torsion으로
    만든 Frobenius--Tate trace가 order-`n` 부분군인지 x좌표만으로 먼저
    판정한다. block에서는 모든 분모를 한 번에 batch-invert한다.
+5. 이 trace의 86비트 binary Lucas ladder를
+   `E=(p+1)/5=20H` 분해와 고정 Lucas-PRAC chain으로 바꾸고, `L_H`를
+   `mu_20`의 11개 trace와 비교한다. trace fraction도 caller 배열에
+   직접 준비하고 in-place compact한다.
 
 40개 adjacent balanced AB/BA pair, 5,000회 deterministic bootstrap,
 4개 시간 block stationarity gate를 사용한 1-thread 측정에서 shifted scan은
@@ -25,7 +29,10 @@ paired median `1.3428x`(95% CI `1.3336..1.3510`), Hamburg는
 `1.0769..1.0842`)로 gate를 통과했다. 첫 세 후보를
 `deep_native_06.cpp`의 기본값으로 승격했다. 네 번째
 부분군 필터도 아래의 전수 수학 검증과 큰 반복 측정 효과를 근거로
-기본값에 넣었다. Brier--Joye, GMP batch
+기본값에 넣었다. 다섯 번째 후보는 아래 1-thread 승격 campaign 두 번에서
+각각 `1.0345x`(CI `1.0271..1.0448`)와
+`1.0311x`(CI `1.0268..1.0376`)로 모든 gate를 통과했다.
+Brier--Joye, GMP batch
 inversion, finite difference, Legendre 선필터와 넓은 임의점 wNAF는 아래
 실패 기록처럼 유지하지 않는다.
 
@@ -298,7 +305,8 @@ shifted 정답 prefix에서 curve-valid lift는 7,713개이고 그중 `[n]T=O`�
 membership filter는 Hamburg 호출의 6,166/7,713 = 79.94%를 제거한다.
 단순 `[n]T`는 대략 Hamburg 한 번의 비용이라 손해다.
 
-Koshelev의 basic-field 알고리즘은 작은 인수 `e`가 `p-1`을 나눠야 한다.
+Koshelev의 basic-field 알고리즘은 작은 cofactor `ℓ=5`가 `p-1`을
+나눠야 한다.
 이 곡선은 `p mod 5=4`라 `5∤p-1`이므로 그대로 적용할 수 없다. 대신
 `Fp2=Fp[v]/(v^2-2)`에서 Frobenius가 `v^p=-v`로 작용하는 order-5 점
 
@@ -327,7 +335,15 @@ V = 2*D^2
 tau = 2*(U+V)/(U-V)
 ```
 
-`e=(p+1)/5=0x2b674bdfd6f921287caaec`라 놓고
+Miller quotient에는
+
+```text
+W^p = f(T) / f(T)^p = W^-1
+```
+
+가 성립한다. 따라서 `W^(p+1)=1`이고 `W`는 norm-one torus
+`mu_(p+1)`에 있다. 먼저
+`E=(p+1)/5=0x2b674bdfd6f921287caaec`라 놓고
 `L_k=W^k+W^-k`를
 
 ```text
@@ -335,18 +351,138 @@ L_2k   = L_k^2 - 2
 L_2k+1 = L_k*L_k+1 - tau
 ```
 
-의 고정 86비트 Lucas ladder로 계산한다. `L_e=2`일 때와 오직 그때만
-order-`n` 부분군이다. trace 준비는 약 `6M+3S`, block당 한 번의
-Montgomery batch inverse와 후보당 약 4M, Lucas ladder는 170 M/S다.
-총 약 183 field-operation equivalent로 추정되어 Hamburg 손익분기점
-739보다 충분히 작다. 유효 rational lift에서는 trace 분모 `U-V`가 0이
-될 수 없지만 구현은 0을 만나면 fail-closed로 거부한다.
+의 고정 86비트 binary ladder로 계산하면 `L_E=2`일 때와 오직 그때만
+order-`n` 부분군이다. 이 기준 구현은 `85M+85S=170` field product를
+쓴다.
+
+최종 경로는 `E=20H`,
+`H=0x22b9097fdf2db42063bbf`로 분해한다. `z=W^H`라 하면
+
+```text
+L_E = 2
+<=> z^20 + z^-20 = 2
+<=> (z^20 - 1)^2 / z^20 = 0
+<=> z^20 = 1.
+```
+
+따라서 `L_H=z+z^-1`가 `mu_20` 원소의 trace인지만 확인하면 된다.
+`20 | p+1`이고 `z^p=z^-1`이므로 이 trace는 `Fp`에 있다. inversion
+quotient `z ~ z^-1`에는 `z=1,-1`인 singleton 두 개와 나머지 18개가
+쌍으로 들어가므로 가능한 값은 정확히 11개다. 구현에 넣은 canonical
+trace table은 다음과 같다.
+
+```text
+2
+49321ac5168966c4e21a84
+464f7cf080ef9f665193b9
+bf1ef683b3802a2312bcf5
+464f7cf080ef9f665193b8
+0
+92b4fe6eb1ee06641dc2e3
+19e584db7f5d7ba75c99a6
+92b4fe6eb1ee06641dc2e2
+8fd2609a1c543f058d3c17
+d9047b5f32dda5ca6f5699
+```
+
+Lucas differential identity
+
+```text
+L_(a+b) = L_a*L_b - L_(a-b)
+L_2a    = L_a^2 - 2
+```
+
+때문에 Montgomery의 PRAC 변환을 이 recurrence에 그대로 적용할 수
+있다. offline 탐색에서 고른 seed
+`r=0x1575ba2094b05be88186b`의 fixed schedule은 115바이트이고,
+rule 3이 109회, rule 4가 4회, rule 5와 rule 1이 각각 1회이며 91개
+opcode가 pre-swap을 갖는다. schedule SHA-256은
+`18b8ddcc131e735e129646411153b5ad76d413e76087e42503cfd56f16a5d739`다.
+최종 multiply까지 `118M+6S=124` products로, binary의 170보다 27.1%
+적다. 이 backend에서 square도 `field_multiply(x,x)`이므로 M/S를 같은
+단위로 합산했다. 11개 table equality에는 field multiplication이 없다.
+
+trace 준비 `6M+3S`, batch inverse의 후보당 약 4M까지 더하면 최종
+membership 비용은 약 137 products다. Hamburg의 초기화와 마무리를
+포함한 전체 비용은 약 930 products이고, 79.94% reject율을 곱한 filter
+손익분기점은 약 743 products이므로 충분히 작다. caller가
+`SubgroupTraceFraction`을 직접 준비하고 batch
+함수가 이를 앞쪽으로 in-place compact한다. 최종 1-lane 경로는 reverse
+pass에서 normalized trace를 지역값으로 계산하고, multi-lane ablation만
+numerator를 덮어쓴다. GCC 12의 raw function-prologue stack allocation은
+binary/xy의 `0x38a8`에서 PRAC/direct의 `0x1180`으로 줄었다. 유효
+rational lift에서는 trace 분모 `U-V`가 0이 될 수 없지만 구현은 0을
+만나면 fail-closed로 거부한다.
+
+124는 증명된 전역 최적값이 아니라 찾은 schedule 중 최선이다.
+Fibonacci 성장으로 보는 이 지수의 하한 맥락은 약 117 products이고,
+golden ratio와 Zimmermann--Dodson의 transformed-alpha 후보 주변을 더
+탐색했지만 124보다 짧은 chain은 찾지 못했다.
 
 검증은 세 겹으로 했다. Sage에서 고정 torsion과 Frobenius 관계, 무작위
 200점, 정답까지의 curve-valid 7,713점을 확인했고 trace 판정 1,547개와
 직접 `[n]T=O` 1,547개 사이 mismatch는 0이었다. C++에서도 scalar와 batched
 trace를 실제 lift 128개에서 직접 `[n]T`와 비교하고, `Q` 양성 벡터와
-`Fp`-rational order-5 점 음성 벡터를 검사한다.
+`Fp`-rational order-5 점 음성 벡터를 검사한다. 추가 self-test는 11개
+상수가 서로 다르고 모두 `L_20=2`인지 확인하며, canonical-to-Montgomery
+상수를 runtime 변환과 대조한다. 64개 field 경계 pair와 2,000개
+deterministic random trace에서 fixed PRAC 결과가 binary `L_E=2`
+oracle과 일치하고, schedule byte hash와 연산 수는 독립 생성기로
+재계산했다. direct-fraction batch는 `1/2/3/4/5/7/127/128/129/255/256`
+tail과 256번 원소의 `uint8_t` index를 검사한다. 양성 하나를 포함해 분모
+0을 세 위치에 주입하고 255번도 양성으로 만든 256-entry 입력으로
+in-place compaction, 원래 index 복원과 active-count 253의 2/4-lane
+scalar tail을 검사한다. 전부 분모 0인 입력도 모두 fail-closed인지
+확인한다.
+
+binary/separate-array 기준과 PRAC/direct-fraction 후보의 1-thread
+40-pair campaign은 두 번 모두 승격 gate를 통과했다. 첫 run은 paired
+`1.0345x`(CI `1.0271..1.0448`), 다른 benchmark-order seed의 독립 run은
+`1.0311x`(CI `1.0268..1.0376`)였고 둘 다 AB/BA 두 순서와 네
+stationarity block이 PASS였다. 최종 기본 매크로로 바꾼 후의 재실행도
+`1.0382x`(CI `1.0248..1.0537`)였지만 후반 host phase 변화로
+stationarity만 실패해 보조 수치로 남겼다. 8-thread run도 중앙값
+`1.0381x`였으나 CI `0.9070..1.1621`로 너무 넓어 성능 주장에 쓰지
+않는다. 최종 감사 뒤 source SHA-256
+`840999f697112a17c7ebe6809351b4971b1a713d021e4c356334e3c4462ae073`를
+seed `0x44444444`로 다시 고정한 run은 중앙값 `1.0289x`였지만 CI
+`0.9791..1.0878`, baseline/candidate block spread `53.8%/72.1%`로
+더 불안정했다. 이 run도 audit snapshot의 correctness 확인으로만 남기고
+승격 근거에는 포함하지 않는다. 최종 source
+`a97d24e5d6a581da586c0df48beb64abdeb6ab60273f2cdd00a352b74aa8df16`은
+양성 255번, zero-denominator compaction과 multi-lane tail self-test만
+강화했고 timed hot path는 바꾸지 않았다.
+
+### Lucas chain 후보별 실패 기록
+
+**86비트 binary ladder.** 처음 채택한 기준은 고정 bit pattern이라
+간단하고 검증하기 쉬웠지만 매 bit에 multiply와 square가 하나씩 필요해
+`85M+85S=170` products를 쓴다. 최종 PRAC oracle과 ablation 기준으로는
+남겼지만 기본 hot path에서는 교체했다.
+
+**`E/4`와 factor-by-factor composition.** `L_(E/4)`를 PRAC으로 계산한
+뒤 `mu_4` traces `{0,2,-2}`와 비교하는 방법도 정확하고 약 128 products로
+줄었다. 그러나 `E=20H`의 124보다 네 번 많았다. `E`의 인수를 여러 작은
+Lucas composition으로 나누는 후보도 약 136 products라 같은 이유로
+기각했다.
+
+**dynamic PRAC.** 매 후보마다 `(d,e)`를 줄이는 일반 PRAC을 실행하면
+88/128비트 division, remainder와 rule 선택이 hot loop에 들어간다.
+지수는 고정이므로 이 비용을 지불하지 않고 offline에서 schedule을 만든
+뒤 115 opcode만 해석하는 경로를 택했다.
+
+**완전 unroll과 fused switch.** 84-step binary loop를 template로 모두
+펼치면 함수가 약 `0x510`에서 `0x298e`바이트로 팽창했고 CI가 매우
+넓었다. PRAC opcode별 body를 크게 복제한 fused interpreter도
+`0.9880x`로 졌다. 반면 compact generic interpreter는 단독으로
+`1.0180x`(CI `1.0117..1.0286`)까지 왔지만 2% 문턱과 stationarity를
+통과하지 못했고, direct-fraction layout과 결합했을 때만 반복 PASS했다.
+
+**lane interleaving과 branchless binary step.** 두 candidate의 binary
+Lucas를 교차 배치한 2-lane 경로는 `1.0180x`로 문턱 아래였고 PRAC
+2-lane은 `0.9941x`였다. binary bit branch를 mask select로 바꾸면 함수는
+`0x579`에서 `0x44c`바이트로 줄었지만 매 bit의 limb select가 늘어
+`0.9770x`(CI `0.9609..0.9914`)로 명확히 느렸다.
 
 필터를 끈 동일 source와의 CPU 고정 40-pair 측정은 1 thread에서 외부
 중앙값 `0.085280/0.044124 s`, paired `1.9444x`(CI
@@ -359,7 +495,7 @@ paired `1.7448x`(CI `1.7161..1.7904`)였다. 모든 시간 block이 각각
 `5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`이다.
 이후 최종 source에서는 중복 `PreparedLift` 저장을 없애고 이미 계산한
 `x^2`를 재사용했으며, 정확성 suite는 다시 통과시켰지만 포화된 host에서
-새 성능 수치를 만들지는 않았다.
+같은 no-filter/filter ablation을 다시 측정하지는 않았다.
 
 ## 반복 측정
 
@@ -419,6 +555,20 @@ runner는 두 C++ 실행 파일을 임시 디렉터리에 빌드하고 각 실�
 - [Niels Möller, "Efficient computation of the Jacobi symbol"](https://arxiv.org/abs/1907.07795), [GNU MP Jacobi algorithm](https://gmplib.org/manual/Jacobi-Symbol.html) — Euclidean/GCD reduction 중 quadratic-reciprocity 상태를 갱신하는 residue test의 근거다.
 - [Dmitrii Koshelev, "Subgroup membership testing on elliptic curves via the Tate pairing"](https://eprint.iacr.org/2022/037.pdf) — 작은 cofactor Tate-pairing 검사의 출발점이다. 논문의 basic-field 조건 `e | p-1`은 여기서 성립하지 않으므로 그대로 적용하지 않고 `Fp2` Frobenius 고유공간으로 옮겼다.
 - [Andreas Enge, "Bilinear pairings on elliptic curves"](https://arxiv.org/abs/1301.5520) — Miller 함수 recurrence, reduced Tate pairing과 Frobenius 작용을 전개해 x-only trace 식을 유도할 때 사용했다.
+- [Peter L. Montgomery, "Evaluating recurrences of form
+  X_(m+n)=f(X_m,X_n,X_(m-n)) via Lucas chains" (1983, rev.
+  1992)](https://cr.yp.to/bib/1992/montgomery-lucas.pdf) — differential
+  Lucas chain과 PRAC 변환의 원자료다.
+- [Paul Zimmermann and Bruce Dodson, "20 years of ECM",
+  Section 2.2](https://members.loria.fr/PZimmermann/papers/ecm-submitted.pdf) —
+  golden-ratio 및 transformed-alpha PRAC seed 선택과 modular-multiplication
+  비용 비교를 대조했다.
+- [Martin Kutz, "Lower Bounds for Lucas Chains", *SIAM Journal on
+  Computing* 31(6), 2002](https://epubs.siam.org/doi/10.1137/S0097539700379255) —
+  Fibonacci 성장과 Lucas-chain 길이 하한의 맥락을 제공한다. 이 논문을
+  124-op schedule의 전역 최적성 증명으로 사용하지는 않았다.
+- [GMP-ECM `lucas.c`](https://sources.debian.org/src/gmp-ecm/7.0.6%2Bds-2/lucas.c/) —
+  `pp1_mul_prac` rule 순서와 alias-safe state update를 구현과 대조했다.
 - [Peter L. Montgomery, "Speeding the Pollard and Elliptic Curve Methods of Factorization" (Mathematics of Computation, 1987)](https://www.ams.org/journals/mcom/1987-48-177/S0025-5718-1987-0866113-7/S0025-5718-1987-0866113-7.pdf) — differential-addition ladder와 inversion amortization의 원형을 확인했다.
 - [Daniel J. Bernstein et al., "OpenSSLNTRU: Faster post-quantum TLS key exchange" (2021), Section 2.2](https://opensslntru.cr.yp.to/opensslntru-20211006.pdf) — Montgomery batch inversion의 prefix/reverse 알고리즘과 `3n-3` multiplications + 1 inversion 비용을 대조했다.
 - [GNU MP Manual, Number Theoretic Functions](https://gmplib.org/manual/Number-Theoretic-Functions) — `mpz_invert`와 `mpz_legendre`의 공식 API 의미를 확인했다.
