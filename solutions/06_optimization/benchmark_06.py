@@ -244,7 +244,13 @@ def validate_result(contender: Contender, result: dict[str, Any]) -> None:
             "telemetry_strategy": "analytic",
             "scan_curve_model": "isomorphic-a-minus-3",
             "d_multiplication": "hamburg-co-z",
-            "lift_residue_test": "binary-jacobi-deferred-sqrt",
+            "lift_residue_test": (
+                "montgomery-residue-hybrid-u128-u64-"
+                "euclidean-jacobi-deferred-sqrt"
+            ),
+            "subgroup_membership_test": (
+                "cofactor-5-frobenius-tate-trace"
+            ),
             "fixed_window_bits": 8,
             "fixed_digit_encoding": "unsigned",
             "fixed_multiplication": "candidate-jacobian",
@@ -578,6 +584,7 @@ def main() -> None:
                 "field_boundary_pairs": 64,
                 "point_vectors": 256,
                 "hamburg_lift_vectors": 128,
+                "subgroup_lift_vectors": 128,
             }:
                 raise RuntimeError(f"unexpected native self-test result: {native_self_test}")
 
@@ -653,8 +660,8 @@ def main() -> None:
         if native_self_test is not None:
             print(
                 "native preflight: 2000 random + 64 boundary field pairs, "
-                "256 point/table vectors, and 128 Hamburg/NAF lift vectors "
-                "verified",
+                "256 point/table vectors, and 128 Hamburg/NAF + subgroup "
+                "lift vectors verified",
                 flush=True,
             )
 
@@ -701,6 +708,7 @@ def main() -> None:
                         "scan_curve_model",
                         "d_multiplication",
                         "lift_residue_test",
+                        "subgroup_membership_test",
                         "fixed_window_bits",
                         "fixed_digit_encoding",
                         "fixed_multiplication",

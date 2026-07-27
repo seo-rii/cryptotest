@@ -282,7 +282,13 @@ def validate_result(contender: Contender, stdout: str) -> dict[str, Any]:
             "telemetry_strategy": "analytic",
             "scan_curve_model": "isomorphic-a-minus-3",
             "d_multiplication": "hamburg-co-z",
-            "lift_residue_test": "binary-jacobi-deferred-sqrt",
+            "lift_residue_test": (
+                "montgomery-residue-hybrid-u128-u64-"
+                "euclidean-jacobi-deferred-sqrt"
+            ),
+            "subgroup_membership_test": (
+                "cofactor-5-frobenius-tate-trace"
+            ),
             "fixed_window_bits": 8,
             "fixed_digit_encoding": "unsigned",
             "fixed_multiplication": "candidate-jacobian",
@@ -575,6 +581,7 @@ def main() -> None:
             "field_boundary_pairs": 64,
             "point_vectors": 256,
             "hamburg_lift_vectors": 128,
+            "subgroup_lift_vectors": 128,
         }
         if (
             self_test.returncode != 0
@@ -649,8 +656,8 @@ def main() -> None:
             f"protocol: warmup={args.warmup}, repetitions={args.repetitions}, "
             "fresh process, cyclic/reversed interleaving, external wall clock, "
             "known-answer check every sample, native 2000 random + 64 boundary "
-            "field pairs, 256 point/table, and 128 Hamburg/NAF lift vector "
-            "self-test passed",
+            "field pairs, 256 point/table, and 128 Hamburg/NAF + subgroup "
+            "lift vector self-test passed",
             flush=True,
         )
 
@@ -714,6 +721,7 @@ def main() -> None:
                         "sqrt_method",
                         "telemetry_strategy",
                         "lift_residue_test",
+                        "subgroup_membership_test",
                         "fixed_digit_encoding",
                         "fixed_multiplication",
                     )

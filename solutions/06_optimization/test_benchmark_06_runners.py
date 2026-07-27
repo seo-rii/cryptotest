@@ -60,7 +60,13 @@ def native_result() -> dict[str, object]:
         "field_backend": "bmi2-adx",
         "scan_curve_model": "isomorphic-a-minus-3",
         "d_multiplication": "hamburg-co-z",
-        "lift_residue_test": "binary-jacobi-deferred-sqrt",
+        "lift_residue_test": (
+            "montgomery-residue-hybrid-u128-u64-"
+            "euclidean-jacobi-deferred-sqrt"
+        ),
+        "subgroup_membership_test": (
+            "cofactor-5-frobenius-tate-trace"
+        ),
         "fixed_window_bits": 8,
         "fixed_digit_encoding": "unsigned",
         "fixed_multiplication": "candidate-jacobian",
@@ -147,6 +153,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
             ("threads_actual", True),
             ("p_equals_dq", 1),
             ("lift_residue_test", None),
+            ("subgroup_membership_test", None),
             ("lift_output_index", None),
             ("fixed_digit_encoding", None),
             ("fixed_multiplication", None),
@@ -175,6 +182,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
             ("threads_actual", 0),
             ("threads_actual", True),
             ("lift_residue_test", None),
+            ("subgroup_membership_test", None),
             ("lift_output_index", None),
             ("fixed_digit_encoding", None),
             ("fixed_multiplication", None),
@@ -315,6 +323,61 @@ class BenchmarkRunnerTests(unittest.TestCase):
                         variant, json.dumps(malformed), 1, 64,
                         "adaptive", True
                     )
+
+    def test_promotion_runner_tracks_jacobi_variants(self) -> None:
+        cases = {
+            (): (
+                "montgomery-residue-hybrid-u128-u64-"
+                "euclidean-jacobi-deferred-sqrt"
+            ),
+            ("CH6_CANONICAL_JACOBI_INPUT",): (
+                "hybrid-u128-u64-euclidean-jacobi-deferred-sqrt"
+            ),
+            ("CH6_FULL_U128_JACOBI",): (
+                "full-u128-euclidean-jacobi-deferred-sqrt"
+            ),
+            ("CH6_SUBTRACTIVE_JACOBI",): (
+                "subtractive-jacobi-deferred-sqrt"
+            ),
+            ("CH6_HYBRID_SUBTRACTIVE_U64_JACOBI",): (
+                "montgomery-residue-hybrid-u128-euclidean-"
+                "u64-subtractive-jacobi-deferred-sqrt"
+            ),
+            (
+                "CH6_HYBRID_SUBTRACTIVE_U64_JACOBI",
+                "CH6_CANONICAL_JACOBI_INPUT",
+            ): (
+                "hybrid-u128-euclidean-u64-subtractive-"
+                "jacobi-deferred-sqrt"
+            ),
+        }
+        for defines, expected in cases.items():
+            with self.subTest(defines=defines):
+                variant = PROMOTION.Variant(
+                    "jacobi", Path("/tmp/deep_native_06"), defines
+                )
+                self.assertEqual(
+                    PROMOTION.expected_configuration(variant, True)[
+                        "lift_residue_test"
+                    ],
+                    expected,
+                )
+
+    def test_promotion_runner_tracks_subgroup_filter(self) -> None:
+        for defines, expected in (
+            ((), "cofactor-5-frobenius-tate-trace"),
+            (("CH6_NO_SUBGROUP_FILTER",), "none"),
+        ):
+            with self.subTest(defines=defines):
+                variant = PROMOTION.Variant(
+                    "subgroup", Path("/tmp/deep_native_06"), defines
+                )
+                self.assertEqual(
+                    PROMOTION.expected_configuration(variant, True)[
+                        "subgroup_membership_test"
+                    ],
+                    expected,
+                )
 
     def test_promotion_runner_rejects_accidental_noop(self) -> None:
         process = subprocess.run(

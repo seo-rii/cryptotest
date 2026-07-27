@@ -62,6 +62,7 @@ CONFIGURATION_KEYS = (
     "scan_curve_model",
     "d_multiplication",
     "lift_residue_test",
+    "subgroup_membership_test",
     "fixed_window_bits",
     "fixed_digit_encoding",
     "fixed_multiplication",
@@ -108,7 +109,32 @@ def expected_configuration(
             (
                 "subtractive-jacobi-deferred-sqrt"
                 if "CH6_SUBTRACTIVE_JACOBI" in defines
-                else "binary-jacobi-deferred-sqrt"
+                else (
+                    (
+                        (
+                            "hybrid-u128-euclidean-u64-subtractive-"
+                            "jacobi-deferred-sqrt"
+                        )
+                        if "CH6_CANONICAL_JACOBI_INPUT" in defines
+                        else (
+                            "montgomery-residue-hybrid-u128-euclidean-"
+                            "u64-subtractive-jacobi-deferred-sqrt"
+                        )
+                    )
+                    if "CH6_HYBRID_SUBTRACTIVE_U64_JACOBI" in defines
+                    else (
+                        "full-u128-euclidean-jacobi-deferred-sqrt"
+                        if "CH6_FULL_U128_JACOBI" in defines
+                        else (
+                            "hybrid-u128-u64-euclidean-jacobi-deferred-sqrt"
+                            if "CH6_CANONICAL_JACOBI_INPUT" in defines
+                            else (
+                                "montgomery-residue-hybrid-u128-u64-"
+                                "euclidean-jacobi-deferred-sqrt"
+                            )
+                        )
+                    )
+                )
             )
             if (
                 "CH6_SQRT_LIFT" not in defines
@@ -128,6 +154,11 @@ def expected_configuration(
             "row-batched-affine"
             if "CH6_ROW_BATCHED_FIXED_MUL" in defines
             else "candidate-jacobian"
+        ),
+        "subgroup_membership_test": (
+            "none"
+            if "CH6_NO_SUBGROUP_FILTER" in defines
+            else "cofactor-5-frobenius-tate-trace"
         ),
     }
     if "CH6_GENERIC_MONTGOMERY" in defines:
@@ -808,6 +839,7 @@ def main() -> None:
                 "field_boundary_pairs": 64,
                 "point_vectors": 256,
                 "hamburg_lift_vectors": 128,
+                "subgroup_lift_vectors": 128,
             }
             if json.loads(self_test.stdout) != expected_self_test:
                 raise RuntimeError(

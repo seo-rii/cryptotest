@@ -62,6 +62,21 @@ constexpr U128 TRANSFORMED_CURVE_A =
     parse_hex("d9047b5f32dda5ca6f5698");
 constexpr U128 TRANSFORMED_CURVE_B =
     parse_hex("5e7dc2bc27aea7935c6b6");
+constexpr U128 SUBGROUP_ALPHA =
+    parse_hex("d59dbc5a89d7c3dcfc7aef");
+constexpr U128 SUBGROUP_BETA =
+    parse_hex("c34366b11d118d0d635fbb");
+constexpr U128 SUBGROUP_GAMMA =
+    parse_hex("0e953f99abc72cff8f3ff9");
+constexpr U128 SUBGROUP_DELTA =
+    parse_hex("94b152fc315f97ae6ea4c7");
+constexpr U128 SUBGROUP_TANGENT_M1 =
+    parse_hex("d1e74749596975d56c869e");
+constexpr U128 SUBGROUP_TANGENT_M2 =
+    parse_hex("3a7862416ae71b5fea671e");
+constexpr U128 SUBGROUP_RATIONAL_TORSION_X =
+    parse_hex("20b363e845196f8282e59d");
+constexpr U128 SUBGROUP_LUCAS_EXPONENT = (FIELD + 1U) / 5U;
 constexpr U128 ORIGINAL_X_FROM_TRANSFORMED_SCALE =
     parse_hex("9b4427ecf55d466c0bbf44");
 constexpr U128 TRANSFORMED_X_MONTGOMERY_R2 =
@@ -118,9 +133,24 @@ constexpr std::string_view D_MULTIPLICATION = "width-2-naf";
 #if defined(CH6_SUBTRACTIVE_JACOBI)
 constexpr std::string_view LIFT_RESIDUE_TEST =
     "subtractive-jacobi-deferred-sqrt";
+#elif defined(CH6_HYBRID_SUBTRACTIVE_U64_JACOBI)
+#if defined(CH6_CANONICAL_JACOBI_INPUT)
+constexpr std::string_view LIFT_RESIDUE_TEST =
+    "hybrid-u128-euclidean-u64-subtractive-jacobi-deferred-sqrt";
 #else
 constexpr std::string_view LIFT_RESIDUE_TEST =
-    "binary-jacobi-deferred-sqrt";
+    "montgomery-residue-hybrid-u128-euclidean-u64-subtractive-"
+    "jacobi-deferred-sqrt";
+#endif
+#elif defined(CH6_FULL_U128_JACOBI)
+constexpr std::string_view LIFT_RESIDUE_TEST =
+    "full-u128-euclidean-jacobi-deferred-sqrt";
+#elif defined(CH6_CANONICAL_JACOBI_INPUT)
+constexpr std::string_view LIFT_RESIDUE_TEST =
+    "hybrid-u128-u64-euclidean-jacobi-deferred-sqrt";
+#else
+constexpr std::string_view LIFT_RESIDUE_TEST =
+    "montgomery-residue-hybrid-u128-u64-euclidean-jacobi-deferred-sqrt";
 #endif
 #else
 constexpr std::string_view LIFT_RESIDUE_TEST = "sqrt";
@@ -148,6 +178,12 @@ constexpr std::string_view FIXED_DIGIT_ENCODING = "unsigned";
 constexpr std::string_view FIXED_MULTIPLICATION = "row-batched-affine";
 #else
 constexpr std::string_view FIXED_MULTIPLICATION = "candidate-jacobian";
+#endif
+#if defined(CH6_NO_SUBGROUP_FILTER)
+constexpr std::string_view SUBGROUP_MEMBERSHIP_TEST = "none";
+#else
+constexpr std::string_view SUBGROUP_MEMBERSHIP_TEST =
+    "cofactor-5-frobenius-tate-trace";
 #endif
 constexpr std::size_t FIXED_NORMALIZE_CAPACITY =
     std::max(FIXED_TABLE_ROWS, FIXED_TABLE_ENTRIES);
@@ -653,10 +689,15 @@ inline FieldElement to_montgomery(U128 canonical) {
     return field_multiply(split(canonical), split(MONTGOMERY_R2_CANON));
 }
 
-inline FieldElement curve_x_to_montgomery(U128 canonical) {
+inline FieldElement transformed_x_to_montgomery(U128 canonical) {
     assert(canonical < FIELD);
+    return field_multiply(
+        split(canonical), split(TRANSFORMED_X_MONTGOMERY_R2));
+}
+
+inline FieldElement curve_x_to_montgomery(U128 canonical) {
 #if !defined(CH6_ORIGINAL_CURVE_SCAN)
-    return field_multiply(split(canonical), split(TRANSFORMED_X_MONTGOMERY_R2));
+    return transformed_x_to_montgomery(canonical);
 #else
     return to_montgomery(canonical);
 #endif
@@ -703,6 +744,18 @@ const FieldElement& transformed_curve_b() {
 const FieldElement& transformed_curve_a() {
     static const FieldElement value = to_montgomery(TRANSFORMED_CURVE_A);
     return value;
+}
+
+inline FieldElement transformed_curve_rhs(
+    const FieldElement& x, const FieldElement& x_squared) {
+    const FieldElement three_x = field_add(x, field_double(x));
+    return field_add(
+        field_subtract(field_multiply(x_squared, x), three_x),
+        transformed_curve_b());
+}
+
+inline FieldElement transformed_curve_rhs(const FieldElement& x) {
+    return transformed_curve_rhs(x, field_square(x));
 }
 
 FieldElement field_power(FieldElement base, U128 exponent) {
@@ -912,6 +965,106 @@ bool field_is_square_euclidean_jacobi(const FieldElement& value) {
     return denominator == 1 && sign > 0;
 }
 
+template <bool SUBTRACTIVE_U64, bool MONTGOMERY_RESIDUE>
+bool field_is_square_hybrid_jacobi_impl(const FieldElement& value) {
+    // R=2^128=(2^64)^2 is a square modulo the odd prime FIELD.  Therefore a
+    // reduced Montgomery residue aR has the same Jacobi symbol as a, and the
+    // hot path can avoid one Montgomery conversion.
+    U128 numerator = MONTGOMERY_RESIDUE
+        ? join(value)
+        : from_montgomery(value);
+    if (numerator == 0) {
+        return true;
+    }
+    U128 denominator = FIELD;
+    int sign = 1;
+    while (numerator != 0) {
+        const std::uint64_t low = static_cast<std::uint64_t>(numerator);
+        const unsigned powers_of_two = low != 0
+            ? static_cast<unsigned>(__builtin_ctzll(low))
+            : 64U + static_cast<unsigned>(
+                __builtin_ctzll(static_cast<std::uint64_t>(numerator >> 64U)));
+        numerator >>= powers_of_two;
+        if (
+            (powers_of_two & 1U) != 0 &&
+            ((denominator & 7U) == 3U || (denominator & 7U) == 5U)) {
+            sign = -sign;
+        }
+
+        if ((numerator >> 64U) == 0 && (denominator >> 64U) == 0) {
+            std::uint64_t numerator64 =
+                static_cast<std::uint64_t>(numerator);
+            std::uint64_t denominator64 =
+                static_cast<std::uint64_t>(denominator);
+            while (numerator64 != 0) {
+                const unsigned twos =
+                    static_cast<unsigned>(__builtin_ctzll(numerator64));
+                numerator64 >>= twos;
+                if (
+                    (twos & 1U) != 0 &&
+                    ((denominator64 & 7U) == 3U ||
+                     (denominator64 & 7U) == 5U)) {
+                    sign = -sign;
+                }
+                if constexpr (SUBTRACTIVE_U64) {
+                    if (numerator64 == 1) {
+                        return sign > 0;
+                    }
+                    if (numerator64 < denominator64) {
+                        std::swap(numerator64, denominator64);
+                        if (
+                            (numerator64 & 3U) == 3U &&
+                            (denominator64 & 3U) == 3U) {
+                            sign = -sign;
+                        }
+                    }
+                    numerator64 -= denominator64;
+                } else {
+                    if (
+                        (numerator64 & 3U) == 3U &&
+                        (denominator64 & 3U) == 3U) {
+                        sign = -sign;
+                    }
+                    const std::uint64_t next_numerator =
+                        denominator64 % numerator64;
+                    denominator64 = numerator64;
+                    numerator64 = next_numerator;
+                }
+            }
+            return denominator64 == 1 && sign > 0;
+        }
+
+        if (
+            (numerator & 3U) == 3U &&
+            (denominator & 3U) == 3U) {
+            sign = -sign;
+        }
+        const U128 next_numerator = denominator % numerator;
+        denominator = numerator;
+        numerator = next_numerator;
+    }
+    return denominator == 1 && sign > 0;
+}
+
+bool field_is_square_hybrid_euclidean_jacobi(const FieldElement& value) {
+    return field_is_square_hybrid_jacobi_impl<false, true>(value);
+}
+
+bool field_is_square_hybrid_canonical_euclidean_jacobi(
+    const FieldElement& value) {
+    return field_is_square_hybrid_jacobi_impl<false, false>(value);
+}
+
+bool field_is_square_hybrid_subtractive_u64_jacobi(
+    const FieldElement& value) {
+    return field_is_square_hybrid_jacobi_impl<true, true>(value);
+}
+
+bool field_is_square_hybrid_canonical_subtractive_u64_jacobi(
+    const FieldElement& value) {
+    return field_is_square_hybrid_jacobi_impl<true, false>(value);
+}
+
 bool field_is_square_subtractive_jacobi(const FieldElement& value) {
     U128 numerator = from_montgomery(value);
     if (numerator == 0) {
@@ -950,9 +1103,143 @@ bool field_is_square_subtractive_jacobi(const FieldElement& value) {
 bool field_is_square_binary_jacobi(const FieldElement& value) {
 #if defined(CH6_SUBTRACTIVE_JACOBI)
     return field_is_square_subtractive_jacobi(value);
+#elif defined(CH6_HYBRID_SUBTRACTIVE_U64_JACOBI)
+#if defined(CH6_CANONICAL_JACOBI_INPUT)
+    return field_is_square_hybrid_canonical_subtractive_u64_jacobi(value);
 #else
-    return field_is_square_euclidean_jacobi(value);
+    return field_is_square_hybrid_subtractive_u64_jacobi(value);
 #endif
+#elif defined(CH6_FULL_U128_JACOBI)
+    return field_is_square_euclidean_jacobi(value);
+#elif defined(CH6_CANONICAL_JACOBI_INPUT)
+    return field_is_square_hybrid_canonical_euclidean_jacobi(value);
+#else
+    return field_is_square_hybrid_euclidean_jacobi(value);
+#endif
+}
+
+struct SubgroupTraceFraction {
+    FieldElement numerator;
+    FieldElement denominator;
+};
+
+SubgroupTraceFraction subgroup_trace_fraction(
+    const FieldElement& x, const FieldElement& rhs) {
+    static const FieldElement alpha = to_montgomery(SUBGROUP_ALPHA);
+    static const FieldElement beta = to_montgomery(SUBGROUP_BETA);
+    static const FieldElement gamma = to_montgomery(SUBGROUP_GAMMA);
+    static const FieldElement delta = to_montgomery(SUBGROUP_DELTA);
+    static const FieldElement tangent_m1 =
+        to_montgomery(SUBGROUP_TANGENT_M1);
+    static const FieldElement tangent_m2 =
+        to_montgomery(SUBGROUP_TANGENT_M2);
+
+    const FieldElement a = field_add(
+        beta, field_multiply(tangent_m1, field_subtract(x, alpha)));
+    const FieldElement b = field_add(
+        delta, field_multiply(tangent_m2, field_subtract(x, gamma)));
+    const FieldElement a_squared = field_square(a);
+    const FieldElement rhs_plus_two_a_squared =
+        field_add(rhs, field_double(a_squared));
+    const FieldElement four_ab =
+        field_double(field_double(field_multiply(a, b)));
+    const FieldElement c =
+        field_add(rhs_plus_two_a_squared, four_ab);
+    const FieldElement d = field_negate(field_add(
+        field_multiply(rhs_plus_two_a_squared, b),
+        field_double(field_multiply(rhs, a))));
+    const FieldElement u = field_multiply(rhs, field_square(c));
+    const FieldElement v = field_double(field_square(d));
+    return {
+        field_double(field_add(u, v)),
+        field_subtract(u, v),
+    };
+}
+
+bool subgroup_member_from_trace(const FieldElement& trace) {
+    static_assert((FIELD + 1U) % 5U == 0);
+    static_assert((SUBGROUP_LUCAS_EXPONENT >> 85U) == 1U);
+    static_assert(
+        ((SUBGROUP_LUCAS_EXPONENT >> 84U) & 1U) == 0U);
+    const FieldElement two = field_double(field_one());
+
+    // L_k = W^k + W^-k.  Start with (L_1,L_2), then consume the known
+    // second exponent bit 0 without recomputing L_2.
+    const FieldElement l2 = field_subtract(field_square(trace), two);
+    FieldElement l_k = l2;
+    FieldElement l_k_plus_one =
+        field_subtract(field_multiply(trace, l2), trace);
+    for (int bit = 83; bit >= 0; --bit) {
+        const FieldElement middle = field_subtract(
+            field_multiply(l_k, l_k_plus_one), trace);
+        if (((SUBGROUP_LUCAS_EXPONENT >> bit) & 1U) != 0) {
+            l_k = middle;
+            l_k_plus_one =
+                field_subtract(field_square(l_k_plus_one), two);
+        } else {
+            l_k_plus_one = middle;
+            l_k = field_subtract(field_square(l_k), two);
+        }
+    }
+    return field_equal(l_k, two);
+}
+
+bool subgroup_member_scalar(
+    const FieldElement& x, const FieldElement& rhs) {
+    const SubgroupTraceFraction fraction =
+        subgroup_trace_fraction(x, rhs);
+    if (field_is_zero(fraction.denominator)) {
+        return false;
+    }
+    const FieldElement trace = field_multiply(
+        fraction.numerator, field_inverse(fraction.denominator));
+    return subgroup_member_from_trace(trace);
+}
+
+void batch_subgroup_membership(
+    const FieldElement* x_values, const FieldElement* rhs_values,
+    bool* members, std::size_t count) {
+    if (count > 256) {
+        throw std::runtime_error("subgroup batch capacity exceeded");
+    }
+    std::fill_n(members, count, false);
+    if (count == 0) {
+        return;
+    }
+
+    std::array<std::size_t, 256> indices{};
+    std::array<FieldElement, 256> numerators{};
+    std::array<FieldElement, 256> denominators{};
+    std::array<FieldElement, 256> prefixes{};
+    std::size_t active_count = 0;
+    FieldElement product = field_one();
+    for (std::size_t index = 0; index < count; ++index) {
+        const SubgroupTraceFraction fraction =
+            subgroup_trace_fraction(x_values[index], rhs_values[index]);
+        if (field_is_zero(fraction.denominator)) {
+            continue;
+        }
+        indices[active_count] = index;
+        numerators[active_count] = fraction.numerator;
+        denominators[active_count] = fraction.denominator;
+        prefixes[active_count] = product;
+        product = field_multiply(product, fraction.denominator);
+        ++active_count;
+    }
+    if (active_count == 0) {
+        return;
+    }
+
+    FieldElement inverse_product = field_inverse(product);
+    for (std::size_t active = active_count; active-- > 0;) {
+        const FieldElement inverse_denominator =
+            field_multiply(inverse_product, prefixes[active]);
+        inverse_product =
+            field_multiply(inverse_product, denominators[active]);
+        const FieldElement trace =
+            field_multiply(numerators[active], inverse_denominator);
+        members[indices[active]] = subgroup_member_from_trace(trace);
+    }
 }
 
 struct AffinePoint {
@@ -1703,41 +1990,79 @@ struct CandidateContext {
     const AffinePoint& generator_p;
 };
 
-bool lift_state_point(
-    int low, const CandidateContext& context, JacobianPoint& state_point) {
+struct PreparedLift {
+    FieldElement x{};
+    FieldElement x_squared{};
+    FieldElement rhs{};
+    FieldElement y{};
+#if defined(CH6_ORIGINAL_CURVE_SCAN) && \
+    !defined(CH6_NO_SUBGROUP_FILTER)
+    FieldElement subgroup_x{};
+    FieldElement subgroup_rhs{};
+#endif
+    bool y_available = false;
+};
+
+#if !defined(CH6_NO_SUBGROUP_FILTER)
+const FieldElement& prepared_subgroup_x(const PreparedLift& prepared) {
+#if defined(CH6_ORIGINAL_CURVE_SCAN)
+    return prepared.subgroup_x;
+#else
+    return prepared.x;
+#endif
+}
+
+const FieldElement& prepared_subgroup_rhs(const PreparedLift& prepared) {
+#if defined(CH6_ORIGINAL_CURVE_SCAN)
+    return prepared.subgroup_rhs;
+#else
+    return prepared.rhs;
+#endif
+}
+#endif
+
+bool prepare_lift(int low, PreparedLift& prepared) {
     const U128 canonical_x = (KNOWN_OUTPUTS[LIFT_OUTPUT_INDEX] << 16U) |
                              static_cast<unsigned>(low);
     if (canonical_x >= FIELD) {
         return false;
     }
-    const FieldElement x =
+    prepared.x =
 #if !defined(CH6_ORIGINAL_CURVE_SCAN)
         curve_x_to_montgomery(canonical_x);
 #else
         to_montgomery(canonical_x);
 #endif
-    const FieldElement x2 = field_square(x);
+    prepared.x_squared = field_square(prepared.x);
 #if !defined(CH6_ORIGINAL_CURVE_SCAN)
-    const FieldElement three_x = field_add(x, field_double(x));
-    const FieldElement rhs = field_add(
-        field_subtract(field_multiply(x2, x), three_x),
-        transformed_curve_b());
+    prepared.rhs = transformed_curve_rhs(prepared.x, prepared.x_squared);
 #else
-    const FieldElement rhs = field_add(
-        field_add(field_multiply(x2, x), field_multiply(curve_a(), x)),
+    prepared.rhs = field_add(
+        field_add(
+            field_multiply(prepared.x_squared, prepared.x),
+            field_multiply(curve_a(), prepared.x)),
         curve_b());
+#if !defined(CH6_NO_SUBGROUP_FILTER)
+    prepared.subgroup_x = transformed_x_to_montgomery(canonical_x);
+    prepared.subgroup_rhs = transformed_curve_rhs(prepared.subgroup_x);
 #endif
-    FieldElement y{};
+#endif
 #if !defined(CH6_SQRT_LIFT) && !defined(CH6_NAF_D_MULTIPLICATION)
-    if (!field_is_square_binary_jacobi(rhs)) {
+    if (!field_is_square_binary_jacobi(prepared.rhs)) {
         return false;
     }
 #else
-    if (!field_sqrt(rhs, y)) {
+    if (!field_sqrt(prepared.rhs, prepared.y)) {
         return false;
     }
+    prepared.y_available = true;
 #endif
+    return true;
+}
 
+bool multiply_prepared_lift(
+    const PreparedLift& prepared, const CandidateContext& context,
+    JacobianPoint& state_point) {
     // +/-y yield opposite points, while every observation uses affine x only.
 #if !defined(CH6_NAF_D_MULTIPLICATION)
     const FieldElement& curve_a_value =
@@ -1746,31 +2071,54 @@ bool lift_state_point(
 #else
         curve_a();
 #endif
-    if (scalar_mul_hamburg_x(
-            context.d, x, x2, rhs, curve_a_value, state_point)) {
-    } else {
+    if (!scalar_mul_hamburg_x(
+            context.d, prepared.x, prepared.x_squared, prepared.rhs,
+            curve_a_value, state_point)) {
         // The simple Hamburg finalization has exceptional small-order inputs.
         // Recover y only on this exceptional path, then retain the complete
         // NAF implementation as a fail-closed fallback.
-#if !defined(CH6_SQRT_LIFT)
-        if (!field_sqrt(rhs, y)) {
+        FieldElement y = prepared.y;
+        if (!prepared.y_available && !field_sqrt(prepared.rhs, y)) {
             return false;
         }
-#endif
 #if !defined(CH6_ORIGINAL_CURVE_SCAN)
         state_point =
-            scalar_mul_naf_minus3(context.d_digits, AffinePoint{x, y});
+            scalar_mul_naf_minus3(
+                context.d_digits, AffinePoint{prepared.x, y});
 #else
-        state_point = scalar_mul_naf(context.d_digits, AffinePoint{x, y});
+        state_point =
+            scalar_mul_naf(context.d_digits, AffinePoint{prepared.x, y});
 #endif
     }
 #elif !defined(CH6_ORIGINAL_CURVE_SCAN)
-    state_point =
-        scalar_mul_naf_minus3(context.d_digits, AffinePoint{x, y});
+    if (!prepared.y_available) {
+        return false;
+    }
+    state_point = scalar_mul_naf_minus3(
+        context.d_digits, AffinePoint{prepared.x, prepared.y});
 #else
-    state_point = scalar_mul_naf(context.d_digits, AffinePoint{x, y});
+    if (!prepared.y_available) {
+        return false;
+    }
+    state_point =
+        scalar_mul_naf(context.d_digits, AffinePoint{prepared.x, prepared.y});
 #endif
     return true;
+}
+
+bool lift_state_point(
+    int low, const CandidateContext& context, JacobianPoint& state_point) {
+    PreparedLift prepared;
+    if (!prepare_lift(low, prepared)) {
+        return false;
+    }
+#if !defined(CH6_NO_SUBGROUP_FILTER)
+    if (!subgroup_member_scalar(
+            prepared_subgroup_x(prepared), prepared_subgroup_rhs(prepared))) {
+        return false;
+    }
+#endif
+    return multiply_prepared_lift(prepared, context, state_point);
 }
 
 bool finish_after_filter(
@@ -1820,14 +2168,50 @@ bool evaluate_candidate(
 bool evaluate_candidate_block(
     int start, int stop, const CandidateContext& context,
     Prediction& result) {
+    std::array<PreparedLift, 256> prepared_lifts{};
+    std::array<int, 256> prepared_lows{};
+    std::size_t prepared_count = 0;
+    for (int low = start; low < stop; ++low) {
+        PreparedLift prepared;
+        if (prepare_lift(low, prepared)) {
+            prepared_lows[prepared_count] = low;
+            prepared_lifts[prepared_count] = prepared;
+            ++prepared_count;
+        }
+    }
+    if (prepared_count == 0) {
+        return false;
+    }
+
+    std::array<bool, 256> subgroup_members{};
+#if !defined(CH6_NO_SUBGROUP_FILTER)
+    std::array<FieldElement, 256> subgroup_x_values{};
+    std::array<FieldElement, 256> subgroup_rhs_values{};
+    for (std::size_t index = 0; index < prepared_count; ++index) {
+        subgroup_x_values[index] =
+            prepared_subgroup_x(prepared_lifts[index]);
+        subgroup_rhs_values[index] =
+            prepared_subgroup_rhs(prepared_lifts[index]);
+    }
+    batch_subgroup_membership(
+        subgroup_x_values.data(), subgroup_rhs_values.data(),
+        subgroup_members.data(), prepared_count);
+#else
+    std::fill_n(subgroup_members.data(), prepared_count, true);
+#endif
+
     std::array<int, 256> low_bits{};
     std::array<JacobianPoint, 256> state_points{};
     std::array<U128, 256> states{};
     std::size_t count = 0;
-    for (int low = start; low < stop; ++low) {
+    for (std::size_t index = 0; index < prepared_count; ++index) {
+        if (!subgroup_members[index]) {
+            continue;
+        }
         JacobianPoint state_point;
-        if (lift_state_point(low, context, state_point)) {
-            low_bits[count] = low;
+        if (multiply_prepared_lift(
+                prepared_lifts[index], context, state_point)) {
+            low_bits[count] = prepared_lows[index];
             state_points[count] = state_point;
             ++count;
         }
@@ -2028,6 +2412,14 @@ void run_self_test() {
             left == 0 || field_equal(legendre, field_one());
         if (
             field_is_square_euclidean_jacobi(left_mont) != expected_square ||
+            field_is_square_hybrid_euclidean_jacobi(left_mont) !=
+                expected_square ||
+            field_is_square_hybrid_canonical_euclidean_jacobi(left_mont) !=
+                expected_square ||
+            field_is_square_hybrid_subtractive_u64_jacobi(left_mont) !=
+                expected_square ||
+            field_is_square_hybrid_canonical_subtractive_u64_jacobi(
+                left_mont) != expected_square ||
             field_is_square_subtractive_jacobi(left_mont) != expected_square ||
             field_is_square_binary_jacobi(left_mont) != expected_square) {
             throw std::runtime_error("binary Jacobi self-test failed");
@@ -2123,6 +2515,24 @@ void run_self_test() {
         throw std::runtime_error("row-batched fixed multiplication self-test failed");
     }
 #endif
+    const FieldElement transformed_q_x =
+        transformed_x_to_montgomery(POINT_Q_X);
+    const FieldElement transformed_q_rhs =
+        transformed_curve_rhs(transformed_q_x);
+    const FieldElement rational_torsion_x =
+        to_montgomery(SUBGROUP_RATIONAL_TORSION_X);
+    const FieldElement rational_torsion_rhs =
+        transformed_curve_rhs(rational_torsion_x);
+    if (!subgroup_member_scalar(transformed_q_x, transformed_q_rhs) ||
+        subgroup_member_scalar(
+            rational_torsion_x, rational_torsion_rhs)) {
+        throw std::runtime_error("subgroup known-answer self-test failed");
+    }
+
+    const NafDigits order_digits = make_naf(ORDER);
+    std::array<FieldElement, 128> subgroup_x_values{};
+    std::array<FieldElement, 128> subgroup_rhs_values{};
+    std::array<bool, 128> expected_subgroup_members{};
     int lifted_checked = 0;
     for (unsigned low = 0;
          low < (1U << 16U) && lifted_checked < 128;
@@ -2178,10 +2588,38 @@ void run_self_test() {
         if (naf_x != hamburg_x) {
             throw std::runtime_error("Hamburg/NAF lift self-test failed");
         }
+
+        const FieldElement subgroup_x =
+            transformed_x_to_montgomery(canonical_x);
+        const FieldElement subgroup_rhs =
+            transformed_curve_rhs(subgroup_x);
+        FieldElement subgroup_y;
+        if (!field_sqrt(subgroup_rhs, subgroup_y)) {
+            throw std::runtime_error(
+                "isomorphic subgroup lift self-test failed");
+        }
+        const bool expected_subgroup_member = field_is_zero(
+            scalar_mul_naf_minus3(
+                order_digits, AffinePoint{subgroup_x, subgroup_y}).z);
+        if (subgroup_member_scalar(subgroup_x, subgroup_rhs) !=
+            expected_subgroup_member) {
+            throw std::runtime_error("scalar subgroup self-test failed");
+        }
+        subgroup_x_values[lifted_checked] = subgroup_x;
+        subgroup_rhs_values[lifted_checked] = subgroup_rhs;
+        expected_subgroup_members[lifted_checked] =
+            expected_subgroup_member;
         ++lifted_checked;
     }
     if (lifted_checked != 128) {
         throw std::runtime_error("insufficient Hamburg lift self-tests");
+    }
+    std::array<bool, 128> batch_subgroup_members{};
+    batch_subgroup_membership(
+        subgroup_x_values.data(), subgroup_rhs_values.data(),
+        batch_subgroup_members.data(), batch_subgroup_members.size());
+    if (batch_subgroup_members != expected_subgroup_members) {
+        throw std::runtime_error("batch subgroup self-test failed");
     }
     const U128 d = recover_backdoor_scalar();
     if (d != EXPECTED_D) {
@@ -2256,9 +2694,11 @@ int main(int argc, char** argv) {
             std::cout << (json
                 ? "{\"self_test\":true,\"field_vectors\":2000,"
                   "\"field_boundary_pairs\":64,\"point_vectors\":256,"
-                  "\"hamburg_lift_vectors\":128}\n"
+                  "\"hamburg_lift_vectors\":128,"
+                  "\"subgroup_lift_vectors\":128}\n"
                 : "self-test: ok (2000 random + 64 boundary field pairs, "
-                  "256 point/table, 128 Hamburg/NAF lift vectors)\n");
+                  "256 point/table, 128 Hamburg/NAF and subgroup lift "
+                  "vectors)\n");
             return 0;
         }
 
@@ -2298,6 +2738,8 @@ int main(int argc, char** argv) {
                       << "\",\"scan_curve_model\":\"" << SCAN_CURVE_MODEL
                       << "\",\"d_multiplication\":\"" << D_MULTIPLICATION
                       << "\",\"lift_residue_test\":\"" << LIFT_RESIDUE_TEST
+                      << "\",\"subgroup_membership_test\":\""
+                      << SUBGROUP_MEMBERSHIP_TEST
                       << "\",\"r3\":\""
                       << hex(prediction.r3)
                       << "\",\"lift_low_bits\":" << prediction.low_bits
@@ -2340,6 +2782,8 @@ int main(int argc, char** argv) {
                       << "scan curve = " << SCAN_CURVE_MODEL << '\n'
                       << "d multiplication = " << D_MULTIPLICATION << '\n'
                       << "lift residue test = " << LIFT_RESIDUE_TEST << '\n'
+                      << "subgroup membership test = "
+                      << SUBGROUP_MEMBERSHIP_TEST << '\n'
                       << "fixed multiplication = " << FIXED_MULTIPLICATION << '\n'
                       << "backdoor scalar d = " << hex(d) << '\n'
                       << "P == d*Q: True\n"
