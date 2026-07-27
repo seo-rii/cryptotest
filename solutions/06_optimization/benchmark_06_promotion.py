@@ -4,9 +4,11 @@
 The broad benchmark matrix is useful for screening large effects.  This runner
 instead compares exactly two builds from the same source, pins both to the same
 CPU set, validates every result, and places the two fresh processes adjacent in
-balanced AB/BA pairs.  A candidate is promotion-eligible only when its paired
-median exceeds 1.02x, the deterministic bootstrap interval excludes parity,
-both order strata favor it, and four fixed chronological blocks are stable.
+balanced AB/BA pairs.  An optional odd or even number of fresh-process trials
+can be median-aggregated into each logical pair without inflating the bootstrap
+sample count.  A candidate is promotion-eligible only when its paired median
+exceeds 1.02x, the deterministic bootstrap interval excludes parity, both order
+strata favor it, and four fixed chronological blocks are stable.
 """
 
 from __future__ import annotations
@@ -65,7 +67,10 @@ CONFIGURATION_KEYS = (
     "subgroup_membership_test",
     "subgroup_constant_layout",
     "subgroup_batch_layout",
+    "subgroup_batch_inversion",
     "subgroup_trace_formula",
+    "block_lift_rhs",
+    "block_lift_square",
     "subgroup_lucas_bit_scan",
     "subgroup_lucas_step",
     "scan_buffer_initialization",
@@ -206,10 +211,33 @@ def expected_configuration(
             if "CH6_XY_SUBGROUP_BATCH" in defines
             else "direct-in-place-fraction"
         ),
+        "subgroup_batch_inversion": (
+            "exclusive-prefix-3m"
+            if "CH6_EXCLUSIVE_BATCH_PREFIX" in defines
+            else "endpoint-elided-3m-minus-3"
+        ),
         "subgroup_trace_formula": (
             "expanded-miller-fraction"
             if "CH6_EXPANDED_SUBGROUP_TRACE" in defines
-            else "degree-5-reciprocal-polynomial"
+            else (
+                "degree-5-reciprocal-horner"
+                if "CH6_HORNER_SUBGROUP_TRACE" in defines
+                else "degree-5-shifted-square"
+            )
+        ),
+        "block_lift_rhs": (
+            "direct-cubic"
+            if "CH6_DIRECT_BLOCK_CUBIC" in defines
+            else "forward-cubic-difference"
+        ),
+        "block_lift_square": (
+            "direct-cubic-reused"
+            if "CH6_DIRECT_BLOCK_CUBIC" in defines
+            else (
+                "eager-after-jacobi"
+                if "CH6_EAGER_BLOCK_X_SQUARE" in defines
+                else "deferred-after-subgroup"
+            )
         ),
         "subgroup_lucas_bit_scan": (
             "u64-msb-stream"
@@ -754,6 +782,15 @@ def main() -> None:
     )
     parser.add_argument("--warmup-pairs", type=int, default=2)
     parser.add_argument("--pairs", type=int, default=40)
+    parser.add_argument(
+        "--trials-per-pair",
+        type=int,
+        default=1,
+        help=(
+            "fresh-process AB/BA trials aggregated by their median inside "
+            "each logical pair"
+        ),
+    )
     parser.add_argument("--seed", type=int, default=0x06C0FFEE)
     parser.add_argument("--timeout", type=float, default=60.0)
     parser.add_argument("--output", type=Path)
@@ -797,8 +834,8 @@ def main() -> None:
         not 1 <= block_size <= 256 for block_size in block_sizes.values()
     ):
         parser.error("threads must be positive and block size must be in 1..256")
-    if args.warmup_pairs < 1:
-        parser.error("warmup pairs must be positive")
+    if args.warmup_pairs < 1 or args.trials_per_pair < 1:
+        parser.error("warmup pairs and trials per pair must be positive")
     if (
         tuple(args.baseline_define) == tuple(args.candidate_define)
         and tuple(args.baseline_cxxflag) == tuple(args.candidate_cxxflag)
@@ -971,69 +1008,102 @@ def main() -> None:
         print(f"compiler: {compiler_version(compiler)}")
         print(
             f"protocol: warmup_pairs={args.warmup_pairs}, pairs={args.pairs}, "
-            "adjacent balanced AB/BA, fresh process, known-answer check every sample"
+            f"trials_per_pair={args.trials_per_pair}, adjacent balanced AB/BA, "
+            "fresh process, known-answer check every trial"
         )
 
         for index in range(args.warmup_pairs):
             order = "AB" if index % 2 == 0 else "BA"
+            warmup_times: dict[str, list[float]] = {"A": [], "B": []}
+            for _trial_index in range(args.trials_per_pair):
+                for key in order:
+                    event = run_once(
+                        variants[key],
+                        commands[key],
+                        args.timeout,
+                        environment,
+                        chosen_cpus,
+                        args.threads,
+                        block_sizes[key],
+                        schedules[key],
+                        variant_bmi2_adx[key],
+                    )
+                    warmup_times[key].append(float(event["external_seconds"]))
             for key in order:
-                event = run_once(
-                    variants[key],
-                    commands[key],
-                    args.timeout,
-                    environment,
-                    chosen_cpus,
-                    args.threads,
-                    block_sizes[key],
-                    schedules[key],
-                    variant_bmi2_adx[key],
-                )
                 print(
                     f"warmup {index + 1}/{args.warmup_pairs} "
                     f"{variants[key].label}: "
-                    f"{event['external_seconds']:.6f}s [verified/discarded]",
+                    f"{statistics.median(warmup_times[key]):.6f}s median of "
+                    f"{args.trials_per_pair} [verified/discarded]",
                     flush=True,
                 )
 
         events: list[dict[str, Any]] = []
+        pair_aggregates: list[dict[str, Any]] = []
         baseline_times: list[float] = []
         candidate_times: list[float] = []
         ratios: list[float] = []
         strata: dict[str, list[float]] = {"AB": [], "BA": []}
         for pair_index, order in enumerate(orders):
-            pair_events: dict[str, dict[str, Any]] = {}
-            for position, key in enumerate(order):
-                event = run_once(
-                    variants[key],
-                    commands[key],
-                    args.timeout,
-                    environment,
-                    chosen_cpus,
-                    args.threads,
-                    block_sizes[key],
-                    schedules[key],
-                    variant_bmi2_adx[key],
+            pair_times: dict[str, list[float]] = {"A": [], "B": []}
+            trial_ratios: list[float] = []
+            for trial_index in range(args.trials_per_pair):
+                trial_events: dict[str, dict[str, Any]] = {}
+                for position, key in enumerate(order):
+                    event = run_once(
+                        variants[key],
+                        commands[key],
+                        args.timeout,
+                        environment,
+                        chosen_cpus,
+                        args.threads,
+                        block_sizes[key],
+                        schedules[key],
+                        variant_bmi2_adx[key],
+                    )
+                    event.update(
+                        {
+                            "pair_index": pair_index,
+                            "pair_order": order,
+                            "trial_index": trial_index,
+                            "position": position,
+                        }
+                    )
+                    events.append(event)
+                    trial_events[key] = event
+                baseline_trial = float(
+                    trial_events["A"]["external_seconds"]
                 )
-                event.update(
-                    {
-                        "pair_index": pair_index,
-                        "pair_order": order,
-                        "position": position,
-                    }
+                candidate_trial = float(
+                    trial_events["B"]["external_seconds"]
                 )
-                events.append(event)
-                pair_events[key] = event
-            baseline_time = float(pair_events["A"]["external_seconds"])
-            candidate_time = float(pair_events["B"]["external_seconds"])
-            ratio = baseline_time / candidate_time
+                pair_times["A"].append(baseline_trial)
+                pair_times["B"].append(candidate_trial)
+                trial_ratios.append(baseline_trial / candidate_trial)
+            baseline_time = statistics.median(pair_times["A"])
+            candidate_time = statistics.median(pair_times["B"])
+            ratio = statistics.median(trial_ratios)
             baseline_times.append(baseline_time)
             candidate_times.append(candidate_time)
             ratios.append(ratio)
             strata[order].append(ratio)
+            pair_aggregates.append(
+                {
+                    "pair_index": pair_index,
+                    "pair_order": order,
+                    "baseline_external_seconds": baseline_time,
+                    "candidate_external_seconds": candidate_time,
+                    "baseline_over_candidate": ratio,
+                    "trial_baseline_external_seconds": pair_times["A"],
+                    "trial_candidate_external_seconds": pair_times["B"],
+                    "trial_baseline_over_candidate": trial_ratios,
+                }
+            )
             print(
                 f"pair {pair_index + 1:02d}/{args.pairs} {order}: "
                 f"A={baseline_time:.6f}s B={candidate_time:.6f}s "
-                f"A/B={ratio:.4f}x",
+                f"A/B={ratio:.4f}x "
+                f"[median of {args.trials_per_pair} trials]",
                 flush=True,
             )
 
@@ -1071,7 +1141,7 @@ def main() -> None:
             "reasons": promotion_reasons,
         }
         report = {
-            "schema": 2,
+            "schema": 3,
             "environment": {
                 "platform": platform.platform(),
                 "python": platform.python_version(),
@@ -1106,10 +1176,16 @@ def main() -> None:
             "protocol": {
                 "warmup_pairs": args.warmup_pairs,
                 "pairs": args.pairs,
+                "trials_per_pair": args.trials_per_pair,
                 "seed": args.seed,
                 "orders": orders,
-                "fresh_process_per_sample": True,
-                "adjacent_pairs": True,
+                "fresh_process_per_trial": True,
+                "adjacent_pair_per_trial": True,
+                "pair_aggregation": {
+                    "baseline_external_seconds": "median-of-trials",
+                    "candidate_external_seconds": "median-of-trials",
+                    "baseline_over_candidate": "median-of-trial-ratios",
+                },
                 "build_and_self_test_excluded": True,
                 "bootstrap_resamples": BOOTSTRAP_RESAMPLES,
                 "paired_bootstrap": (
@@ -1134,6 +1210,7 @@ def main() -> None:
                 },
             },
             "events": events,
+            "pair_aggregates": pair_aggregates,
             "summary": {
                 "baseline_external_seconds": baseline_summary,
                 "candidate_external_seconds": candidate_summary,

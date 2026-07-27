@@ -14,8 +14,9 @@ It also expands the original Fp2 Miller numerator
 ``(y+v*A)^2*(y+v*B)``, proves the resulting polynomial identity, and checks
 that its Frobenius quotient trace equals the rational x-only formula used by
 ``deep_native_06.cpp``.  Finally, it cancels the common ``(x-gamma)^4`` factor
-symbolically and verifies all five coefficients of the reciprocal polynomial
-in ``z=(x-alpha)^-1``.
+symbolically, verifies all five coefficients of the reciprocal polynomial in
+``z=(x-alpha)^-1``, and proves the three-product shifted-square factorization
+used by the native hot path.
 
 Run from the repository root:
 
@@ -74,6 +75,15 @@ SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS = tuple(
         "a70788aa8b9edb2fe870f2",
         "a1a50d0fa2d3c77e33b7da",
     )
+)
+SUBGROUP_TRACE_RECIPROCAL_SCALE = Integer(
+    "33982bff439c0aac1c38c7", 16
+)
+SUBGROUP_TRACE_RECIPROCAL_SHIFT = Integer(
+    "b26c40e89155897f96df9d", 16
+)
+SUBGROUP_TRACE_RECIPROCAL_OFFSET = Integer(
+    "5e4ed38e19913a2d6e2fc8", 16
 )
 SUBGROUP_ROOT_TRACES = {
     Integer(value, 16)
@@ -349,6 +359,40 @@ def main():
         2 * (x_u + x_v) == cancelled_factor * reciprocal_numerator,
         "reciprocal trace coefficients do not match the expanded formula",
     )
+    z_ring = PolynomialRing(base_field, "Z")
+    z_variable = z_ring.gen()
+    reciprocal_trace_polynomial = z_ring(2)
+    for index, coefficient in enumerate(
+        SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS, start=1
+    ):
+        reciprocal_trace_polynomial += (
+            base_field(coefficient) * z_variable ** index
+        )
+    scaled_reciprocal = (
+        base_field(SUBGROUP_TRACE_RECIPROCAL_SCALE) * z_variable
+    )
+    factorized_trace_polynomial = (
+        2
+        + scaled_reciprocal
+        * (
+            (
+                scaled_reciprocal
+                + base_field(SUBGROUP_TRACE_RECIPROCAL_SHIFT)
+            )
+            ** 2
+            + base_field(SUBGROUP_TRACE_RECIPROCAL_OFFSET)
+        )
+        ** 2
+    )
+    require(
+        base_field(SUBGROUP_TRACE_RECIPROCAL_SCALE) ** 5
+        == base_field(SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS[-1]),
+        "reciprocal trace scale is not the required fifth root",
+    )
+    require(
+        factorized_trace_polynomial == reciprocal_trace_polynomial,
+        "shifted-square trace factorization failed",
+    )
 
     twentieth_root = find_primitive_twentieth_root(extension, v, base_field)
     generated_root_traces = set()
@@ -402,6 +446,26 @@ def main():
         require(
             reciprocal_trace == rational_trace,
             "reciprocal and expanded x-only traces differ",
+        )
+        scaled_reciprocal = (
+            base_field(SUBGROUP_TRACE_RECIPROCAL_SCALE) * reciprocal
+        )
+        factorized_trace = (
+            2
+            + scaled_reciprocal
+            * (
+                (
+                    scaled_reciprocal
+                    + base_field(SUBGROUP_TRACE_RECIPROCAL_SHIFT)
+                )
+                ** 2
+                + base_field(SUBGROUP_TRACE_RECIPROCAL_OFFSET)
+            )
+            ** 2
+        )
+        require(
+            factorized_trace == reciprocal_trace,
+            "factorized and Horner reciprocal traces differ",
         )
 
         if crosscheck_fp2:
@@ -495,6 +559,7 @@ def main():
         "prefix_valid_lifts": None if prefix_valid is None else int(prefix_valid),
         "trace_identity": True,
         "reciprocal_trace_identity": True,
+        "factorized_trace_identity": True,
         "trace_identity_symbolic": True,
     }
     if args.json:

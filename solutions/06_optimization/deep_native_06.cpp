@@ -90,6 +90,19 @@ constexpr std::array<U128, 5> SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS{
     parse_hex("a70788aa8b9edb2fe870f2"),
     parse_hex("a1a50d0fa2d3c77e33b7da"),
 };
+// With z=(x-alpha)^-1, the reciprocal quintic factors after the unique
+// fifth-root scaling r=lambda*z as
+//
+//   tau = 2 + r * ((r+h)^2+k)^2.
+//
+// This reaches the multiplicative-degree lower bound of three field products
+// (two squares and one multiply), versus five multiplies for Horner.
+constexpr U128 SUBGROUP_TRACE_RECIPROCAL_SCALE =
+    parse_hex("33982bff439c0aac1c38c7");
+constexpr U128 SUBGROUP_TRACE_RECIPROCAL_SHIFT =
+    parse_hex("b26c40e89155897f96df9d");
+constexpr U128 SUBGROUP_TRACE_RECIPROCAL_OFFSET =
+    parse_hex("5e4ed38e19913a2d6e2fc8");
 constexpr U128 SUBGROUP_LUCAS_EXPONENT = (FIELD + 1U) / 5U;
 constexpr U128 SUBGROUP_PRAC_EXPONENT =
     SUBGROUP_LUCAS_EXPONENT / 20U;
@@ -329,12 +342,39 @@ constexpr std::string_view SUBGROUP_BATCH_LAYOUT =
 #else
 constexpr std::string_view SUBGROUP_BATCH_LAYOUT = "xy-separated";
 #endif
+#if defined(CH6_EXCLUSIVE_BATCH_PREFIX)
+constexpr std::string_view SUBGROUP_BATCH_INVERSION =
+    "exclusive-prefix-3m";
+#else
+constexpr std::string_view SUBGROUP_BATCH_INVERSION =
+    "endpoint-elided-3m-minus-3";
+#endif
 #if defined(CH6_EXPANDED_SUBGROUP_TRACE)
 constexpr std::string_view SUBGROUP_TRACE_FORMULA =
     "expanded-miller-fraction";
+#elif defined(CH6_HORNER_SUBGROUP_TRACE)
+constexpr std::string_view SUBGROUP_TRACE_FORMULA =
+    "degree-5-reciprocal-horner";
 #else
 constexpr std::string_view SUBGROUP_TRACE_FORMULA =
-    "degree-5-reciprocal-polynomial";
+    "degree-5-shifted-square";
+#endif
+#if defined(CH6_DIRECT_BLOCK_CUBIC)
+constexpr std::string_view BLOCK_LIFT_RHS =
+    "direct-cubic";
+#else
+constexpr std::string_view BLOCK_LIFT_RHS =
+    "forward-cubic-difference";
+#endif
+#if defined(CH6_DIRECT_BLOCK_CUBIC)
+constexpr std::string_view BLOCK_LIFT_SQUARE =
+    "direct-cubic-reused";
+#elif defined(CH6_EAGER_BLOCK_X_SQUARE)
+constexpr std::string_view BLOCK_LIFT_SQUARE =
+    "eager-after-jacobi";
+#else
+constexpr std::string_view BLOCK_LIFT_SQUARE =
+    "deferred-after-subgroup";
 #endif
 #if defined(CH6_VARIABLE_U128_LUCAS_BITS)
 constexpr std::string_view SUBGROUP_LUCAS_BIT_SCAN =
@@ -503,6 +543,22 @@ constexpr std::array<FieldElement, 5>
             SUBGROUP_TRACE_RECIPROCAL_COEFFICIENTS[4],
             MONTGOMERY_ONE_CANON, FIELD)),
     };
+constexpr FieldElement SUBGROUP_TRACE_RECIPROCAL_SCALE_MONT =
+    split(mul_mod_reference(
+        SUBGROUP_TRACE_RECIPROCAL_SCALE,
+        MONTGOMERY_ONE_CANON, FIELD));
+constexpr FieldElement SUBGROUP_TRACE_RECIPROCAL_SCALED_R2 =
+    split(mul_mod_reference(
+        SUBGROUP_TRACE_RECIPROCAL_SCALE,
+        MONTGOMERY_R2_CANON, FIELD));
+constexpr FieldElement SUBGROUP_TRACE_RECIPROCAL_SHIFT_MONT =
+    split(mul_mod_reference(
+        SUBGROUP_TRACE_RECIPROCAL_SHIFT,
+        MONTGOMERY_ONE_CANON, FIELD));
+constexpr FieldElement SUBGROUP_TRACE_RECIPROCAL_OFFSET_MONT =
+    split(mul_mod_reference(
+        SUBGROUP_TRACE_RECIPROCAL_OFFSET,
+        MONTGOMERY_ONE_CANON, FIELD));
 constexpr FieldElement CURVE_A_MONT = split(mul_mod_reference(
     CURVE_A_CANON, MONTGOMERY_ONE_CANON, FIELD));
 constexpr FieldElement CURVE_B_MONT = split(mul_mod_reference(
@@ -1039,6 +1095,36 @@ subgroup_trace_reciprocal_coefficients() {
 #endif
 }
 
+const FieldElement& subgroup_trace_reciprocal_scale() {
+#if defined(CH6_RUNTIME_SUBGROUP_CONSTANTS)
+    static const FieldElement value =
+        to_montgomery(SUBGROUP_TRACE_RECIPROCAL_SCALE);
+    return value;
+#else
+    return SUBGROUP_TRACE_RECIPROCAL_SCALE_MONT;
+#endif
+}
+
+const FieldElement& subgroup_trace_reciprocal_shift() {
+#if defined(CH6_RUNTIME_SUBGROUP_CONSTANTS)
+    static const FieldElement value =
+        to_montgomery(SUBGROUP_TRACE_RECIPROCAL_SHIFT);
+    return value;
+#else
+    return SUBGROUP_TRACE_RECIPROCAL_SHIFT_MONT;
+#endif
+}
+
+const FieldElement& subgroup_trace_reciprocal_offset() {
+#if defined(CH6_RUNTIME_SUBGROUP_CONSTANTS)
+    static const FieldElement value =
+        to_montgomery(SUBGROUP_TRACE_RECIPROCAL_OFFSET);
+    return value;
+#else
+    return SUBGROUP_TRACE_RECIPROCAL_OFFSET_MONT;
+#endif
+}
+
 inline FieldElement transformed_curve_rhs(
     const FieldElement& x, const FieldElement& x_squared) {
     const FieldElement three_x = field_add(x, field_double(x));
@@ -1172,7 +1258,8 @@ FieldElement field_inverse_fermat(const FieldElement& value) {
     return field_power(value, FIELD - 2U);
 }
 
-FieldElement field_inverse_binary_gcd(const FieldElement& value) {
+FieldElement field_inverse_binary_gcd_with_r2(
+    const FieldElement& value, const FieldElement& output_r2) {
     if (field_is_zero(value)) {
         throw std::runtime_error("field inversion of zero");
     }
@@ -1203,13 +1290,42 @@ FieldElement field_inverse_binary_gcd(const FieldElement& value) {
                 sub_mod(right_coefficient, left_coefficient, FIELD);
         }
     }
-    return to_montgomery(left == 1 ? left_coefficient : right_coefficient);
+    return field_multiply(
+        split(left == 1 ? left_coefficient : right_coefficient),
+        output_r2);
+}
+
+FieldElement field_inverse_binary_gcd(const FieldElement& value) {
+    return field_inverse_binary_gcd_with_r2(
+        value, split(MONTGOMERY_R2_CANON));
 }
 
 FieldElement field_inverse(const FieldElement& value) {
     return inverse_method == InverseMethod::BinaryGcd
         ? field_inverse_binary_gcd(value)
         : field_inverse_fermat(value);
+}
+
+FieldElement field_inverse_subgroup_denominator(
+    const FieldElement& value) {
+#if defined(CH6_EXPANDED_SUBGROUP_TRACE) || \
+    defined(CH6_HORNER_SUBGROUP_TRACE)
+    return field_inverse(value);
+#else
+#if defined(CH6_RUNTIME_SUBGROUP_CONSTANTS)
+    static const FieldElement scaled_r2 = split(mul_mod_reference(
+        SUBGROUP_TRACE_RECIPROCAL_SCALE,
+        MONTGOMERY_R2_CANON, FIELD));
+#else
+    constexpr FieldElement scaled_r2 =
+        SUBGROUP_TRACE_RECIPROCAL_SCALED_R2;
+#endif
+    return inverse_method == InverseMethod::BinaryGcd
+        ? field_inverse_binary_gcd_with_r2(value, scaled_r2)
+        : field_multiply(
+              field_inverse_fermat(value),
+              subgroup_trace_reciprocal_scale());
+#endif
 }
 
 bool field_sqrt(const FieldElement& value, FieldElement& root) {
@@ -1489,6 +1605,18 @@ FieldElement subgroup_trace_from_reciprocal(
         field_multiply(trace, reciprocal), field_double(field_one()));
 }
 
+FieldElement subgroup_trace_from_scaled_reciprocal(
+    const FieldElement& scaled_reciprocal) {
+    const FieldElement shifted = field_add(
+        scaled_reciprocal, subgroup_trace_reciprocal_shift());
+    const FieldElement quadratic = field_add(
+        field_square(shifted), subgroup_trace_reciprocal_offset());
+    return field_add(
+        field_multiply(
+            scaled_reciprocal, field_square(quadratic)),
+        field_double(field_one()));
+}
+
 SubgroupTraceFraction subgroup_trace_fraction_reciprocal_polynomial(
     const FieldElement& x) {
     const SubgroupTraceFraction input =
@@ -1523,9 +1651,12 @@ FieldElement subgroup_trace_from_inverse_denominator(
     const FieldElement& inverse_denominator) {
 #if defined(CH6_EXPANDED_SUBGROUP_TRACE)
     return field_multiply(fraction.numerator, inverse_denominator);
-#else
+#elif defined(CH6_HORNER_SUBGROUP_TRACE)
     (void)fraction;
     return subgroup_trace_from_reciprocal(inverse_denominator);
+#else
+    (void)fraction;
+    return subgroup_trace_from_scaled_reciprocal(inverse_denominator);
 #endif
 }
 
@@ -1551,6 +1682,21 @@ bool subgroup_trace_reciprocal_normalized(
     }
     trace = subgroup_trace_from_reciprocal(
         field_inverse(input.denominator));
+    return true;
+}
+
+bool subgroup_trace_factorized_normalized(
+    const FieldElement& x, FieldElement& trace) {
+    const SubgroupTraceFraction input =
+        subgroup_trace_reciprocal_input(x);
+    if (field_is_zero(input.denominator)) {
+        return false;
+    }
+    const FieldElement scaled_reciprocal = field_multiply(
+        field_inverse(input.denominator),
+        subgroup_trace_reciprocal_scale());
+    trace =
+        subgroup_trace_from_scaled_reciprocal(scaled_reciprocal);
     return true;
 }
 
@@ -1746,7 +1892,8 @@ bool subgroup_member_scalar(
         return false;
     }
     const FieldElement trace = subgroup_trace_from_inverse_denominator(
-        fraction, field_inverse(fraction.denominator));
+        fraction,
+        field_inverse_subgroup_denominator(fraction.denominator));
     return subgroup_member_from_trace(trace);
 }
 
@@ -1799,28 +1946,59 @@ void batch_subgroup_membership(
         denominators[active_count] = fraction.denominator;
 #endif
         indices[active_count] = static_cast<BatchIndex>(index);
+#if defined(CH6_EXCLUSIVE_BATCH_PREFIX)
         prefixes[active_count] = product;
         product = field_multiply(product, fraction.denominator);
+#else
+        if (active_count == 0) {
+            product = fraction.denominator;
+        } else {
+            prefixes[active_count] = product;
+            product = field_multiply(product, fraction.denominator);
+        }
+#endif
         ++active_count;
     }
     if (active_count == 0) {
         return;
     }
 
-    FieldElement inverse_product = field_inverse(product);
+    FieldElement inverse_product =
+        field_inverse_subgroup_denominator(product);
 #if CH6_SUBGROUP_LUCAS_LANES == 1
     for (std::size_t active = active_count; active-- > 0;) {
+#if defined(CH6_EXCLUSIVE_BATCH_PREFIX)
         const FieldElement inverse_denominator =
             field_multiply(inverse_product, prefixes[active]);
+#else
+        const FieldElement inverse_denominator =
+            active == 0
+                ? inverse_product
+                : field_multiply(inverse_product, prefixes[active]);
+#endif
 #if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+#if defined(CH6_EXCLUSIVE_BATCH_PREFIX)
         inverse_product = field_multiply(
             inverse_product, fractions[active].denominator);
+#else
+        if (active != 0) {
+            inverse_product = field_multiply(
+                inverse_product, fractions[active].denominator);
+        }
+#endif
         const FieldElement trace =
             subgroup_trace_from_inverse_denominator(
                 fractions[active], inverse_denominator);
 #else
+#if defined(CH6_EXCLUSIVE_BATCH_PREFIX)
         inverse_product =
             field_multiply(inverse_product, denominators[active]);
+#else
+        if (active != 0) {
+            inverse_product =
+                field_multiply(inverse_product, denominators[active]);
+        }
+#endif
         const FieldElement trace =
             subgroup_trace_from_inverse_denominator(
                 SubgroupTraceFraction{
@@ -1831,17 +2009,38 @@ void batch_subgroup_membership(
     }
 #else
     for (std::size_t active = active_count; active-- > 0;) {
+#if defined(CH6_EXCLUSIVE_BATCH_PREFIX)
         const FieldElement inverse_denominator =
             field_multiply(inverse_product, prefixes[active]);
+#else
+        const FieldElement inverse_denominator =
+            active == 0
+                ? inverse_product
+                : field_multiply(inverse_product, prefixes[active]);
+#endif
 #if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+#if defined(CH6_EXCLUSIVE_BATCH_PREFIX)
         inverse_product = field_multiply(
             inverse_product, fractions[active].denominator);
+#else
+        if (active != 0) {
+            inverse_product = field_multiply(
+                inverse_product, fractions[active].denominator);
+        }
+#endif
         fractions[active].numerator =
             subgroup_trace_from_inverse_denominator(
                 fractions[active], inverse_denominator);
 #else
+#if defined(CH6_EXCLUSIVE_BATCH_PREFIX)
         inverse_product =
             field_multiply(inverse_product, denominators[active]);
+#else
+        if (active != 0) {
+            inverse_product =
+                field_multiply(inverse_product, denominators[active]);
+        }
+#endif
         numerators[active] = subgroup_trace_from_inverse_denominator(
             SubgroupTraceFraction{
                 numerators[active], denominators[active]},
@@ -2793,11 +2992,42 @@ int probe_openmp_team_size(int requested_threads) {
     return actual_threads;
 }
 
+struct ScanCubicConstants {
+    FieldElement x_step;
+    FieldElement x_step_squared;
+    FieldElement x_step_cubed;
+    FieldElement curve_a_times_step;
+    FieldElement third_difference;
+};
+
+ScanCubicConstants make_scan_cubic_constants() {
+    const FieldElement x_step = curve_x_to_montgomery(1);
+    const FieldElement x_step_squared = field_square(x_step);
+    const FieldElement x_step_cubed =
+        field_multiply(x_step_squared, x_step);
+    const FieldElement three_step_cubed =
+        field_add(x_step_cubed, field_double(x_step_cubed));
+    const FieldElement& scan_curve_a =
+#if !defined(CH6_ORIGINAL_CURVE_SCAN)
+        transformed_curve_a();
+#else
+        curve_a();
+#endif
+    return {
+        x_step,
+        x_step_squared,
+        x_step_cubed,
+        field_multiply(scan_curve_a, x_step),
+        field_double(three_step_cubed),
+    };
+}
+
 struct CandidateContext {
     U128 d;
     const NafDigits& d_digits;
     const FixedTable& q_table;
     const AffinePoint& generator_p;
+    ScanCubicConstants scan_cubic;
 };
 
 struct PreparedLift {
@@ -2831,33 +3061,8 @@ const FieldElement& prepared_subgroup_rhs(const PreparedLift& prepared) {
 }
 #endif
 
-bool prepare_lift(int low, PreparedLift& prepared) {
-    const U128 canonical_x = (KNOWN_OUTPUTS[LIFT_OUTPUT_INDEX] << 16U) |
-                             static_cast<unsigned>(low);
-    if (canonical_x >= FIELD) {
-        return false;
-    }
+bool lift_residue_is_valid(PreparedLift& prepared) {
     prepared.y_available = false;
-    prepared.x =
-#if !defined(CH6_ORIGINAL_CURVE_SCAN)
-        curve_x_to_montgomery(canonical_x);
-#else
-        to_montgomery(canonical_x);
-#endif
-    prepared.x_squared = field_square(prepared.x);
-#if !defined(CH6_ORIGINAL_CURVE_SCAN)
-    prepared.rhs = transformed_curve_rhs(prepared.x, prepared.x_squared);
-#else
-    prepared.rhs = field_add(
-        field_add(
-            field_multiply(prepared.x_squared, prepared.x),
-            field_multiply(curve_a(), prepared.x)),
-        curve_b());
-#if !defined(CH6_NO_SUBGROUP_FILTER)
-    prepared.subgroup_x = transformed_x_to_montgomery(canonical_x);
-    prepared.subgroup_rhs = transformed_curve_rhs(prepared.subgroup_x);
-#endif
-#endif
 #if !defined(CH6_SQRT_LIFT) && !defined(CH6_NAF_D_MULTIPLICATION)
     if (!field_is_square_binary_jacobi(prepared.rhs)) {
         return false;
@@ -2871,10 +3076,125 @@ bool prepare_lift(int low, PreparedLift& prepared) {
     return true;
 }
 
+void prepare_original_curve_subgroup(
+    U128 canonical_x, PreparedLift& prepared) {
+#if defined(CH6_ORIGINAL_CURVE_SCAN) && \
+    !defined(CH6_NO_SUBGROUP_FILTER)
+    prepared.subgroup_x = transformed_x_to_montgomery(canonical_x);
+    prepared.subgroup_rhs = transformed_curve_rhs(prepared.subgroup_x);
+#else
+    (void)canonical_x;
+    (void)prepared;
+#endif
+}
+
+bool prepare_lift(int low, PreparedLift& prepared) {
+    const U128 canonical_x = (KNOWN_OUTPUTS[LIFT_OUTPUT_INDEX] << 16U) |
+                             static_cast<unsigned>(low);
+    if (canonical_x >= FIELD) {
+        return false;
+    }
+    prepared.x = curve_x_to_montgomery(canonical_x);
+    prepared.x_squared = field_square(prepared.x);
+#if !defined(CH6_ORIGINAL_CURVE_SCAN)
+    prepared.rhs = transformed_curve_rhs(prepared.x, prepared.x_squared);
+#else
+    prepared.rhs = field_add(
+        field_add(
+            field_multiply(prepared.x_squared, prepared.x),
+            field_multiply(curve_a(), prepared.x)),
+        curve_b());
+#endif
+    if (!lift_residue_is_valid(prepared)) {
+        return false;
+    }
+    prepare_original_curve_subgroup(canonical_x, prepared);
+    return true;
+}
+
+struct BlockCubicState {
+    FieldElement x;
+    FieldElement rhs;
+    FieldElement first_difference;
+    FieldElement second_difference;
+};
+
+BlockCubicState make_block_cubic_state(
+    int start, const CandidateContext& context) {
+    const U128 canonical_x = (KNOWN_OUTPUTS[LIFT_OUTPUT_INDEX] << 16U) |
+                             static_cast<unsigned>(start);
+    const FieldElement x = curve_x_to_montgomery(canonical_x);
+    const FieldElement x_squared = field_square(x);
+#if !defined(CH6_ORIGINAL_CURVE_SCAN)
+    const FieldElement rhs = transformed_curve_rhs(x, x_squared);
+#else
+    const FieldElement rhs = field_add(
+        field_add(
+            field_multiply(x_squared, x),
+            field_multiply(curve_a(), x)),
+        curve_b());
+#endif
+    const FieldElement x_squared_times_step =
+        field_multiply(x_squared, context.scan_cubic.x_step);
+    const FieldElement x_times_step_squared =
+        field_multiply(x, context.scan_cubic.x_step_squared);
+    const FieldElement first_difference = field_add(
+        field_add(
+            field_add(
+                x_squared_times_step,
+                field_double(x_squared_times_step)),
+            field_add(
+                x_times_step_squared,
+                field_double(x_times_step_squared))),
+        field_add(
+            context.scan_cubic.x_step_cubed,
+            context.scan_cubic.curve_a_times_step));
+    const FieldElement second_difference_base = field_add(
+        x_times_step_squared, context.scan_cubic.x_step_cubed);
+    const FieldElement second_difference = field_double(field_add(
+        second_difference_base,
+        field_double(second_difference_base)));
+    return {x, rhs, first_difference, second_difference};
+}
+
+void advance_block_cubic_state(
+    BlockCubicState& state, const CandidateContext& context) {
+    state.x = field_add(state.x, context.scan_cubic.x_step);
+    state.rhs = field_add(state.rhs, state.first_difference);
+    state.first_difference =
+        field_add(state.first_difference, state.second_difference);
+    state.second_difference = field_add(
+        state.second_difference,
+        context.scan_cubic.third_difference);
+}
+
+bool prepare_lift_from_block_cubic(
+    int low, const BlockCubicState& state, PreparedLift& prepared) {
+    const U128 canonical_x = (KNOWN_OUTPUTS[LIFT_OUTPUT_INDEX] << 16U) |
+                             static_cast<unsigned>(low);
+    if (canonical_x >= FIELD) {
+        return false;
+    }
+    prepared.x = state.x;
+    prepared.rhs = state.rhs;
+    if (!lift_residue_is_valid(prepared)) {
+        return false;
+    }
+#if defined(CH6_EAGER_BLOCK_X_SQUARE)
+    prepared.x_squared = field_square(prepared.x);
+#endif
+    prepare_original_curve_subgroup(canonical_x, prepared);
+    return true;
+}
+
 bool multiply_prepared_lift(
-    const PreparedLift& prepared, const CandidateContext& context,
+    const PreparedLift& prepared, const FieldElement& x_squared,
+    const CandidateContext& context,
     JacobianPoint& state_point) {
     // +/-y yield opposite points, while every observation uses affine x only.
+#if defined(CH6_NAF_D_MULTIPLICATION)
+    (void)x_squared;
+#endif
 #if !defined(CH6_NAF_D_MULTIPLICATION)
     const FieldElement& curve_a_value =
 #if !defined(CH6_ORIGINAL_CURVE_SCAN)
@@ -2883,7 +3203,7 @@ bool multiply_prepared_lift(
         curve_a();
 #endif
     if (!scalar_mul_hamburg_x(
-            context.d, prepared.x, prepared.x_squared, prepared.rhs,
+            context.d, prepared.x, x_squared, prepared.rhs,
             curve_a_value, state_point)) {
         // The simple Hamburg finalization has exceptional small-order inputs.
         // Recover y only on this exceptional path, then retain the complete
@@ -2933,7 +3253,8 @@ bool lift_state_point(
         return false;
     }
 #endif
-    return multiply_prepared_lift(prepared, context, state_point);
+    return multiply_prepared_lift(
+        prepared, prepared.x_squared, context, state_point);
 }
 
 bool finish_after_filter(
@@ -2987,8 +3308,20 @@ bool evaluate_candidate_block(
         prepared_lifts CH6_SCAN_BUFFER_INITIALIZER;
     std::array<int, 256> prepared_lows CH6_SCAN_BUFFER_INITIALIZER;
     std::size_t prepared_count = 0;
+#if !defined(CH6_DIRECT_BLOCK_CUBIC)
+    BlockCubicState cubic_state =
+        make_block_cubic_state(start, context);
+#endif
     for (int low = start; low < stop; ++low) {
-        if (prepare_lift(low, prepared_lifts[prepared_count])) {
+        const bool valid =
+#if defined(CH6_DIRECT_BLOCK_CUBIC)
+            prepare_lift(low, prepared_lifts[prepared_count]);
+#else
+            prepare_lift_from_block_cubic(
+                low, cubic_state, prepared_lifts[prepared_count]);
+        advance_block_cubic_state(cubic_state, context);
+#endif
+        if (valid) {
             prepared_lows[prepared_count] = low;
             ++prepared_count;
         }
@@ -3037,9 +3370,18 @@ bool evaluate_candidate_block(
         if (!subgroup_members[index]) {
             continue;
         }
+#if defined(CH6_DIRECT_BLOCK_CUBIC) || \
+    defined(CH6_EAGER_BLOCK_X_SQUARE)
+        const FieldElement x_squared = prepared_lifts[index].x_squared;
+#else
+        // The cubic recurrence already supplied rhs.  Delay the square until
+        // after the subgroup filter, which rejects roughly four lifts in five.
+        const FieldElement x_squared =
+            field_square(prepared_lifts[index].x);
+#endif
         JacobianPoint state_point;
         if (multiply_prepared_lift(
-                prepared_lifts[index], context, state_point)) {
+                prepared_lifts[index], x_squared, context, state_point)) {
             low_bits[count] = prepared_lows[index];
             state_points[count] = state_point;
             ++count;
@@ -3100,7 +3442,13 @@ Prediction recover_state(
     std::atomic<int> next_block{0};
     Prediction prediction;
     std::mutex prediction_mutex;
-    const CandidateContext context{d, d_digits, q_table, generator_p};
+    const CandidateContext context{
+        d,
+        d_digits,
+        q_table,
+        generator_p,
+        make_scan_cubic_constants(),
+    };
     std::uint64_t candidates_started = 0;
     const auto record_prediction = [&](const Prediction& candidate) {
         std::lock_guard<std::mutex> guard(prediction_mutex);
@@ -3300,7 +3648,14 @@ void run_self_test() {
                  field_one()) ||
              !field_equal(
                  field_inverse_binary_gcd(left_mont),
-                 field_inverse_fermat(left_mont)))) {
+                 field_inverse_fermat(left_mont)) ||
+             !field_equal(
+                 field_inverse_binary_gcd_with_r2(
+                     left_mont,
+                     SUBGROUP_TRACE_RECIPROCAL_SCALED_R2),
+                 field_multiply(
+                     field_inverse_binary_gcd(left_mont),
+                     subgroup_trace_reciprocal_scale())))) {
             throw std::runtime_error("field inverse self-test failed");
         }
         const FieldElement square = field_square(left_mont);
@@ -3392,14 +3747,19 @@ void run_self_test() {
         }
         FieldElement expanded_trace{};
         FieldElement reciprocal_trace{};
+        FieldElement factorized_trace{};
         const bool expanded_defined =
             subgroup_trace_expanded_normalized(x, rhs, expanded_trace);
         const bool reciprocal_defined =
             subgroup_trace_reciprocal_normalized(x, reciprocal_trace);
+        const bool factorized_defined =
+            subgroup_trace_factorized_normalized(x, factorized_trace);
         if (
             expanded_defined != reciprocal_defined ||
+            reciprocal_defined != factorized_defined ||
             (expanded_defined &&
-             !field_equal(expanded_trace, reciprocal_trace))) {
+             (!field_equal(expanded_trace, reciprocal_trace) ||
+              !field_equal(reciprocal_trace, factorized_trace)))) {
             throw std::runtime_error(
                 "subgroup normalized trace self-test failed");
         }
@@ -3458,6 +3818,70 @@ void run_self_test() {
     const AffinePoint q = point_q();
     FixedTable q_table;
     build_fixed_table(q, q_table);
+    const NafDigits scan_test_digits = make_naf(EXPECTED_D);
+    const AffinePoint scan_test_p = point_p();
+    const CandidateContext scan_test_context{
+        EXPECTED_D,
+        scan_test_digits,
+        q_table,
+        scan_test_p,
+        make_scan_cubic_constants(),
+    };
+    constexpr std::array<int, 5> BLOCK_CUBIC_TEST_STARTS{
+        0, 63, 4096, 15500, 65000,
+    };
+    for (const int start : BLOCK_CUBIC_TEST_STARTS) {
+        BlockCubicState cubic_state =
+            make_block_cubic_state(start, scan_test_context);
+        const int stop = std::min(start + 128, 1 << 16);
+        for (int low = start; low < stop; ++low) {
+            const U128 canonical_x =
+                (KNOWN_OUTPUTS[LIFT_OUTPUT_INDEX] << 16U) |
+                static_cast<unsigned>(low);
+            const FieldElement expected_x =
+                curve_x_to_montgomery(canonical_x);
+            const FieldElement expected_x_squared =
+                field_square(expected_x);
+            const FieldElement expected_rhs =
+#if !defined(CH6_ORIGINAL_CURVE_SCAN)
+                transformed_curve_rhs(expected_x, expected_x_squared);
+#else
+                field_add(
+                    field_add(
+                        field_multiply(expected_x_squared, expected_x),
+                        field_multiply(curve_a(), expected_x)),
+                    curve_b());
+#endif
+            if (
+                !field_equal(cubic_state.x, expected_x) ||
+                !field_equal(cubic_state.rhs, expected_rhs)) {
+                throw std::runtime_error(
+                    "block cubic difference self-test failed");
+            }
+            PreparedLift direct_prepared;
+            PreparedLift difference_prepared;
+            const bool direct_valid =
+                prepare_lift(low, direct_prepared);
+            const bool difference_valid =
+                prepare_lift_from_block_cubic(
+                    low, cubic_state, difference_prepared);
+            if (
+                direct_valid != difference_valid ||
+                (direct_valid &&
+                 (!field_equal(
+                      direct_prepared.x, difference_prepared.x) ||
+                  !field_equal(
+                      direct_prepared.x_squared,
+                      field_square(difference_prepared.x)) ||
+                  !field_equal(
+                      direct_prepared.rhs, difference_prepared.rhs)))) {
+                throw std::runtime_error(
+                    "block cubic preparation self-test failed");
+            }
+            advance_block_cubic_state(
+                cubic_state, scan_test_context);
+        }
+    }
     constexpr std::array<U128, 16> POINT_SCALAR_BOUNDARIES{
         1,
         255,
@@ -3834,8 +4258,14 @@ int main(int argc, char** argv) {
                       << SUBGROUP_CONSTANT_LAYOUT
                       << "\",\"subgroup_batch_layout\":\""
                       << SUBGROUP_BATCH_LAYOUT
+                      << "\",\"subgroup_batch_inversion\":\""
+                      << SUBGROUP_BATCH_INVERSION
                       << "\",\"subgroup_trace_formula\":\""
                       << SUBGROUP_TRACE_FORMULA
+                      << "\",\"block_lift_rhs\":\""
+                      << BLOCK_LIFT_RHS
+                      << "\",\"block_lift_square\":\""
+                      << BLOCK_LIFT_SQUARE
                       << "\",\"subgroup_lucas_bit_scan\":\""
                       << SUBGROUP_LUCAS_BIT_SCAN
                       << "\",\"subgroup_lucas_step\":\""
@@ -3892,8 +4322,14 @@ int main(int argc, char** argv) {
                       << SUBGROUP_CONSTANT_LAYOUT << '\n'
                       << "subgroup batch layout = "
                       << SUBGROUP_BATCH_LAYOUT << '\n'
+                      << "subgroup batch inversion = "
+                      << SUBGROUP_BATCH_INVERSION << '\n'
                       << "subgroup trace formula = "
                       << SUBGROUP_TRACE_FORMULA << '\n'
+                      << "block lift RHS = "
+                      << BLOCK_LIFT_RHS << '\n'
+                      << "block lift square = "
+                      << BLOCK_LIFT_SQUARE << '\n'
                       << "subgroup Lucas bit scan = "
                       << SUBGROUP_LUCAS_BIT_SCAN << '\n'
                       << "subgroup Lucas step = "

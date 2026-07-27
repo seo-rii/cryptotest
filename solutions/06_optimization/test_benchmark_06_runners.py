@@ -69,7 +69,10 @@ def native_result() -> dict[str, object]:
         ),
         "subgroup_constant_layout": "constexpr-montgomery",
         "subgroup_batch_layout": "direct-in-place-fraction",
-        "subgroup_trace_formula": "degree-5-reciprocal-polynomial",
+        "subgroup_batch_inversion": "endpoint-elided-3m-minus-3",
+        "subgroup_trace_formula": "degree-5-shifted-square",
+        "block_lift_rhs": "forward-cubic-difference",
+        "block_lift_square": "deferred-after-subgroup",
         "subgroup_lucas_bit_scan": "variable-u128-shift",
         "subgroup_lucas_step": "fixed-prac-schedule",
         "scan_buffer_initialization": "write-before-read",
@@ -162,6 +165,9 @@ class BenchmarkRunnerTests(unittest.TestCase):
             ("lift_residue_test", None),
             ("subgroup_membership_test", None),
             ("subgroup_trace_formula", None),
+            ("subgroup_batch_inversion", None),
+            ("block_lift_rhs", None),
+            ("block_lift_square", None),
             ("lift_output_index", None),
             ("fixed_digit_encoding", None),
             ("fixed_multiplication", None),
@@ -192,6 +198,9 @@ class BenchmarkRunnerTests(unittest.TestCase):
             ("lift_residue_test", None),
             ("subgroup_membership_test", None),
             ("subgroup_trace_formula", None),
+            ("subgroup_batch_inversion", None),
+            ("block_lift_rhs", None),
+            ("block_lift_square", None),
             ("lift_output_index", None),
             ("fixed_digit_encoding", None),
             ("fixed_multiplication", None),
@@ -327,6 +336,9 @@ class BenchmarkRunnerTests(unittest.TestCase):
             ("threads_actual", 2),
             ("threads", True),
             ("subgroup_trace_formula", "expanded-miller-fraction"),
+            ("subgroup_batch_inversion", "exclusive-prefix-3m"),
+            ("block_lift_rhs", "direct-cubic"),
+            ("block_lift_square", "direct-cubic-reused"),
         ):
             with self.subTest(key=key):
                 malformed = native_result()
@@ -501,9 +513,31 @@ class BenchmarkRunnerTests(unittest.TestCase):
                     expected,
                 )
 
+    def test_promotion_runner_tracks_subgroup_batch_inversion(self) -> None:
+        for defines, expected in (
+            ((), "endpoint-elided-3m-minus-3"),
+            (("CH6_EXCLUSIVE_BATCH_PREFIX",), "exclusive-prefix-3m"),
+        ):
+            with self.subTest(defines=defines):
+                variant = PROMOTION.Variant(
+                    "subgroup-inversion",
+                    Path("/tmp/deep_native_06"),
+                    defines,
+                )
+                self.assertEqual(
+                    PROMOTION.expected_configuration(variant, True)[
+                        "subgroup_batch_inversion"
+                    ],
+                    expected,
+                )
+
     def test_promotion_runner_tracks_subgroup_trace_formula(self) -> None:
         for defines, expected in (
-            ((), "degree-5-reciprocal-polynomial"),
+            ((), "degree-5-shifted-square"),
+            (
+                ("CH6_HORNER_SUBGROUP_TRACE",),
+                "degree-5-reciprocal-horner",
+            ),
             (("CH6_EXPANDED_SUBGROUP_TRACE",), "expanded-miller-fraction"),
         ):
             with self.subTest(defines=defines):
@@ -513,6 +547,39 @@ class BenchmarkRunnerTests(unittest.TestCase):
                 self.assertEqual(
                     PROMOTION.expected_configuration(variant, True)[
                         "subgroup_trace_formula"
+                    ],
+                    expected,
+                )
+
+    def test_promotion_runner_tracks_block_lift_rhs(self) -> None:
+        for defines, expected in (
+            ((), "forward-cubic-difference"),
+            (("CH6_DIRECT_BLOCK_CUBIC",), "direct-cubic"),
+        ):
+            with self.subTest(defines=defines):
+                variant = PROMOTION.Variant(
+                    "block-cubic", Path("/tmp/deep_native_06"), defines
+                )
+                self.assertEqual(
+                    PROMOTION.expected_configuration(variant, True)[
+                        "block_lift_rhs"
+                    ],
+                    expected,
+                )
+
+    def test_promotion_runner_tracks_block_lift_square(self) -> None:
+        for defines, expected in (
+            ((), "deferred-after-subgroup"),
+            (("CH6_EAGER_BLOCK_X_SQUARE",), "eager-after-jacobi"),
+            (("CH6_DIRECT_BLOCK_CUBIC",), "direct-cubic-reused"),
+        ):
+            with self.subTest(defines=defines):
+                variant = PROMOTION.Variant(
+                    "block-square", Path("/tmp/deep_native_06"), defines
+                )
+                self.assertEqual(
+                    PROMOTION.expected_configuration(variant, True)[
+                        "block_lift_square"
                     ],
                     expected,
                 )
@@ -613,6 +680,26 @@ class BenchmarkRunnerTests(unittest.TestCase):
         )
         self.assertEqual(process.returncode, 2)
         self.assertIn("same effective build/runtime configuration", process.stderr)
+
+    def test_promotion_runner_rejects_nonpositive_trials_per_pair(self) -> None:
+        process = subprocess.run(
+            (
+                sys.executable,
+                str(DIRECTORY / "benchmark_06_promotion.py"),
+                "--warmup-pairs",
+                "1",
+                "--pairs",
+                "40",
+                "--trials-per-pair",
+                "0",
+            ),
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10.0,
+        )
+        self.assertEqual(process.returncode, 2)
+        self.assertIn("trials per pair must be positive", process.stderr)
 
 
 if __name__ == "__main__":
