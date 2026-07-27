@@ -3,7 +3,7 @@
 ## 결론
 
 첫 GMP 후보군에서는 안정적인 개선을 찾지 못했지만, native 경로를 다시
-검토해 서로 독립적인 세 알고리즘 개선을 채택했다.
+검토해 서로 독립적인 네 알고리즘 개선을 채택했다.
 
 1. `r0`를 lift해 `r1`로 거르는 대신 **`r1`을 lift해 `r2`로 거른다**.
    이 인스턴스의 순차 검사량은 21,305개에서 15,595개로 26.8% 줄었다.
@@ -11,16 +11,21 @@
    short-Weierstrass co-Z x-only ladder로 바꿨다. exceptional denominator는
    완전한 NAF 경로로 되돌아가도록 fail-closed 처리했다.
 3. Hamburg 정상 경로에 y가 필요 없다는 점을 이용해 매 lift의 sqrt를
-   88비트 Jacobi symbol 판정으로 바꾸고, exceptional NAF fallback에서만
-   sqrt를 지연 실행한다.
+   Montgomery residue의 hybrid 128/64비트 Jacobi symbol 판정으로 바꾸고,
+   exceptional NAF fallback에서만 sqrt를 지연 실행한다.
+4. `#E(Fp)=5n`의 작은 cofactor를 이용해, `Fp2`의 비유리 5-torsion으로
+   만든 Frobenius--Tate trace가 order-`n` 부분군인지 x좌표만으로 먼저
+   판정한다. block에서는 모든 분모를 한 번에 batch-invert한다.
 
 40개 adjacent balanced AB/BA pair, 5,000회 deterministic bootstrap,
 4개 시간 block stationarity gate를 사용한 1-thread 측정에서 shifted scan은
 paired median `1.3428x`(95% CI `1.3336..1.3510`), Hamburg는
 `1.1716x`(95% CI `1.1682..1.1764`)였고 둘 다 gate를 통과했다. 따라서
 최종 source의 sqrt/Jacobi 비교도 `1.0819x`(95% CI
-`1.0769..1.0842`)로 gate를 통과했다. 세 후보를
-`deep_native_06.cpp`의 기본값으로 승격했다. Brier--Joye, GMP batch
+`1.0769..1.0842`)로 gate를 통과했다. 첫 세 후보를
+`deep_native_06.cpp`의 기본값으로 승격했다. 네 번째
+부분군 필터도 아래의 전수 수학 검증과 큰 반복 측정 효과를 근거로
+기본값에 넣었다. Brier--Joye, GMP batch
 inversion, finite difference, Legendre 선필터와 넓은 임의점 wNAF는 아래
 실패 기록처럼 유지하지 않는다.
 
@@ -95,13 +100,16 @@ numerator/denominator를 개별 invert하지 않고 Jacobian `X/Z^2`로 인코�
 
 기존 lift는 모든 우변에 `a^((p+1)/4)`를 계산하고 square로 검증했다.
 그러나 Hamburg Figure 3의 정상 계산에는 y가 전혀 들어가지 않는다. 따라서
-canonical 우변에 대해 `(a/p)`만 Euclidean reduction으로 구한다. 결과가
+Montgomery 우변에 대해 `(aR/p)=(a/p)`만 Euclidean reduction으로 구한다.
+여기서 `R=2^128=(2^64)^2`이므로 Montgomery factor 자체가 제곱이고 Jacobi
+symbol을 바꾸지 않는다. 결과가
 `-1`이면 비잔여이므로 버리고, `+1`이면 Hamburg를 실행한다. denominator가
 0인 exceptional input에서만 기존 sqrt로 y를 복원해 완전한 NAF로
 fallback한다.
 
 이는 아래에서 실패한 `mpz_legendre + sqrt`와 비용 구조가 다르다. 그 후보는
-두 exponentiation을 이어서 실행했지만, 최종 native Jacobi는 88비트 정수의
+두 exponentiation을 이어서 실행했지만, 최종 native Jacobi는 U128
+Euclidean 단계 뒤 두 피연산자가 64비트가 되는 순간 U64 루프로 전환해
 나머지·shift·quadratic-reciprocity 부호 갱신만 수행한다. 2,000개
 deterministic random 값과 64개 경계 pair에서 Fermat/Legendre와 결과를
 비교했고 완전한 attack 실행의 known answer도 일치했다.
@@ -257,7 +265,7 @@ permutation이 아니다. 뒤의 공개 출력도 같은 72비트 early filter�
 경로에 채택했다. x-only에서 curve-membership 검사까지 filter 뒤로 미루는
 순서는 여전히 비잔여 후보에도 비싼 ladder를 수행해 실패했다.
 
-## 후속 native 후보
+## 후속 native 검토
 
 ### Row-batched affine fixed-`Q`
 
@@ -275,7 +283,7 @@ inverse 하나, 약 30KB의 thread-local scratch와 불규칙 exceptional 분기
 `0.9254..0.9438`)로 명확히 느렸다. 재현용
 `CH6_ROW_BATCHED_FIXED_MUL` macro만 유지하고 기본값으로 승격하지 않았다.
 
-### Cofactor-5 subgroup membership
+## 채택 4: cofactor-5 Frobenius--Tate trace 선필터
 
 PARI의 `ellcard`, `ellgroup`, `ellorder`로 다음을 독립 확인했다.
 
@@ -288,11 +296,70 @@ ord(Q) = n
 shifted 정답 prefix에서 curve-valid lift는 7,713개이고 그중 `[n]T=O`는
 1,547개다. true lift는 `s2*Q`이므로 order-`n` subgroup에 있고, 정확한
 membership filter는 Hamburg 호출의 6,166/7,713 = 79.94%를 제거한다.
-단순 `[n]T`는 대략 Hamburg 한 번의 비용이라 손해다. Hamburg를 bit당
-`8M+3S`로 잡으면 filter의 대략적인 손익분기점은 후보당 739 field
-operation equivalents다. Koshelev의 small-cofactor Tate-pairing/
-power-residue 검사가 유력한 출발점이지만 `p mod 5=4`인 이 곡선에 맞춘
-확장체와 exceptional 검증이 필요해 고위험 연구 후보로 남겼다.
+단순 `[n]T`는 대략 Hamburg 한 번의 비용이라 손해다.
+
+Koshelev의 basic-field 알고리즘은 작은 인수 `e`가 `p-1`을 나눠야 한다.
+이 곡선은 `p mod 5=4`라 `5∤p-1`이므로 그대로 적용할 수 없다. 대신
+`Fp2=Fp[v]/(v^2-2)`에서 Frobenius가 `v^p=-v`로 작용하는 order-5 점
+
+```text
+P-  = (alpha, beta*v)
+2P- = (gamma, delta*v)
+alpha = d59dbc5a89d7c3dcfc7aef
+beta  = c34366b11d118d0d635fbb
+gamma = 0e953f99abc72cff8f3ff9
+delta = 94b152fc315f97ae6ea4c7
+```
+
+을 사용했다. 두 tangent slope는 각각 `m1*v`, `m2*v`이고,
+`m1=d1e74749596975d56c869e`,
+`m2=3a7862416ae71b5fea671e`다. Miller recurrence를 order 5에 전개한 뒤
+`W=f(T)^p/f(T)`와 `tau=W+W^-1`을 취하면 lift의 y가 소거된다. 변환 곡선의
+`r=x^3-3x+b`에 대해 실제 코드는 다음 Fp 식만 계산한다.
+
+```text
+A = beta + m1*(x-alpha)
+B = delta + m2*(x-gamma)
+C = r + 2*A^2 + 4*A*B
+D = -((r + 2*A^2)*B + 2*r*A)
+U = r*C^2
+V = 2*D^2
+tau = 2*(U+V)/(U-V)
+```
+
+`e=(p+1)/5=0x2b674bdfd6f921287caaec`라 놓고
+`L_k=W^k+W^-k`를
+
+```text
+L_2k   = L_k^2 - 2
+L_2k+1 = L_k*L_k+1 - tau
+```
+
+의 고정 86비트 Lucas ladder로 계산한다. `L_e=2`일 때와 오직 그때만
+order-`n` 부분군이다. trace 준비는 약 `6M+3S`, block당 한 번의
+Montgomery batch inverse와 후보당 약 4M, Lucas ladder는 170 M/S다.
+총 약 183 field-operation equivalent로 추정되어 Hamburg 손익분기점
+739보다 충분히 작다. 유효 rational lift에서는 trace 분모 `U-V`가 0이
+될 수 없지만 구현은 0을 만나면 fail-closed로 거부한다.
+
+검증은 세 겹으로 했다. Sage에서 고정 torsion과 Frobenius 관계, 무작위
+200점, 정답까지의 curve-valid 7,713점을 확인했고 trace 판정 1,547개와
+직접 `[n]T=O` 1,547개 사이 mismatch는 0이었다. C++에서도 scalar와 batched
+trace를 실제 lift 128개에서 직접 `[n]T`와 비교하고, `Q` 양성 벡터와
+`Fp`-rational order-5 점 음성 벡터를 검사한다.
+
+필터를 끈 동일 source와의 CPU 고정 40-pair 측정은 1 thread에서 외부
+중앙값 `0.085280/0.044124 s`, paired `1.9444x`(CI
+`1.9113..1.9687`)였고 2 thread에서는 `0.053521/0.030619 s`,
+paired `1.7448x`(CI `1.7161..1.7904`)였다. 모든 시간 block이 각각
+`1.874x`, `1.718x` 이상이었지만, 다른 빌드가 동시에 실행된 shared host의
+절대 시간과 effect spread가 엄격한 stationarity 문턱을 넘었다. 따라서
+방향과 큰 효과는 분명하지만 이 절대 시간은 diagnostic-only로 기록한다.
+이 campaign의 고정 source SHA-256은
+`5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`이다.
+이후 최종 source에서는 중복 `PreparedLift` 저장을 없애고 이미 계산한
+`x^2`를 재사용했으며, 정확성 suite는 다시 통과시켰지만 포화된 host에서
+새 성능 수치를 만들지는 않았다.
 
 ## 반복 측정
 
@@ -350,7 +417,8 @@ runner는 두 C++ 실행 파일을 임시 디렉터리에 빌드하고 각 실�
 - [Eric Brier and Marc Joye, "Weierstrass Elliptic Curves and Side-Channel Attacks" (2002)](https://marcjoye.github.io/papers/BJ02espa.pdf) — Figure 3의 ladder invariant와 식 (6), (7), (9), (10)의 x-only differential addition/doubling을 그대로 구현했다. 원문은 projective ladder 비용도 bit당 약 14 multiplications로 분석한다.
 - [Mike Hamburg, "Faster Montgomery and double-add ladders for short Weierstrass curves" (TCHES 2020 / ePrint 2020/437)](https://eprint.iacr.org/2020/437), [공식 supplementary formulas](https://github.com/bitwiseshiftleft/ladder_formulas) — Figure 3의 co-Z ladder를 고정 `d` hot path에 구현하고 exceptional denominator를 NAF fallback으로 처리했으며 Figure 4/6 DAG를 비교했다.
 - [Niels Möller, "Efficient computation of the Jacobi symbol"](https://arxiv.org/abs/1907.07795), [GNU MP Jacobi algorithm](https://gmplib.org/manual/Jacobi-Symbol.html) — Euclidean/GCD reduction 중 quadratic-reciprocity 상태를 갱신하는 residue test의 근거다.
-- [Dmitrii Koshelev, "Subgroup membership testing on elliptic curves via the Tate pairing"](https://eprint.iacr.org/2022/037.pdf) — cofactor-5 subgroup 선필터의 장기 연구 출발점이다.
+- [Dmitrii Koshelev, "Subgroup membership testing on elliptic curves via the Tate pairing"](https://eprint.iacr.org/2022/037.pdf) — 작은 cofactor Tate-pairing 검사의 출발점이다. 논문의 basic-field 조건 `e | p-1`은 여기서 성립하지 않으므로 그대로 적용하지 않고 `Fp2` Frobenius 고유공간으로 옮겼다.
+- [Andreas Enge, "Bilinear pairings on elliptic curves"](https://arxiv.org/abs/1301.5520) — Miller 함수 recurrence, reduced Tate pairing과 Frobenius 작용을 전개해 x-only trace 식을 유도할 때 사용했다.
 - [Peter L. Montgomery, "Speeding the Pollard and Elliptic Curve Methods of Factorization" (Mathematics of Computation, 1987)](https://www.ams.org/journals/mcom/1987-48-177/S0025-5718-1987-0866113-7/S0025-5718-1987-0866113-7.pdf) — differential-addition ladder와 inversion amortization의 원형을 확인했다.
 - [Daniel J. Bernstein et al., "OpenSSLNTRU: Faster post-quantum TLS key exchange" (2021), Section 2.2](https://opensslntru.cr.yp.to/opensslntru-20211006.pdf) — Montgomery batch inversion의 prefix/reverse 알고리즘과 `3n-3` multiplications + 1 inversion 비용을 대조했다.
 - [GNU MP Manual, Number Theoretic Functions](https://gmplib.org/manual/Number-Theoretic-Functions) — `mpz_invert`와 `mpz_legendre`의 공식 API 의미를 확인했다.

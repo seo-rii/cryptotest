@@ -93,9 +93,19 @@ Jacobian point는 48바이트 POD다. 임의점 scan은 동형 `a=-3` 곡선과
 Hamburg ladder를 쓰고, 고정 `Q` table은 구축 중
 batch-normalize한 90,112바이트 affine table로 만들어 generic addition
 대신 mixed addition을 쓴다. Hamburg 정상 경로에는 y좌표가 필요 없으므로
-모든 lift에서 제곱근 지수승을 하지 않고 canonical 88비트 우변의 Euclidean
-Jacobi symbol만 계산한다. denominator 예외에서 NAF fallback이 필요할 때만
-실제 제곱근을 지연 계산한다.
+모든 lift에서 제곱근 지수승을 하지 않고 Montgomery residue의 hybrid
+128/64비트 Euclidean Jacobi symbol만 계산한다. `R=2^128`은 제곱이므로
+canonical 변환 없이도 symbol이 같다. denominator 예외에서 NAF fallback이
+필요할 때만 실제 제곱근을 지연 계산한다.
+
+곡선군은 `#E(Fp)=5n`, `ord(Q)=n`이다. `p mod 5=4`라 Koshelev의
+basic-field 조건 `5 | p-1`은 성립하지 않으므로, `Fp2` Frobenius `-1`
+eigenspace의 order-5 점으로 Tate/Miller 값을 전개했다.
+`W=f(T)^p/f(T)`의 trace `tau=W+W^-1`는 y가 소거되어 x만으로 계산되고,
+`e=(p+1)/5`에 대한 Lucas ladder가 `W^e=1`인지 판정한다. block 안의 trace
+분모는 한 번에 batch-invert한다. 정답 prefix의 curve-valid 7,713개 중
+직접 `[n]T=O`인 1,547개와 trace 결과가 모두 일치해 Hamburg 호출의
+79.94%를 제거한다.
 
 연속 candidate block은 atomic counter로 배분한다. 최종 adaptive 정책은
 1 thread에서 block/batch inverse 64개, 2 threads에서 block 32개, 3 threads
@@ -111,9 +121,10 @@ compile-time fallback과 실제 lift 교차 검증을 함께 유지한다.
 82,560바이트로 줄였지만 `1.0065x`에 그쳤고, comb row별 affine batch는
 `0.9351x`로 느렸다. 나눗셈을 반복 뺄셈으로 바꾼 Jacobi는 `1.0072x`이며
 CI가 parity를 포함했다. 두 후보는 실험 macro만 남기고 unsigned w8 table과
-Euclidean Jacobi를 유지했다. cofactor가 5라는 사실을 이용한 subgroup
-membership 선필터는 유효 lift의 79.94%를 이론상 제거하지만, 단순 `[n]T`
-판정 자체가 비싸므로 후속 연구 후보로 남겼다.
+Euclidean Jacobi를 유지했다. 부분군 필터의 직접 `Fp2` character 변형은
+sqrt가 필요해 paired `1.1643x`에 그쳤고, x-only trace의 `1.9444x`보다
+느려 기각했다. 완전 unroll Lucas도 code-size 증가와 넓은 CI 때문에
+채택하지 않았다.
 
 복잡도는 telemetry가 이 인스턴스에서 `O(log B log n)`, 상태 탐색 work가
 최악 `O(2^16 log n)`이다. native 고정 table 외 탐색 메모리는 worker마다
@@ -152,14 +163,26 @@ interleaved run에서 warm-up 1회 후 각각 5회 측정한 역사 기준선이
 (95% CI `1.1682..1.1764`), sqrt/Jacobi는 `1.0819x`
 (95% CI `1.0769..1.0842`), 2-thread scalar64/adaptive-block32는
 `1.2121x`(95% CI `1.2051..1.2163`)였고 모두 stationarity gate를 통과했다.
+no-subgroup-filter/trace-filter는 1 thread에서
+`0.085280/0.044124 s`, paired `1.9444x`(CI `1.9113..1.9687`), 2
+thread에서 `0.053521/0.030619 s`, paired `1.7448x`(CI
+`1.7161..1.7904`)였다. 모든 effect block이 1.71x 이상이었지만 shared
+host 포화로 stationarity는 실패해 절대 시간은 diagnostic-only다.
+이는 source SHA-256
+`5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`을
+고정한 campaign이다. 이후 최종 source의 중복 `PreparedLift` 저장과
+`x^2` 계산을 제거하고 correctness를 재검증했지만, 포화된 host에서 새
+성능 수치는 만들지 않았다.
 Jacobi와 새 2-thread 정책 전 source의 전체 legacy/당시-final holdout은
 warm-up 10쌍 뒤 paired `3.7126x`(95% CI `3.7106..3.7251`)였다. 이는 현재
 전체 stack의 합산 수치가 아니라 이전 단계의 역사적 같은-source 비교다.
 
 timing 전에 독립 canonical arithmetic와 affine reference로 field 2,000개,
-64개 경계 field pair, point/scalar 256개와 실제 lift Hamburg/NAF 128개를
-교차 검증했다. signed carry와 subgroup order 경계도 point vector에 넣고,
-Euclidean/subtractive Jacobi를 Fermat/Legendre와 비교했다. 모든 측정
+64개 경계 field pair, point/scalar 256개와 실제 lift Hamburg/NAF 및
+scalar/batched subgroup 128개를 교차 검증했다. Sage에서도 무작위 200점과
+실제 prefix 전부를 직접 `[n]T`와 비교해 mismatch 0을 확인했다. signed
+carry와 subgroup order 경계도 point vector에 넣고, 모든 Jacobi 변형을
+Fermat/Legendre와 비교했다. 모든 측정
 process도 `P=dQ`, `d`, `r3`, `state_label`별 `s2/s3`, 정답 low bits와
 요청/실제 thread·schedule·table·residue metadata를 다시 검사했다.
 
@@ -173,7 +196,8 @@ process도 `P=dQ`, `d`, `r3`, `state_label`별 `s2/s3`, 정답 low bits와
 - [EFD `a=-3` Jacobian formulas](https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-3.html): 동형 곡선 doubling 공식.
 - [Hamburg, *Faster Montgomery and double-add ladders for short Weierstrass curves*](https://eprint.iacr.org/2020/437), [공식 supplementary formulas](https://github.com/bitwiseshiftleft/ladder_formulas): 실제 구현한 co-Z ladder, exceptional case와 대조한 Figure 4/6 DAG.
 - [Möller, *Efficient computation of the Jacobi symbol*](https://arxiv.org/abs/1907.07795), [GNU MP Jacobi algorithm](https://gmplib.org/manual/Jacobi-Symbol.html): Euclidean reduction 중 quadratic-reciprocity 부호 갱신.
-- [Koshelev, *Subgroup membership testing on elliptic curves via the Tate pairing*](https://eprint.iacr.org/2022/037.pdf): cofactor-5 subgroup 선필터의 후속 연구 근거.
+- [Koshelev, *Subgroup membership testing on elliptic curves via the Tate pairing*](https://eprint.iacr.org/2022/037.pdf): small-cofactor pairing test의 출발점. basic-field 조건은 성립하지 않아 `Fp2`로 확장했다.
+- [Enge, *Bilinear pairings on elliptic curves*](https://arxiv.org/abs/1301.5520): Miller recurrence와 reduced Tate pairing을 x-only Frobenius trace로 전개할 때 참고했다.
 - [Bernstein et al., *OpenSSLNTRU*](https://opensslntru.cr.yp.to/opensslntru-20211006.pdf): prefix/reverse batch inversion 비용.
 - [Montgomery, *Modular Multiplication Without Trial Division*](https://doi.org/10.1090/S0025-5718-1985-0777282-X): 2-limb REDC와 Montgomery 표현.
 - [GNU MP Manual](https://gmplib.org/manual/) 및 [OpenMP 5.2](https://www.openmp.org/spec-html/5.2/openmp.html): C++ arithmetic와 병렬 구현.

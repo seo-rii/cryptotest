@@ -42,10 +42,13 @@ The default `deep_native_06.cpp` combines:
 6. an isomorphic `a=-3` curve for the arbitrary-point scan;
 7. Hamburg's co-Z short-Weierstrass ladder for the recovered fixed `d`, with a
    complete width-2 NAF fallback for exceptional inputs;
-8. an 88-bit Jacobi residue test, deferring the square root to the exceptional
-   NAF fallback instead of exponentiating for every lift;
-9. a width-8 fixed-`Q` affine comb table and mixed Jacobian addition;
-10. monotone OpenMP work assignment: block-64 at one thread, block-32 at two
+8. a hybrid 128/64-bit Jacobi test run directly on the Montgomery residue,
+   deferring the square root to the exceptional NAF fallback;
+9. an exact x-only cofactor-5 subgroup filter derived from a Frobenius/Tate
+   trace over `Fp2`; block scans batch-invert all trace denominators before the
+   expensive Hamburg multiplication;
+10. a width-8 fixed-`Q` affine comb table and mixed Jacobian addition;
+11. monotone OpenMP work assignment: block-64 at one thread, block-32 at two
     threads, and the scalar pipeline at three or more threads.
 
 The fixed field element is 16 bytes, a Jacobian point is 48 bytes, and the
@@ -59,17 +62,21 @@ Before timing, the native self-test checks:
 - 64 boundary pairs around zero, `p`, and the 64-bit limb boundary;
 - 256 point/scalar/table vectors against an affine reference, including signed
   carry, subgroup-order, and 88-bit scalar boundaries;
-- 128 real curve lifts comparing Hamburg and NAF affine x-coordinates.
+- 128 real curve lifts comparing Hamburg and NAF affine x-coordinates and
+  comparing both scalar and batched subgroup tests with exact `[n]T=O`.
 
-The same field vectors compare Euclidean and subtractive Jacobi results with a
-Fermat/Legendre reference.
+The same field vectors compare full-U128, hybrid-U64, Montgomery-residue,
+canonical-input, Euclidean, and subtractive Jacobi variants with a
+Fermat/Legendre reference. The subgroup preflight also checks known positive
+and rational 5-torsion negative vectors.
 
 Every timed JSON result also reports the selected field backend, curve model,
-`d` multiplication, lift residue test, table width/encoding, scan label and
-output indices, requested and actual threads, schedule, inverse, and
-square-root method, plus requested/effective block size and fixed-`Q`
-multiplication layout. The solver rejects a smaller OpenMP team, and the benchmark
-rejects metadata mismatches instead of timing an accidentally inactive macro.
+`d` multiplication, lift residue test, subgroup membership test, table
+width/encoding, scan label and output indices, requested and actual threads,
+schedule, inverse, and square-root method, plus requested/effective block size
+and fixed-`Q` multiplication layout. The solver rejects a smaller OpenMP team,
+and the benchmark rejects metadata mismatches instead of timing an accidentally
+inactive macro.
 
 ## Reproduce
 
@@ -141,6 +148,22 @@ The stationarity-gated wins now include:
 | Jacobi lift vs square-root lift, 1T | 1.0819x | 1.0769..1.0842 | adopted |
 | adaptive block-32 vs scalar-64, 2T | 1.2121x | 1.2051..1.2163 | adopted |
 
+The new cofactor-5 filter was compared in frozen source snapshot SHA-256
+`5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`,
+with only `CH6_NO_SUBGROUP_FILTER` changed. At one thread the external medians
+were `0.085280/0.044124 s`, with paired `1.9444x` and bootstrap CI
+`1.9113..1.9687`; at two threads they were `0.053521/0.030619 s`, with paired
+`1.7448x` and CI `1.7161..1.7904`. Every chronological effect block was above
+`1.71x`, but the shared host was simultaneously saturated and both runs failed
+the strict absolute/effect stationarity gate. The exhaustive subgroup
+equivalence check and the large, structurally expected reduction justify the
+default, while these timings remain diagnostic rather than portable
+absolute-speed claims.
+
+The maintained source subsequently removed duplicate `PreparedLift` storage
+and reuses its precomputed x-square. Its full correctness suite was rerun, but
+no new final-source timing claim was produced on the saturated host.
+
 After ten warm-up pairs, the pre-Jacobi source comparison of the complete
 legacy stack (generic carry, legacy scan, original curve, NAF) against the
 then-default stack measured `0.283205 s` versus `0.076114 s`. Its paired median was
@@ -152,10 +175,20 @@ A balanced signed-w9 table reduced the table to 82,560 bytes but reached only
 affine fixed-`Q` multiplication lost at `0.9351x`, and subtractive Jacobi was
 statistical parity at `1.0072x` with a parity-containing CI. A w4 fixed table
 lost to w8 (`0.9483x`, CI `0.9243..0.9737`), and block 128
-did not beat block 64 (`0.9948x`, CI `0.9093..1.0473`). Specialized square,
+did not beat block 64 before the subgroup filter (`0.9948x`, CI
+`0.9093..1.0473`). With the filter, block 256 was a promising `1.0365x`
+(CI `1.0173..1.0503`) but missed stationarity, so block 64 remains automatic.
+Specialized square,
 direct U128 add, a straight-line sqrt chain, w9, field-multiply `noinline`,
 Hamburg inline, PRAC, and GLV/endomorphism variants were also rejected or kept
 diagnostic-only.
+
+The hybrid Jacobi kernel itself reduced a dedicated Jacobi microbenchmark from
+`0.08616 s` for full U128 Euclidean reduction to `0.05543 s`; using the
+Montgomery residue directly was another 2.7% faster than first converting to
+canonical form. In a noisy complete no-subgroup-filter campaign, however, the
+paired result was only `1.0013x` with CI `0.9699..1.0315`; it is retained as a
+verified low-level simplification, not counted as an end-to-end win.
 
 A saved generic-carry/BMI2 holdout showed a large `2.9808x` paired median and
 all pairs favored BMI2/ADX, but the shared host's chronological block spread

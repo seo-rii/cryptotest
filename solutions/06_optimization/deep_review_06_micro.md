@@ -18,8 +18,11 @@ batch-normalize했다. 두 번째 최적화 pass에서 scan과 고정 `d` 곱까
 - scan: `r1` lift → `r2` filter의 shifted window
 - hot `dR`: Hamburg 2020 co-Z x-only ladder, exceptional input은 width-2
   NAF fallback
-- lift residue: 88비트 Euclidean Jacobi; Hamburg exceptional NAF에서만
-  width-4 sqrt를 지연 실행
+- lift residue: Montgomery residue에서 바로 시작해 U128에서 U64로
+  전환하는 Euclidean Jacobi; Hamburg exceptional NAF에서만 width-4
+  sqrt를 지연 실행
+- subgroup: `Fp2` Frobenius--Tate trace의 x-only cofactor-5 판정,
+  block마다 trace 분모를 한 번에 batch-invert
 - scan curve: 원곡선과 동형인 `a=-3` 모델, 결과 x는 원래 좌표로 환산
 - 역원: canonical `unsigned __int128` binary extended GCD
 - 제곱근 fallback: 고정 지수 `(p+1)/4`의 width-4 sliding window
@@ -116,12 +119,22 @@ quotient 근사를 다시 여러 word로 다뤄야 한다. 이 instance에서는
 
 초기 구현은 모든 x에 이 sqrt를 실행했고, 별도 Legendre exponent를 앞에
 붙이는 후보는 두 exponentiation이 겹쳐 실패했다. Hamburg 정상 경로가 y를
-쓰지 않는다는 점을 이용해 최종 구현은 canonical 88비트 우변의 Jacobi
-symbol만 계산한다. 비잔여는 즉시 버리고 Hamburg denominator 예외에서만
-sqrt를 실행한다. 최종 1-thread campaign은 sqrt/Jacobi 외부 중앙값
+쓰지 않는다는 점을 이용해 최종 구현은 Montgomery 88비트 우변의 Jacobi
+symbol만 계산한다. `R=2^128=(2^64)^2`이므로 canonical 변환 없이도 symbol은
+같다. U128 Euclidean reduction 도중 두 피연산자가 64비트가 되면 U64
+remainder loop로 전환한다. 비잔여는 즉시 버리고 Hamburg denominator
+예외에서만 sqrt를 실행한다. 최종 1-thread campaign은 sqrt/Jacobi 외부 중앙값
 `0.076186/0.070292 s`, paired `1.0819x`(CI `1.0769..1.0842`)로
 stationarity PASS였다. 반복 뺄셈 Jacobi는 `1.0072x`, parity-containing
 CI여서 Euclidean remainder 경로를 유지했다.
+
+Jacobi 함수만 분리한 microbenchmark에서는 full-U128 Euclidean,
+canonical-hybrid, Montgomery-hybrid가 각각
+`0.086159/0.056937/0.055429 s`였다. Montgomery 입력은 canonical-hybrid보다
+약 2.7% 빨랐다. 반면 부분군 필터를 끈 전체 attack의 full-U128/hybrid
+40-pair는 `1.0013x`(CI `0.9699..1.0315`)로 noisy parity였다. 따라서
+이 변경은 검증된 hot primitive 단순화로 유지하되 별도 end-to-end 승격
+수치로 합산하지 않는다.
 
 ### 2. POD Jacobian과 affine `Q` comb
 
@@ -200,6 +213,27 @@ normalization과 결합했다. inline은 약 10KB code와 spill을 만들어
 40쌍 모두 이겼고 median `1.0868x`였지만 한 effect outlier 때문에
 stationarity gate는 실패해 보조 자료로만 쓴다.
 
+Hamburg 앞에는 cofactor-5 x-only membership filter를 둔다. `Fp2`의
+Frobenius `-1` eigenspace에 있는 order-5 점으로 Miller 함수를 전개한 뒤
+`W+W^-1` trace를 취해 y좌표를 없앴다. 고정
+`e=(p+1)/5`의 Lucas ladder가 `W^e=1`인지 검사한다. 한 block의 모든 trace
+분모는 Montgomery trick으로 함께 invert하므로 후보당 비용은 약 183
+field M/S이고, `[d]T` Hamburg 약 930 M/S보다 작다. 실제 정답 prefix에서
+curve-valid 7,713개 중 1,547개만 통과해 79.94%를 미리 버린다.
+
+필터 없음/있음 40-pair 결과는 1 thread에서
+`0.085280/0.044124 s`, paired `1.9444x`(CI `1.9113..1.9687`), 2
+thread에서 `0.053521/0.030619 s`, paired `1.7448x`(CI
+`1.7161..1.7904`)였다. 호스트 load와 swap 포화 때문에 strict
+stationarity는 실패했지만, 네 effect block은 1 thread에서
+`1.9569/1.8740/1.9486/1.9833x`, 2 thread에서
+`1.7654/1.7710/1.7574/1.7184x`로 모두 큰 이득이었다.
+이 수치는 source SHA-256
+`5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`을
+고정한 campaign이다. 이후 최종 source는 중복 `PreparedLift` 저장과
+중복 `x^2` 계산을 제거했고 correctness suite를 다시 통과했지만, 포화된
+host에서 최종 source를 다시 수치화하지는 않았다.
+
 ### 4. block scheduling과 batch affine-x
 
 Atomic block counter가 낮은 low bits부터 연속 block으로 나눠 준다. 정답이
@@ -229,6 +263,12 @@ stationarity PASS였다. 반면 4/8-thread block screening은 CI·block별 방�
 `3T+=scalar64`를 고른다. `block`, `scalar`, `static`은 명시적으로 재현할
 수 있고 JSON은 요청/실효 block을 구분한다.
 
+부분군 batch inverse가 추가된 뒤 1-thread block64/block256을 다시
+비교하면 paired `1.0365x`(CI `1.0173..1.0503`)였지만 effect
+stationarity가 실패했다. 2-thread block32/block128도 host 포화 속에서
+결론을 내지 못했다. 따라서 새 구조에서 큰 block이 유망하다는 기록만
+남기고 자동 정책은 조용한 target에서 재측정할 때까지 바꾸지 않았다.
+
 ## 정확성 검증
 
 검증을 세 층으로 분리했다.
@@ -237,7 +277,8 @@ stationarity PASS였다. 반면 4/8-thread block screening은 CI·block별 방�
    `{0,1,2,p-2,p-1,2^64-1,2^64,2^64+1}`의 64개 경계 pair에 대해 Montgomery
    conversion/add/subtract/multiply를 canonical U128 double-and-add
    modular multiplication과 비교한다. Binary-GCD inverse와 Fermat
-   inverse, binary sqrt와 window-4 sqrt, Euclidean/subtractive Jacobi와
+   inverse, binary sqrt와 window-4 sqrt, full-U128/hybrid-U64
+   Euclidean/subtractive Jacobi, canonical/Montgomery 입력과
    Fermat/Legendre 결과도 서로 대조한다.
 2. **Point/table 층:** signed carry, subgroup order와 88비트 끝값을 포함한
    16개 경계 scalar와 240개 deterministic random scalar, 총 256개에 대해
@@ -245,6 +286,8 @@ stationarity PASS였다. 반면 4/8-thread block screening은 CI·block별 방�
    reference, NAF/mixed Jacobian, fixed `Q` comb 결과의 x/y를 모두
    비교한다. row-batched macro에서는 256개를 한 번에 다시 비교한다. 별도로
    실제 curve-valid lift 128개에서 Hamburg와 NAF의 affine x를 대조한다.
+   같은 128개에서 scalar/batched Frobenius--Tate trace와 직접 `[n]T=O`를
+   비교하고, `Q` 양성·`Fp`-rational order-5 음성 벡터도 검사한다.
 3. **전체 attack 층:** 모든 benchmark process가 아래를 검사한다.
 
 ```text
@@ -258,8 +301,8 @@ r3                 = 0x2443c8daf1a9d52b09
 원본 Python은 low bits를 출력하지 않으므로 runner가 그 process에서는
 `d`, `P=dQ`, `s2`, `r3`를 검증한다. GMP/native process는 low bits까지
 검증한다. native는 `state_label`, lift/filter output index,
-`field_backend`, curve model, `d` multiplication, lift residue, table
-width/encoding/multiplication, 요청/실효 block, 요청/실제 thread,
+`field_backend`, curve model, `d` multiplication, lift residue, subgroup
+membership test, table width/encoding/multiplication, 요청/실효 block, 요청/실제 thread,
 schedule, inverse와 sqrt까지 출력한다. runner는 요청한 후보와 이
 metadata가 다르면 timing 전에 실패한다. 기존 원본의 출력 이름 `s1`은
 수학적으로 `s2`이고 runner는 그 값만 정상화한다.
@@ -347,12 +390,16 @@ VM 부하로 특히 8-thread MAD가 컸으므로 큰 효과의 sanity check일 �
 | width-2 NAF / Hamburg co-Z | 1.1716x | 1.1682..1.1764 | PASS | Hamburg 채택 |
 | sqrt lift / Jacobi lift | 1.0819x | 1.0769..1.0842 | PASS | Jacobi 채택 |
 | 2T scalar64 / adaptive block32 | 1.2121x | 1.2051..1.2163 | PASS | 2T 정책 채택 |
+| no subgroup filter / Frobenius--Tate trace, 1T | 1.9444x | 1.9113..1.9687 | FAIL | 큰 전 구간 이득, diagnostic timing |
+| no subgroup filter / Frobenius--Tate trace, 2T | 1.7448x | 1.7161..1.7904 | FAIL | 큰 전 구간 이득, diagnostic timing |
+| full-U128 / Montgomery-hybrid Jacobi | 1.0013x | 0.9699..1.0315 | FAIL | micro 개선만 확인 |
 | unsigned w8 / signed-w9 | 1.0065x | 1.0035..1.0094 | PASS | 2% 미달 |
 | Euclidean / subtractive Jacobi | 1.0072x | 0.9851..1.0225 | FAIL | Euclidean 유지 |
 | candidate-Jacobian / row-batched affine | 0.9351x | 0.9254..0.9438 | FAIL | 기존 유지 |
 | original curve / isomorphic `a=-3` | 1.1022x | 1.0320..1.1274 | FAIL | diagnostic-only |
 | w8 table / w4 table | 0.9483x | 0.9243..0.9737 | FAIL | w8 유지 |
 | block 64 / block 128 | 0.9948x | 0.9093..1.0473 | FAIL | 64 유지 |
+| subgroup stack block64 / block256 | 1.0365x | 1.0173..1.0503 | FAIL | stationarity 재측정 필요 |
 | generic carry / BMI2+ADX | 2.9808x | 2.7330..3.2589 | FAIL | 큰 방향성만 확인 |
 
 마지막 arithmetic holdout은 40쌍 모두 BMI2/ADX가 `2.04x` 이상
@@ -468,7 +515,7 @@ python3 solutions/06_optimization/benchmark_06_promotion.py \
   --output /tmp/ch6-final-stack-final-run.json
 ```
 
-## 실패하거나 보류한 전략
+## 실패·보류 및 채택 뒤 재검토한 전략
 
 ### Fermat inverse
 
@@ -500,6 +547,11 @@ inverse나 generic Jacobian addition 비용 때문에 width-2 mixed NAF가
 두 cross term을 공통 부분식으로 합쳤기 때문이다. `join(left)+join(right)`
 형태의 direct U128 add도 carry intrinsic보다 빠르지 않았다.
 
+새 부분군 Lucas ladder가 square를 많이 쓰므로 두 구현을 다시 측정했지만
+오히려 portable specialized square는 paired `0.7111x`(CI
+`0.6640..0.8047`), BMI2 intrinsic square는 `0.9230x`(CI
+`0.8584..0.9899`)로 명확히 느렸다. 일반 multiply-as-square를 유지한다.
+
 ### 고정 sqrt addition chain
 
 `(p+1)/4`에 대해 straight-line chain을 생성해 sliding-window
@@ -526,6 +578,12 @@ ladder를 inline하면 caller code가 약 10KB로 팽창하고 spill이 생겼�
 8-thread 비교와 block 128 대 64의 1-thread 비교도 CI가 parity를 포함했다.
 다만 thread 수를 분리한 최종 campaign에서 2-thread block32만
 `1.2121x`로 gate를 통과했으므로 adaptive 정책의 유일한 예외로 채택했다.
+
+부분군 filter 뒤에는 batch inverse amortization 때문에 1-thread block256이
+block64보다 paired `1.0365x`로 유망했고 CI도 parity를 제외했지만,
+chronological effect spread가 gate를 실패했다. 2-thread block128 검사는
+시스템 swap 포화로 paired `1.0048x`에 불과하고 CI가 넓었다. 자동 정책은
+보수적으로 그대로 두고 runtime `--block-size` 비교만 열어 뒀다.
 
 ### Euclidean과 subtractive Jacobi
 
@@ -588,25 +646,47 @@ Native에서 Fermat exponent로 Legendre를 계산하는 후보도 살아남은 
 sqrt exponent를 다시 실행해 중복됐다. 이것은 위에서 채택한 작은 정수
 Euclidean Jacobi와 다른 전략이다.
 
-### cofactor-5 subgroup 선필터
+### cofactor-5 subgroup 선필터와 기각한 변형
 
-PARI로 `#E(F_p)=5n`, `E(F_p)`가 cyclic이고 `ord(Q)=n`임을 확인했다.
-shifted 정답 prefix의 curve-valid lift 7,713개 중 `[n]T=O`인 점은
-1,547개뿐이라 값싼 정확한 membership test는 Hamburg 호출의 79.94%를
-제거할 수 있다. 그러나 단순 `[n]T` 계산은 Hamburg 자체와 비슷하게 비싸다.
-Koshelev의 small-cofactor Tate-pairing/power-residue 판정은 유력한 출발점이나
-`p mod 5=4`인 이 곡선용 확장체·예외 처리와 독립 검증이 필요해 고위험 후속
-연구로 남겼다.
+PARI로 `#E(F_p)=5n`, `E(F_p)`가 cyclic이고 `ord(Q)=n`임을 확인한 뒤,
+`Fp2` 비유리 5-torsion의 reduced Tate character를 x-only Frobenius
+trace로 바꿔 기본 경로에 채택했다. shifted 정답 prefix의 curve-valid
+7,713개에서 `[n]T=O`인 1,547개와 정확히 일치한다. 식과 상수, Lucas
+recurrence는 `deep_review_06_algorithm.md`에 적었다.
+
+처음 구현한 역원 없는 변형은 Miller 값
+`f=(y+i*c1(x))^2*(y+i*c2(x))`를 직접 `Fp2`에서
+`(p+1)/5`승하고 허수부가 0인지 검사했다. 판정은 맞지만 먼저 y를
+구하기 위한 sqrt와 Fp2 연산이 필요해 no-filter 대비 paired
+`1.1643x`에 그쳤다. x-only trace+block batch inversion의 `1.9444x`보다
+낮아 기각했다. Lucas bit loop를 84단계 template로 완전히 펼치는 후보도
+함수가 약 `0x510`에서 `0x298e`바이트로 커졌고 paired `1.0451x`, CI
+`0.9133..1.1072`로 불확실해 loop를 유지했다.
 
 ### BMI2/ADX 이후의 carry chain
 
-빌드 metadata는 BMI2/ADX 경로를 선택하지만 현재 hot assembly의 곱셈은
-주로 `mulx`와 일반 `adc` carry chain이다. `adcx/adox` 이중 carry chain을
-직접 짜면 독립 partial-product 누산을 겹칠 여지는 있다. 반면 2-limb REDC의
-짧은 dependency graph, ABI register 수와 검증 부담 때문에 compiler
-intrinsic을 단순 치환하는 정도로는 안전한 이득을 기대하기 어렵다. 별도
-assembly kernel과 canonical reference를 갖춘 target-specific 후보로만
-남긴다.
+GCC 12와 Clang 21 assembly를 직접 세어 보니 두 compiler 모두 current
+multiply에 `mulx+adc`를 쓰고 `adcx/adox`는 0회였다. 따라서 `bmi2-adx`
+metadata는 실제 ADX opcode 사용 보장이 아니라 compile-time capability
+gate다. 별도 dual-carry REDC assembly는 self-test와 KAT를 통과했지만
+CPU 고정 quick 비교에서 약 4--5% 느렸다. 2-limb 크기에서는 짧은 직렬
+REDC dependency와 추가 move/carry가 dual chain 이득을 상쇄했다.
+
+같은 source의 Clang 21+libomp는 1-thread quick 비교에서 GCC보다 약
+`1.076x`로 유망했지만 2-thread는 `1.016x`로 불확실했다. Clang+libgomp는
+요청한 두 thread를 만들지 못했으므로 결과에서 제외했다. compiler 교체는
+libomp 의존성과 현재 host 포화가 해소된 뒤 별도 40-pair campaign으로
+판정한다.
+
+### cache hint, padding과 compiler flag
+
+고정 table prefetch distance 1/2/4는 각각 paired
+`0.9953/0.9921/0.9805x`, row padding 1/3 cache line은
+`0.9814/0.9826x`였다. 하드웨어 prefetch와 현재 연속 row 접근보다 나아지지
+않았다. signed-w10은 `1.0118x`로 2% 문턱 아래였고,
+`-funroll-loops`도 `1.0074x`였다. 4-thread scalar chunk32/chunk256은
+`1.0155/0.9987x`이며 order와 시간 block이 불안정했다. 모두 기본 cache
+layout·compiler flag·adaptive 정책을 유지한다.
 
 ### AVX2 field arithmetic
 
@@ -650,7 +730,13 @@ AVX-512 IFMA52가 있는 다른 CPU라면 radix-44/52 multi-buffer field를
   residue test의 근거다.
 - Dmitrii Koshelev,
   [“Subgroup membership testing on elliptic curves via the Tate pairing”](https://eprint.iacr.org/2022/037.pdf).
-  cofactor-5 membership 선필터를 더 연구할 때의 출발점이다.
+  small-cofactor pairing test의 출발점이다. 논문의 basic-field 조건
+  `e | p-1`은 `p mod 5=4`인 현재 곡선에서 성립하지 않으므로 그대로
+  적용하지 않고 `Fp2` Frobenius `-1` eigenspace로 옮겼다.
+- Andreas Enge,
+  [“Bilinear pairings on elliptic curves”](https://arxiv.org/abs/1301.5520).
+  Miller recurrence, reduced Tate pairing과 Frobenius 관계를 이용해
+  order-5 Miller 값을 x-only trace로 전개할 때 참고했다.
 - François Morain and Jorge Olivos,
   [“Speeding up the computations on an elliptic curve using
   addition-subtraction chains”](https://www.numdam.org/item/ITA_1990__24_6_531_0/),
