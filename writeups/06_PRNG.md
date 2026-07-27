@@ -1,26 +1,24 @@
 # 6. PRNG - Dual_EC_DRBG 백도어 복원과 최적화
 
-## 현재 구현 상태
+## 제출 요약
 
-- 정답 `r3`, 복원한 `d`, `s2/s3`와 원래 곡선의 점 관계는 확정했다.
-- 최종 native source는 `solutions/06_optimization/deep_native_06.cpp`다.
-  범용 carry loop 대신 고정 2-limb Montgomery REDC를 사용하고, 임의점
-  scan은 원곡선과 교차 검증되는 동형 `a=-3` 곡선에서 수행한다. lift의
-  제곱잉여 여부는 Montgomery residue의 hybrid 128/64비트 Jacobi symbol로
-  판정한다. 이어서 x-only Frobenius--Tate trace, fixed Lucas-PRAC과
-  11개 `mu_20` trace table로 cofactor-5 부분군을 선별한다. block의 trace
-  fraction은 직접 준비하고 in-place compact한 뒤 분모를 batch-invert한다. Hamburg
-  exceptional fallback에서만 실제 제곱근을 구한다.
-- field 2,000개, 경계 pair 64개, point/table 256개와 실제 lift 128개의
-  Hamburg/NAF 및 scalar/batched subgroup self-test, known-answer 전체
-  실행을 timing 전에 통과해야 한다.
-- adaptive scheduler는 1 thread에서 block 64, 2 threads에서 block 32,
-  3 threads 이상에서 scalar 64를 선택한다. 2-thread 정책은 고정 CPU의
-  40-pair 승격 gate를 통과했다.
-- 현재 VM의 순위는 Core Ultra 7 255H 결론이 아니다. P-only, E-only,
-  P+E, all-core와 table/block 크기는 타깃에서 별도로 재측정한다.
+복원한 백도어 스칼라와 예측 출력은 다음과 같다.
 
-score 후보의 기본 build와 검증은 다음과 같다.
+```text
+d   = 0x1c3cdd6b221806db0a7b28
+s2  = 0x638d9d631ab436da51e640
+s3  = 0x948173253ad6d120a3f562
+r3  = 0x2443c8daf1a9d52b09
+```
+
+최종 native source는 `solutions/06_optimization/deep_native_06.cpp`다.
+고정 2-limb Montgomery REDC, 동형 `a=-3` 곡선의 Hamburg x-only ladder,
+deferred-sqrt Jacobi 판정, reciprocal-polynomial cofactor-5
+Frobenius--Tate trace와 fixed Lucas-PRAC, affine byte-comb table 및 OpenMP
+탐색을 결합했다. 실행 전에 field/point/table, Hamburg/NAF,
+scalar/batched subgroup와 known answer self-test를 모두 통과한다.
+
+기본 build와 검증은 다음과 같다.
 
 ```bash
 g++ -O3 -DNDEBUG -march=native -std=c++20 -fopenmp \
@@ -28,6 +26,9 @@ g++ -O3 -DNDEBUG -march=native -std=c++20 -fopenmp \
 /tmp/deep_native_06 --self-test --json
 /tmp/deep_native_06 --threads 1 --json
 ```
+
+1--3절은 문제의 누설식 추론부터 `r3` 예측까지의 제출 풀이이고, 4--8절은
+채택·기각한 최적화, 정확성 검증과 반복 측정 근거를 보존한 기술 부록이다.
 
 ## 문제와 결론
 
@@ -39,35 +40,44 @@ r_i     = TMSB(X(s_{i+1} Q))
 ```
 
 필드는 88비트이고 출력은 x좌표의 하위 16비트를 버린 상위 72비트다.
-또한 `telemetry.csv`의 여섯 행은 같은 비밀 스칼라 `d`에 대한 affine
-함숫값에서 하위 20비트를 버린 결과다. 복원 결과는 다음과 같다.
+`telemetry.csv`는 같은 비밀 스칼라에 대한 affine 함숫값에서 하위
+20비트를 버렸다고만 설명하며 정확한 식은 주어지지 않는다. 아래에서는
+데이터로 누설식을 추론하고, 여섯 행 및 문제와 독립적인 점 등식 `P=dQ`로
+그 추론과 복원값을 검증한다.
 
-```text
-d                 = 0x1c3cdd6b221806db0a7b28
-legacy scan s2    = 0x638d9d631ab436da51e640
-shifted scan s3   = 0x948173253ad6d120a3f562
-r3                = 0x2443c8daf1a9d52b09
-```
-
-기존 문서와 코드가 `0x638d...`를 `s1`이라고 쓴 것은 한 칸 어긋난
-표기였다. `r0`에서 lift한 점은 `s1 Q`이고, 여기에 `d`를 곱한 점의
-x좌표는 `X(s1 P)=s2`다. 의존성 없는 Python/GMP 경로는 이 `s2`를
-복원하고, 최종 native 경로는 관측 window를 한 칸 옮겨 `s3`를 직접
-복원한다. 둘 다 같은 목표 `r3`를 예측한다.
+`r0`에서 lift한 점은 `s1 Q`이고 여기에 `d`를 곱한 점의 x좌표는
+`X(s1P)=s2`다. Python/GMP 경로는 `r0,r1`으로 `s2`를 복원한다. native
+경로는 같은 공격을 `r1,r2`에 적용해 `s3`를 복원하며, 두 경로 모두 같은
+목표 `r3`를 예측한다.
 
 ## 1. telemetry에서 `d` 복원
 
-### 선형 전수조사 풀이
+### 누설식 추론과 첫 행 전수조사
 
-`B=2^20`이라 하자. 첫 행 `(scale_0, offset_0, summary_0)`은 다음을
-뜻한다.
+비밀 `d`는 order-`n` 부분군의 스칼라이므로 `scale`, `offset`도
+`Z/nZ`의 원소로 해석하는 것이 자연스럽다. 문제의 “affine function”과
+“하위 20비트 제거”를 만족하는 가장 단순한 가설은, `B=2^20`일 때
+
+```text
+u_i       = (scale_i*d + offset_i) mod n
+summary_i = floor(u_i/B)
+```
+
+이다. 이는 문제에서 직접 준 식이 아니라 데이터로 검증할 가설이다. 실제로
+여섯 `scale_i` 모두 `gcd(scale_i,n)=1`이어서 역원이 존재하고, 각 행이
+정의하는 truncated interval을 교차하면 후보가 하나만 남는다. 그 후보는
+여섯 행의 `summary_i`를 모두 정확히 재생하고, telemetry와 독립적인
+타원곡선 등식 `P=dQ`도 만족한다. 따라서 아래 복원은 식을 선험적으로
+가정한 결과가 아니라 두 종류의 검증을 통과한 추론이다.
+
+첫 행 `(scale_0, offset_0, summary_0)`은 다음과 같이 쓸 수 있다.
 
 ```text
 (scale_0*d + offset_0) mod n = summary_0*B + low
 0 <= low < B
 ```
 
-따라서 첫 행만으로 `2^20`개의 후보를 만들 수 있다.
+특히 `gcd(scale_0,n)=1`이므로 첫 행만으로 `2^20`개의 후보를 만들 수 있다.
 
 ```text
 d(low) = ((summary_0*B + low - offset_0) * scale_0^{-1}) mod n
@@ -170,7 +180,7 @@ r3  = TMSB(X(s4 Q))
 낮다. 실제로 `r1`, `r2`를 모두 재생하는 후보가 위의 `s2` 하나이고,
 거기서 예측한 `r3`가 정답과 일치한다.
 
-### 최종 native의 shifted scan
+### `r1,r2` 관측 window
 
 출력 정의를 한 칸 뒤에서 똑같이 적용할 수 있다. `r1`에 low 16비트를
 붙여 lift한 점을 `T`라 하면 올바른 후보는 부호를 제외하고 `s2 Q`다.
@@ -289,7 +299,7 @@ sqrt exponent를 다시 실행했던 실패 후보와 달리 두 exponentiation�
 중복하지 않는다. field random 2,000개와 경계 64개에서 Jacobi 결과를
 Fermat/Legendre 결과와 교차 검증했다.
 
-최종 source/runner의 1-thread 40-pair 비교에서 sqrt-lift와 Jacobi-lift의
+채택 구현의 1-thread 40-pair 비교에서 sqrt-lift와 Jacobi-lift의
 외부 시간 중앙값은 `0.076186/0.070292 s`, paired median은 `1.0819x`
 (층화 bootstrap 95% CI `1.0769..1.0842`)였다. AB/BA 중앙값은
 `1.0823x/1.0817x`, 네 시간 block은 `1.0863/1.0814/1.0809/1.0817x`로
@@ -314,16 +324,17 @@ ord(Q) = n
 ```
 
 이다. true lift는 `s2Q`이므로 order-`n` 부분군에 있다. 정답까지 검사하는
-shifted prefix에는 curve-valid 점이 7,713개 있지만 `[n]T=O`인 점은
+`r1,r2` window prefix에는 curve-valid 점이 7,713개 있지만 `[n]T=O`인 점은
 1,547개뿐이다. 따라서 정확하고 싼 부분군 판정은 Hamburg 호출의
 `6,166/7,713=79.94%`를 제거한다.
 
-Koshelev의 small-cofactor Tate-pairing 검사는 이 아이디어의 출발점이지만,
-논문의 basic-field 알고리즘은 작은 cofactor `ℓ=5`가 `p-1`을 나눈다고
-가정한다.
-여기서는 `p mod 5=4`, 즉 `5∤p-1`이므로 그대로 적용할 수 없다. 대신
-`Fp2=Fp[v]/(v^2-2)`에서 `v^p=-v`인 Frobenius `-1` eigenspace의
-order-5 점을 사용했다.
+Koshelev의 small-cofactor Tate-pairing 검사는 이 아이디어의 출발점이다.
+본문의 basic-field 알고리즘은 작은 cofactor `ℓ=5`가 `p-1`을 나눈다고
+가정하지만, 같은 논문의 Appendix는 base change를 통한 extension-field
+일반화를 제시한다. 여기서는 `p mod 5=4`라 dual embedding degree가 2인
+경우에 이를 특수화했다. 구체적으로 `Fp2=Fp[v]/(v^2-2)`에서 `v^p=-v`인
+Frobenius `-1` eigenspace의 order-5 점을 택하고, 이 인스턴스에 맞춰
+Miller 값을 x-only trace 식으로 전개한 뒤 fixed Lucas-PRAC으로 계산했다.
 
 ```text
 P-  = (alpha, beta*v)
@@ -395,11 +406,33 @@ schedule SHA-256은
 square도 같은 Montgomery multiply를 사용하므로 M/S를 같은 단위로
 합산했고, 11개 equality에는 field multiplication이 없다.
 
-trace 식 `6M+3S`와 block batch inversion의 후보당 약 4M을 더하면 약
-137 products다. 초기화와 마무리를 포함한 full Hamburg는 약 930
-products이고 79.94% reject율을 반영한 filter 손익분기점은 약 743이라
-충분히 작다. caller가 trace
-fraction을 직접 쓰고 batch가 이를 in-place compact해 별도
+expanded trace 식에는 더 제거할 수 있는 공통 인수가 있다. `y=x-alpha`라
+두고 Sage에서 `U,V`를 `x`의 다항식으로 전개하면 정확히
+
+```text
+U-V     = (x-gamma)^4 * y^5
+2(U+V)  = (x-gamma)^4
+          * (2y^5+c1*y^4+c2*y^3+c3*y^2+c4*y+c5)
+```
+
+로 인수분해된다. 따라서 `z=y^-1`에 대해
+
+```text
+tau = 2 + c1*z + c2*z^2 + c3*z^3 + c4*z^4 + c5*z^5
+```
+
+를 Horner 법으로 계산한다. 이미 batch/scalar inversion에서 얻은 `z`를
+재사용하므로 expanded 식의 `6M+3S`와 분자 정규화가 사라지고 trace 자체는
+`5M`만 필요하다. 원식이 `0/0`인 `x=gamma`와 분모가 0인 `x=alpha`는
+제거 가능한 특이점이라고 임의로 연장하지 않고 기존처럼 fail-closed한다.
+
+PRAC의 124 products까지 포함하면 block 경로는 batch inversion의
+후보당 약 3M을 더한 `132 M/S + I/block`, 3-thread 이상의 scalar 경로는
+`129 M/S + I/candidate`다. 여기서 `I`는 field inversion이며 block
+전체가 하나를 공유한다. 초기화와 마무리를 포함한 full Hamburg는 약 930
+products이고 79.94% reject율이 절약하는 비용은 약 743 products다. 따라서
+M/S 부분은 두 경로 모두 손익분기점보다 충분히 작다. caller가 trace
+input을 직접 쓰고 batch가 이를 in-place compact해 별도
 x/RHS/numerator/denominator staging도 없앴다. 최종 1-lane은 normalized
 trace를 지역값으로 계산하고 multi-lane ablation만 numerator를 덮어쓴다.
 GCC 12의 raw batch-function prologue allocation은 binary/xy의
@@ -412,38 +445,51 @@ Fibonacci형 Lucas-chain 하한 맥락은 약 117이고, golden-ratio와
 transformed-alpha seed 주변을 추가 탐색했지만 더 짧은 schedule은 찾지
 못했다.
 
-정확성은 Sage와 C++ 양쪽에서 확인했다. Sage는 고정 torsion/Frobenius 관계,
-무작위 200점, 실제 prefix의 7,713개 curve-valid lift를 검사했고 trace
-member 1,547개와 직접 `[n]T=O` 1,547개 사이 mismatch는 0이었다. C++
-self-test도 실제 lift 128개에서 scalar/batched trace를 직접 order 곱과
-비교하고 `Q` 양성 벡터, `Fp`-rational order-5 음성 벡터를 검사한다.
+수학적 정확성은 성능 승격 여부와 별개로 Sage와 C++ 양쪽에서 확인했다.
+Sage는 고정 torsion/Frobenius 관계, Miller 식, 위 인수분해와 다섯
+reciprocal 계수, 무작위 200점, 실제 prefix의 7,713개 curve-valid lift를
+검사했다. trace member 1,547개와 직접 `[n]T=O` 1,547개 사이 mismatch는
+0이었다. C++ self-test도 실제 lift 128개에서 scalar/batched trace를 직접
+order 곱과 비교하고 `Q` 양성 벡터, `Fp`-rational order-5 음성 벡터를
+검사한다. expanded/reciprocal 식은 경계 11개, 무작위 512개 및 공개된 세
+prefix의 전체 `3*65,536`개 x후보에서 cross-product identity로 대조한다.
 11개 root trace의 uniqueness/`L_20=2`, runtime Montgomery 변환,
-64개 boundary pair와 2,000개 random trace의 binary/PRAC 일치도 함께
-검사한다. `-ftrivial-auto-var-init=pattern` build도 self-test와 전체
-known answer를 통과했다.
+8개 고유 boundary trace를 포함한 64개 field pair와 2,000개 random
+trace의 binary/PRAC 일치도 함께 검사한다.
+`-ftrivial-auto-var-init=pattern` build도 self-test와 전체 known answer를
+통과했다.
 
-binary/separate-array 기준과 PRAC/direct-fraction 후보의 1-thread
-40-pair 측정은 독립적으로 두 번 PASS했다.
+성능 채택은 이 correctness 결과가 아니라 별도의 1-thread 40-pair
+binary/separate-array 대 PRAC/direct-fraction 비교로 판정했다.
 
-| campaign | paired median | 95% CI | stationarity |
+| 측정 | paired median | 95% CI | stationarity |
 |---|---:|---:|---|
-| run 1 | 1.0345x | 1.0271..1.0448 | PASS |
-| run 2 | 1.0311x | 1.0268..1.0376 | PASS |
-| post-audit | 1.0289x | 0.9791..1.0878 | FAIL |
+| 독립 측정 A | 1.0345x | 1.0271..1.0448 | PASS |
+| 독립 측정 B | 1.0311x | 1.0268..1.0376 | PASS |
+| 포화 host 진단 | 1.0289x | 0.9791..1.0878 | FAIL |
 
-최종 기본 매크로로 바꾼 뒤의 세 번째 run도 `1.0382x`(CI
+첫 두 측정은 CI와 stationarity 조건을 모두 만족했다. 동일 구현의 다른
+측정은 `1.0382x`(CI
 `1.0248..1.0537`)였지만 후반 shared-host phase 변화로 stationarity만
 실패했다. 8-thread 중앙값은 `1.0381x`였으나 CI
 `0.9070..1.1621`로 너무 넓어 보조 진단으로만 남긴다.
-최종 감사 뒤 source SHA-256
-`840999f697112a17c7ebe6809351b4971b1a713d021e4c356334e3c4462ae073`를
-seed `0x44444444`로 고정한 post-audit run도 중앙값은 `1.0289x`였지만
-CI가 parity를 포함했다. baseline/candidate block spread가
+seed `0x44444444`로 고정한 위 포화-host 진단도 중앙값은 `1.0289x`였지만
+CI가 parity를 포함하고 baseline/candidate block spread가
 53.8%/72.1%여서 stationarity가 실패했으므로 새 승격 근거로 세지 않는다.
-이후 최종 source SHA-256
-`a97d24e5d6a581da586c0df48beb64abdeb6ab60273f2cdd00a352b74aa8df16`은
-양성 255번과 zero-denominator/multi-lane-tail self-test만 강화했으며
-timed hot path는 그대로다.
+이는 구현의 correctness 실패가 아니라 성능 표본의 불안정성을 뜻한다.
+이 PRAC/direct 측정 뒤 reciprocal trace가 timed path에 추가됐으므로 위
+수치는 현재 expanded/reciprocal 비교로 소급하지 않는다.
+
+현재 native source SHA-256
+`33920f4851b7d9a318a0242e730915b4d15a971e9019d24e595ac2c00ce9ba1e`에서
+`CH6_EXPANDED_SUBGROUP_TRACE`만 바꾼 1-thread 측정은 CPU 7 고정,
+warm-up 10쌍 뒤 40쌍으로 수행했다. expanded/reciprocal 중앙값은
+`0.041154/0.040303 s`, paired median은 `1.0270x`, bootstrap 95% CI는
+`1.0027..1.0360`이었다. 다만 네 시간 block의 effect spread가 2%를 넘어
+stationarity를 실패했으므로 wall-clock 승격 PASS로 세지 않는다. 기본
+reciprocal 식은 `9→5` products의 대수적 감소와 위 독립 인수분해·전수
+등가 검증에 근거하며, expanded 식은 정확성 oracle이자 ablation macro로
+보존한다.
 
 source SHA-256
 `5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`을
@@ -455,12 +501,13 @@ source SHA-256
 | 2 | 0.053521 s | 0.030619 s | 1.7448x | 1.7161..1.7904 |
 
 모든 chronological effect block이 1 thread에서 `1.874x`, 2 thread에서
-`1.718x` 이상이었지만, 당시 shared host는 다른 Rust/C++ 빌드와 swap으로
-포화되어 absolute/effect stationarity gate는 실패했다. 전수 등가 검증과
-전 구간의 큰 효과를 근거로 필터를 기본값에 넣되, 위 절대 시간은
-diagnostic-only로 취급한다.
-그 뒤 최종 source에서는 중복 `PreparedLift` 저장을 없애고 이미 계산한
-`x^2`를 재사용했다. correctness suite는 다시 통과했지만, 포화된 host에서
+`1.718x` 이상이었지만, shared host 포화로 absolute/effect stationarity
+gate는 실패했다. 부분군 필터의 정확성은 앞의 전수 등가 검증으로 확립했고,
+위 timing은 효과의 크기를 보여 주는 진단값일 뿐 promotion-pass 수치로
+사용하지 않는다.
+후속 source에서는 중복 `PreparedLift` 저장을 없애고 `x^2` 계산 자체를
+없앤 것이 아니라 이미 계산한 값을 재사용했다. correctness suite는 다시
+통과했지만, 포화된 host에서
 같은 no-filter/filter ablation을 다시 측정하지는 않았다.
 
 고정 `Q` table은 width 4--11을 compile-time으로 비교했고 w8을 유지했다.
@@ -472,6 +519,16 @@ w4는 최신 40-pair에서 `0.9483x`(CI `0.9243..0.9737`)였고, w9의 작은
 그쳐 2% 승격 문턱을 넘지 못했다. 경계 scalar `255/256`, `511/512`,
 `2^81±1`, `2^87±1`, `n±1`, 88비트 최댓값까지 reference와 대조한
 실험 macro만 남기고 기본 w8 unsigned table을 유지했다.
+
+---
+
+## 기술 부록 안내
+
+이하 4--8절은 정답 도출에 필요한 본문을 반복하지 않고, 성능 후보의
+operation count, 실패 원인, correctness oracle, 측정 protocol과 이식성
+한계를 기록한다. 여기서 correctness 통과는 결과가 맞다는 뜻이고,
+stationarity/promotion 통과는 해당 환경에서 성능 개선을 채택할 통계적
+근거가 있다는 뜻이므로 서로 바꾸어 해석하지 않는다.
 
 ## 4. 알고리즘 심층 재검토와 실패한 방법
 
@@ -840,8 +897,9 @@ multi-buffer 구현을 다시 비교할 수 있다.
 
 - 알고리즘 후보 runner는 측정 전에 x-only 실제 lift 8개와 finite-difference
   256개를 reference와 대조하고, 매 sample의 known answer를 검사한다.
-- 공용/deep-native runner는 `state_label`에 따라 legacy `s2/0x5338` 또는
-  shifted `s3/0x3cea`를 검사하고 `d`, `r3`, `P=dQ`도 확인한다. 원본
+- 공용/deep-native runner는 `state_label`에 따라 `r0,r1` window의
+  `s2/0x5338` 또는 `r1,r2` window의 `s3/0x3cea`를 검사하고 `d`, `r3`,
+  `P=dQ`도 확인한다. 원본
   Python은 low bits를 출력하지 않아 `s2` known answer까지만 검사한다.
 - native preflight는 deterministic random field pair 2,000개, limb/modulus
   경계 pair 64개, point/scalar/table 256개, 실제 lift Hamburg/NAF 및
@@ -851,15 +909,18 @@ multi-buffer 구현을 다시 비교할 수 있다.
   최댓값을 명시적으로 포함한다. full-U128/hybrid-U64,
   canonical/Montgomery, Euclidean/subtractive Jacobi도 Legendre 결과와
   함께 비교한다. 11개 `mu_20` trace와 runtime Montgomery 변환,
-  binary/PRAC 결과를 64개 경계 pair와 2,000개 random trace에서
-  교차 검증한다. direct-fraction batch는 최대 256개와 255번 index,
+  binary/PRAC 결과를 8개 고유 경계 trace가 들어 있는 64개 field pair와
+  2,000개 random trace에서 교차 검증한다. expanded/reciprocal trace는
+  경계 11개, 무작위 512개와 공개된 세 prefix의 전체 `3*65,536`개
+  x후보를 cross-multiply해 대조한다. direct-fraction batch는 최대 256개와
+  255번 index,
   여러 tail 길이, 양성 하나를 포함한 분모 0 세 개를 넣어 active count가
   253이 되는 in-place compaction, 양성 255번 index 복원, 전부 분모 0인
   fail-closed 입력도 검사한다.
 - promotion runner는 field backend, curve model, `d` multiplication,
   lift residue와 subgroup membership/constant/batch layout, Lucas bit
-  scan/step, scan-buffer/curve-constant layout, table 폭/부호 encoding,
-  scan output index, fixed multiplication, 요청/실효 block,
+  scan/step, subgroup trace formula, scan-buffer/curve-constant layout,
+  table 폭/부호 encoding, scan output index, fixed multiplication, 요청/실효 block,
   thread/schedule/inverse/sqrt metadata가 요청한 후보와 일치하는지
   검사한다.
   solver는 실제 생성된 OpenMP team 크기를 `threads_actual`로 보고하고,
@@ -922,7 +983,13 @@ absolute/effect stationarity를 모두 통과해야 승격한다.
 argv, CPU model/flags/topology, 모든 timestamp와 child CPU time을 보존한다.
 
 측정 환경은 AMD EPYC 7B12 VM, 8 logical CPU, Python 3.11.2, G++ 12.2.0이다.
-먼저 언어/backend 단계별 효과를 확인한 역사 캠페인은 다음과 같다.
+
+### 역사적 end-to-end 기준선
+
+먼저 언어/backend 단계별 효과를 확인한 초기 측정은 다음과 같다. 이 표들은
+각 표 안에서는 같은 campaign의 교차 실행이지만, 후속 Jacobi, 부분군
+trace/PRAC와 adaptive 2-thread 정책까지 포함한 현재 source의 절대 시간표가
+아니다.
 
 | 구현 | end-to-end 중앙값 | 중앙값 비율 | paired 중앙값 |
 |---|---:|---:|---:|
@@ -937,10 +1004,10 @@ paired p05--p95는 25.21x--33.48x였다. 앞선 독립 캠페인도 0.445551초�
 31.76x를 기록해 같은 규모를 재현했다. 이 VM은 다른 작업과 공유되므로
 절대값보다 warm-up 이후 raw sample과 강건 통계를 함께 본다.
 
-다음 표는 **이번 pass 이전 native**와 원본 Python, 같은 thread 수의 GMP를
-하나의 cyclic-rotation 실행 순서에 넣어 측정한 역사 기준선이다. 서로 다른
-부하의 run을 나눈 값은 아니지만 shifted/Hamburg/BMI2 최종 binary의 수치로
-소급해서 부르지 않는다.
+다음 표도 후속 알고리즘 최적화 전 native와 원본 Python, 같은 thread 수의
+GMP를 하나의 cyclic-rotation 실행 순서에 넣어 측정한 역사 기준선이다.
+서로 다른 부하의 run을 나눈 값은 아니지만 현재 native source의 절대
+성능으로 소급하지 않는다.
 
 | 구현 | end-to-end 중앙값 | MAD | 중앙값 비율 |
 |---|---:|---:|---:|
@@ -956,7 +1023,7 @@ paired p05--p95는 25.21x--33.48x였다. 앞선 독립 캠페인도 0.445551초�
 표본도 가장 빠른 GMP 표본보다 4배 이상 빨랐다. 서로 다른 캠페인을 섞어
 계산하면 더 큰 수치가 나오지만 서로 다른 run의 수치이므로 폐기했다.
 
-최종 표의 외부 wall-clock raw sample은 다음과 같다.
+이 역사 표의 외부 wall-clock raw sample은 다음과 같다.
 
 ```text
 python-original = [13.777580, 14.396470, 13.622788, 14.138053, 14.073190]
@@ -972,25 +1039,30 @@ native-8t       = [ 0.075537,  0.096514,  0.085076,  0.078161,  0.089694]
 requested/effective schedule, build command와 same-index diagnostic ratio를
 함께 보존한다.
 
-두 번째 pass의 broad screening 7회에서는 최종 native가 1 thread
+후속 native 구성의 broad screening 7회에서는 1 thread
 `0.097596 s`(MAD `0.004957 s`), 8 threads `0.057401 s`
 (MAD `0.009471 s`)였다. 같은 run의 GMP는 각각 `2.529046 s`,
 `0.575237 s`여서 ratio-of-medians는 `25.91x`, `10.02x`였다. shared VM
 부하와 8-thread MAD가 커 이 표는 큰 효과의 sanity check로만 쓴다.
 
-작은 후보의 40-pair 결과는 다음과 같다.
+### 구성요소별 반복 비교
+
+작은 후보의 40-pair 결과는 다음과 같다. `PASS/FAIL`은 정답 검증이 아니라
+CI, AB/BA와 시간 block stationarity를 포함한 성능 승격 gate의 판정이다.
+모든 행은 timing 전에 known answer와 구성 metadata 검사를 별도로 통과했다.
 
 | 후보 (`A/B`) | paired median | bootstrap 95% CI | stationarity | 판정 |
 |---|---:|---:|---|---|
-| legacy / shifted scan | 1.3428x | 1.3336..1.3510 | PASS | shifted 채택 |
+| `r0,r1` / `r1,r2` scan window | 1.3428x | 1.3336..1.3510 | PASS | `r1,r2` 채택 |
 | width-2 NAF / Hamburg | 1.1716x | 1.1682..1.1764 | PASS | Hamburg 채택 |
 | sqrt lift / Jacobi lift | 1.0819x | 1.0769..1.0842 | PASS | Jacobi 채택 |
 | 2T scalar64 / adaptive block32 | 1.2121x | 1.2051..1.2163 | PASS | 2T 정책 채택 |
 | no subgroup filter / Frobenius--Tate trace, 1T | 1.9444x | 1.9113..1.9687 | FAIL | 전 구간 큰 이득, diagnostic timing |
 | no subgroup filter / Frobenius--Tate trace, 2T | 1.7448x | 1.7161..1.7904 | FAIL | 전 구간 큰 이득, diagnostic timing |
-| binary/xy / PRAC20/direct, 1T run 1 | 1.0345x | 1.0271..1.0448 | PASS | 기본값 승격 |
-| binary/xy / PRAC20/direct, 1T run 2 | 1.0311x | 1.0268..1.0376 | PASS | 독립 재현 |
-| binary/xy / PRAC20/direct, post-audit | 1.0289x | 0.9791..1.0878 | FAIL | 포화 host 진단 |
+| binary/xy / PRAC20/direct, 1T 측정 A | 1.0345x | 1.0271..1.0448 | PASS | PRAC/direct 채택 |
+| binary/xy / PRAC20/direct, 1T 측정 B | 1.0311x | 1.0268..1.0376 | PASS | 독립 재현 |
+| binary/xy / PRAC20/direct, 포화 host | 1.0289x | 0.9791..1.0878 | FAIL | 진단값 |
+| expanded / reciprocal trace, 1T | 1.0270x | 1.0027..1.0360 | FAIL | 연산 수 감소 채택, timing은 진단값 |
 | binary branch / branchless select | 0.9770x | 0.9609..0.9914 | FAIL | branch 유지 |
 | U128 bit scan / U64 stream | 1.0068x | 1.0001..1.0191 | FAIL | U128 유지 |
 | xy-separated / direct fraction only | 1.0007x | 0.9912..1.0082 | PASS | 단독 승격 안 함 |
@@ -1006,7 +1078,7 @@ requested/effective schedule, build command와 same-index diagnostic ratio를
 | subgroup stack block64 / block256 | 1.0365x | 1.0173..1.0503 | FAIL | stationarity 재측정 필요 |
 | generic carry / BMI2+ADX | 2.9808x | 2.7330..3.2589 | FAIL | diagnostic-only |
 
-PRAC/direct의 최종-default-source 재실행은 `1.0382x`(CI
+같은 PRAC/direct 구현의 후속 재실행은 `1.0382x`(CI
 `1.0248..1.0537`)였지만 후반 host phase 변화로 stationarity만
 실패했다. 앞의 독립 PASS 두 번과 같은 hot path의 보조 확인으로만 쓴다.
 8-thread median도 `1.0381x`였으나 CI `0.9070..1.1621`와 stationarity가
@@ -1016,20 +1088,23 @@ PRAC/direct의 최종-default-source 재실행은 `1.0382x`(CI
 average가 16을 넘으며 시간 block spread가 gate를 실패했다. 따라서 방향과
 portable fallback의 필요성만 뒷받침하며 절대 성능 주장에는 쓰지 않는다.
 
-Jacobi와 새 2-thread 정책을 넣기 전 source에서 수행한 전체 legacy/당시-final
-비교는 warm-up 10쌍 뒤
+Jacobi와 새 2-thread 정책을 넣기 전 source에서 수행한 당시 baseline/optimized
+stack 비교는 warm-up 10쌍 뒤
 40쌍을 측정했다. baseline/candidate median은 `0.283205/0.076114 s`,
 paired median은 `3.7126x`(CI `3.7106..3.7251`)였다. AB/BA stratum도
 각각 `3.7125x/3.7197x`였고 absolute/effect block spread가 모두 기준
 안에 들어 stationarity와 promotion gate를 통과했다. 이 합산 결과는
-generic carry, legacy scan, 원곡선과 NAF 대조군에서 당시 BMI2/shifted/
-Hamburg stack까지의 동일-source compile-time 비교다. 현재 기본값에는 그
-위에 Jacobi lift가 추가됐으므로 이 `3.7126x`를 새 전체 합산 수치로
-소급하지 않는다.
+generic carry, `r0,r1` scan window, 원곡선과 NAF 대조군에서
+BMI2, `r1,r2` window와 Hamburg까지를 비교한 동일-source 측정이다. 현재
+기본값에는 그 위에 Jacobi lift와 부분군 trace/PRAC 등이 추가됐으므로 이
+`3.7126x`를 현재 전체 stack의 합산 수치로 소급하지 않는다.
 
 재현 명령이다. 첫 Python 정답 경로는 표준 라이브러리만 필요하다. C++/native
 benchmark에는 C++20을 지원하는 `g++`, OpenMP와 GMP 개발 라이브러리가
-필요하다.
+필요하다. `solutions/06_optimization/`에는 Sage 기반 부분군 수학
+검증과 PRAC schedule 생성·검증을 다시 수행하는 재현 스크립트도 함께
+제공한다. 아래 `--cpus` 값은 측정 host의 affinity ID이므로 다른 환경에서는
+허용된 CPU ID로 바꾸거나 옵션을 생략한다.
 
 ```bash
 python3 solutions/solve_06_prng.py --backend int --telemetry analytic
@@ -1068,6 +1143,19 @@ python3 solutions/06_optimization/benchmark_06_promotion.py \
   --baseline-define CH6_XY_SUBGROUP_BATCH \
   --threads 1 --warmup-pairs 3 --pairs 40 \
   --output /tmp/challenge06-prac20-direct.json
+
+python3 solutions/06_optimization/generate_06_prac_schedule.py --json
+sage -python solutions/06_optimization/audit_06_subgroup.py --json
+sage -python solutions/06_optimization/audit_06_subgroup.py \
+  --samples 0 --full-prefix --json
+
+python3 solutions/06_optimization/benchmark_06_promotion.py \
+  --baseline-label expanded-trace --candidate-label reciprocal-trace \
+  --baseline-define CH6_EXPANDED_SUBGROUP_TRACE \
+  --threads 1 --cpus 7 --baseline-schedule block \
+  --candidate-schedule block --block-size 64 \
+  --warmup-pairs 10 --pairs 40 --seed 1145324612 \
+  --output /tmp/challenge06-reciprocal-trace.json
 ```
 
 C++만 직접 실행하려면:
@@ -1143,7 +1231,7 @@ g++ -O3 -DNDEBUG -std=c++20 -fopenmp \
 - [Brier and Joye, *Weierstrass Elliptic Curves and Side-Channel Attacks*](https://marcjoye.github.io/papers/BJ02espa.pdf) — 일반 Weierstrass 곡선에서 x-only ladder 후보를 검토할 때 사용했다.
 - [Hamburg, *Faster Montgomery and double-add ladders for short Weierstrass curves*](https://eprint.iacr.org/2020/437), [공식 supplementary formulas](https://github.com/bitwiseshiftleft/ladder_formulas) — Figure 3의 co-Z ladder를 고정 `d` hot path에 구현하고 exceptional denominator를 NAF fallback으로 처리했으며 Figure 4/6 DAG 후보를 대조했다.
 - [Möller, *Efficient computation of the Jacobi symbol*](https://arxiv.org/abs/1907.07795), [GNU MP Jacobi algorithm](https://gmplib.org/manual/Jacobi-Symbol.html) — GCD/Euclidean reduction 중 하위 비트로 Jacobi 부호를 갱신하는 근거다. 이 문제에서는 88비트 고정 입력에 맞춘 작은 구현으로 sqrt를 지연했다.
-- [Koshelev, *Subgroup membership testing on elliptic curves via the Tate pairing*](https://eprint.iacr.org/2022/037.pdf) — small-cofactor pairing test의 출발점이다. 논문의 basic-field 조건 `e | p-1`은 현재 `p mod 5=4` 곡선에서 성립하지 않아, 구현은 그대로 복사하지 않고 `Fp2` Frobenius 고유공간으로 확장했다.
+- [Koshelev, *Subgroup membership testing on elliptic curves via the Tate pairing*](https://eprint.iacr.org/2022/037.pdf), [extension-field Appendix의 출판 correction](https://doi.org/10.1007/s13389-023-00331-3) — small-cofactor pairing test와 base change 일반화의 근거다. 여기서는 dual embedding degree 2인 경우를 `Fp2` Frobenius `-1` 고유공간에 특수화하고, x-only trace 식과 fixed Lucas-PRAC을 별도로 유도했다.
 - [Enge, *Bilinear pairings on elliptic curves*](https://arxiv.org/abs/1301.5520) — Miller recurrence, reduced Tate pairing과 Frobenius 작용을 이용해 order-5 Miller 값을 x-only trace 식으로 전개할 때 참고했다.
 - [Montgomery, *Evaluating recurrences of form X_(m+n)=f(X_m,X_n,X_(m-n)) via Lucas chains*](https://cr.yp.to/bib/1992/montgomery-lucas.pdf) — differential Lucas chain과 PRAC rule의 원자료다.
 - [Zimmermann--Dodson, *20 years of ECM*, Section 2.2](https://members.loria.fr/PZimmermann/papers/ecm-submitted.pdf) — golden-ratio 및 transformed-alpha PRAC seed와 operation-cost 탐색을 대조했다.

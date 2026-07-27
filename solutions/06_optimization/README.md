@@ -27,6 +27,10 @@ Both paths predict the same required
 - `benchmark_deep_native_06.py`: broad GMP/native/thread/scheduler screening.
 - `benchmark_06_promotion.py`: frozen-source, CPU-pinned adjacent AB/BA
   promotion test for exactly two native variants.
+- `audit_06_subgroup.py`: independent Sage audit of the curve, torsion,
+  Frobenius/Miller trace identities, reciprocal coefficients, and full prefix.
+- `generate_06_prac_schedule.py`: standard-library regeneration and byte-level
+  audit of the fixed Lucas-PRAC schedule.
 
 ## Final native stack
 
@@ -49,11 +53,14 @@ The default `deep_native_06.cpp` combines:
    Lucas-PRAC schedule and compares the result with the 11 traces of
    `mu_20`, replacing the former 170-product binary Lucas ladder with a
    124-product chain;
-10. direct in-place trace-fraction preparation: block scans compact the
-    surviving fractions and batch-invert their denominators without staging
-    separate x, curve-RHS, numerator, and denominator arrays;
-11. a width-8 fixed-`Q` affine comb table and mixed Jacobian addition;
-12. monotone OpenMP work assignment: block-64 at one thread, block-32 at two
+10. an exact reciprocal-polynomial trace: after cancelling the common
+    `(x-gamma)^4` factor, Horner evaluation in `z=(x-alpha)^-1` needs five field
+    products instead of the expanded formula's `6M+3S`;
+11. direct in-place trace-input preparation: block scans compact the surviving
+    inputs and batch-invert their denominators without staging separate x,
+    curve-RHS, numerator, and denominator arrays;
+12. a width-8 fixed-`Q` affine comb table and mixed Jacobian addition;
+13. monotone OpenMP work assignment: block-64 at one thread, block-32 at two
     threads, and the scalar pipeline at three or more threads.
 
 The fixed field element is 16 bytes, a Jacobian point is 48 bytes, and the
@@ -75,7 +82,9 @@ canonical-input, Euclidean, and subtractive Jacobi variants with a
 Fermat/Legendre reference. The subgroup preflight also checks known positive
 and rational 5-torsion negative vectors, converts all 11 `mu_20` traces to
 Montgomery form independently, and compares the fixed PRAC chain with the
-binary Lucas oracle on every boundary and random field trace. A
+binary Lucas oracle on every boundary and random field trace. The expanded and
+reciprocal trace formulas are cross-checked on boundary and random values and
+all 65,536 low bits of each of the three public prefixes. A
 `-ftrivial-auto-var-init=pattern` build passes the same self-test and known
 answer, guarding the write-before-read scan buffers.
 
@@ -84,10 +93,10 @@ Every timed JSON result also reports the selected field backend, curve model,
 width/encoding, scan label and output indices, requested and actual threads,
 schedule, inverse, and square-root method, plus requested/effective block size
 and fixed-`Q` multiplication layout. It additionally identifies the subgroup
-constant layout, batch layout, Lucas bit scan/step, scan-buffer initialization,
-and curve-constant layout. The solver rejects a smaller OpenMP team, and the
-benchmark rejects metadata mismatches instead of timing an accidentally
-inactive macro.
+constant layout, batch layout, trace formula, Lucas bit scan/step, scan-buffer
+initialization, and curve-constant layout. The solver rejects a smaller OpenMP
+team, and the benchmark rejects metadata mismatches instead of timing an
+accidentally inactive macro.
 
 ## Reproduce
 
@@ -106,6 +115,15 @@ g++ -O3 -DNDEBUG -march=native -std=c++20 -fopenmp \
 /tmp/deep_native_06 --self-test --json
 /tmp/deep_native_06 --threads 1 --json
 /tmp/deep_native_06 --threads 8 --json
+```
+
+Regenerate the PRAC schedule and independently audit the subgroup mathematics:
+
+```bash
+python3 solutions/06_optimization/generate_06_prac_schedule.py --json
+sage -python solutions/06_optimization/audit_06_subgroup.py --json
+sage -python solutions/06_optimization/audit_06_subgroup.py \
+  --samples 0 --full-prefix --json
 ```
 
 The portable path does not require BMI2/ADX:
@@ -138,6 +156,20 @@ python3 solutions/06_optimization/benchmark_06_promotion.py \
   --threads 1 --warmup-pairs 3 --pairs 40 \
   --output /tmp/ch6-prac20-direct.json
 ```
+
+For the reciprocal trace ablation, use:
+
+```bash
+python3 solutions/06_optimization/benchmark_06_promotion.py \
+  --baseline-label expanded-trace --candidate-label reciprocal-trace \
+  --baseline-define CH6_EXPANDED_SUBGROUP_TRACE \
+  --threads 1 --cpus 7 --baseline-schedule block \
+  --candidate-schedule block --block-size 64 \
+  --warmup-pairs 10 --pairs 40 --seed 1145324612 \
+  --output /tmp/ch6-reciprocal-trace.json
+```
+
+Replace `--cpus 7` with an allowed idle CPU on another host.
 
 The promotion protocol uses four chronological blocks, each with five AB and
 five BA pairs, 5,000 deterministic bootstrap resamples within the eight
@@ -180,12 +212,27 @@ An additional post-audit run on source SHA-256
 `840999f697112a17c7ebe6809351b4971b1a713d021e4c356334e3c4462ae073`
 had median `1.0289x` but CI `0.9791..1.0878`; absolute block spreads of
 53.8%/72.1% and a sign-changing effect made it diagnostic-only as well.
-The final source SHA-256
+The later source SHA-256
 `a97d24e5d6a581da586c0df48beb64abdeb6ab60273f2cdd00a352b74aa8df16`
 differs only in stronger self-test fixtures for positive index 255,
 zero-denominator compaction, and multi-lane tails; the timed path is unchanged.
 The 8-thread diagnostic median was `1.0381x`, but its CI
 `0.9070..1.1621` and stationarity both failed on the saturated shared VM.
+
+The current source SHA-256
+`33920f4851b7d9a318a0242e730915b4d15a971e9019d24e595ac2c00ce9ba1e`
+adds a subsequent algebraic trace simplification. Symbolic Sage expansion
+proves
+`U-V=(x-gamma)^4(x-alpha)^5`; after cancelling the common fourth power,
+the trace is a degree-5 polynomial in `(x-alpha)^-1`. This changes the trace
+from nine field products (`6M+3S`) to five and reduces the whole subgroup check
+to approximately `132 M/S + I/block` or `129 M/S + I/candidate`. A CPU-7-pinned
+one-thread run after ten warm-up pairs measured 40 balanced pairs at
+`1.0270x` (bootstrap CI `1.0027..1.0360`), but failed the chronological
+stationarity gate. The timing is therefore diagnostic, while the default is
+based on the exact operation reduction plus symbolic and exhaustive
+equivalence checks. `CH6_EXPANDED_SUBGROUP_TRACE` preserves the former formula
+as an ablation and independent oracle.
 
 The new cofactor-5 filter was compared in frozen source snapshot SHA-256
 `5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`,
