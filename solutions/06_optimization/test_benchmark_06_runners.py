@@ -69,6 +69,7 @@ def native_result() -> dict[str, object]:
         ),
         "subgroup_constant_layout": "constexpr-montgomery",
         "subgroup_batch_layout": "direct-in-place-fraction",
+        "subgroup_trace_formula": "degree-5-reciprocal-polynomial",
         "subgroup_lucas_bit_scan": "variable-u128-shift",
         "subgroup_lucas_step": "fixed-prac-schedule",
         "scan_buffer_initialization": "write-before-read",
@@ -160,6 +161,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
             ("p_equals_dq", 1),
             ("lift_residue_test", None),
             ("subgroup_membership_test", None),
+            ("subgroup_trace_formula", None),
             ("lift_output_index", None),
             ("fixed_digit_encoding", None),
             ("fixed_multiplication", None),
@@ -189,6 +191,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
             ("threads_actual", True),
             ("lift_residue_test", None),
             ("subgroup_membership_test", None),
+            ("subgroup_trace_formula", None),
             ("lift_output_index", None),
             ("fixed_digit_encoding", None),
             ("fixed_multiplication", None),
@@ -320,7 +323,11 @@ class BenchmarkRunnerTests(unittest.TestCase):
             variant, json.dumps(adaptive_two_result), 2, 64,
             "adaptive", True
         )
-        for key, value in (("threads_actual", 2), ("threads", True)):
+        for key, value in (
+            ("threads_actual", 2),
+            ("threads", True),
+            ("subgroup_trace_formula", "expanded-miller-fraction"),
+        ):
             with self.subTest(key=key):
                 malformed = native_result()
                 malformed[key] = value
@@ -490,6 +497,22 @@ class BenchmarkRunnerTests(unittest.TestCase):
                 self.assertEqual(
                     PROMOTION.expected_configuration(variant, True)[
                         "subgroup_batch_layout"
+                    ],
+                    expected,
+                )
+
+    def test_promotion_runner_tracks_subgroup_trace_formula(self) -> None:
+        for defines, expected in (
+            ((), "degree-5-reciprocal-polynomial"),
+            (("CH6_EXPANDED_SUBGROUP_TRACE",), "expanded-miller-fraction"),
+        ):
+            with self.subTest(defines=defines):
+                variant = PROMOTION.Variant(
+                    "subgroup-trace", Path("/tmp/deep_native_06"), defines
+                )
+                self.assertEqual(
+                    PROMOTION.expected_configuration(variant, True)[
+                        "subgroup_trace_formula"
                     ],
                     expected,
                 )

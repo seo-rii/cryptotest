@@ -65,6 +65,7 @@ CONFIGURATION_KEYS = (
     "subgroup_membership_test",
     "subgroup_constant_layout",
     "subgroup_batch_layout",
+    "subgroup_trace_formula",
     "subgroup_lucas_bit_scan",
     "subgroup_lucas_step",
     "scan_buffer_initialization",
@@ -204,6 +205,11 @@ def expected_configuration(
             "xy-separated"
             if "CH6_XY_SUBGROUP_BATCH" in defines
             else "direct-in-place-fraction"
+        ),
+        "subgroup_trace_formula": (
+            "expanded-miller-fraction"
+            if "CH6_EXPANDED_SUBGROUP_TRACE" in defines
+            else "degree-5-reciprocal-polynomial"
         ),
         "subgroup_lucas_bit_scan": (
             "u64-msb-stream"
