@@ -287,8 +287,14 @@ def validate_result(contender: Contender, stdout: str) -> dict[str, Any]:
                 "euclidean-jacobi-deferred-sqrt"
             ),
             "subgroup_membership_test": (
-                "cofactor-5-frobenius-tate-trace"
+                "cofactor-5-frobenius-tate-trace-prac-20-generic"
             ),
+            "subgroup_constant_layout": "constexpr-montgomery",
+            "subgroup_batch_layout": "direct-in-place-fraction",
+            "subgroup_lucas_bit_scan": "variable-u128-shift",
+            "subgroup_lucas_step": "fixed-prac-schedule",
+            "scan_buffer_initialization": "write-before-read",
+            "curve_constant_layout": "constexpr-montgomery",
             "fixed_window_bits": 8,
             "fixed_digit_encoding": "unsigned",
             "fixed_multiplication": "candidate-jacobian",
@@ -722,6 +728,12 @@ def main() -> None:
                         "telemetry_strategy",
                         "lift_residue_test",
                         "subgroup_membership_test",
+                        "subgroup_constant_layout",
+                        "subgroup_batch_layout",
+                        "subgroup_lucas_bit_scan",
+                        "subgroup_lucas_step",
+                        "scan_buffer_initialization",
+                        "curve_constant_layout",
                         "fixed_digit_encoding",
                         "fixed_multiplication",
                     )

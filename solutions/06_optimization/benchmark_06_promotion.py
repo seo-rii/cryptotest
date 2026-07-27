@@ -63,6 +63,12 @@ CONFIGURATION_KEYS = (
     "d_multiplication",
     "lift_residue_test",
     "subgroup_membership_test",
+    "subgroup_constant_layout",
+    "subgroup_batch_layout",
+    "subgroup_lucas_bit_scan",
+    "subgroup_lucas_step",
+    "scan_buffer_initialization",
+    "curve_constant_layout",
     "fixed_window_bits",
     "fixed_digit_encoding",
     "fixed_multiplication",
@@ -77,6 +83,7 @@ class Variant:
     label: str
     binary: Path
     defines: tuple[str, ...]
+    cxxflags: tuple[str, ...] = ()
 
 
 def define_values(defines: tuple[str, ...]) -> dict[str, str | None]:
@@ -91,6 +98,13 @@ def expected_configuration(
     variant: Variant, native_bmi2_adx: bool
 ) -> dict[str, Any]:
     defines = define_values(variant.defines)
+    subgroup_lucas_lanes = int(
+        defines.get("CH6_SUBGROUP_LUCAS_LANES") or "1", 0
+    )
+    subgroup_uses_prac = (
+        "CH6_BINARY_SUBGROUP_LUCAS" not in defines
+        or "CH6_PRAC_SUBGROUP_LUCAS" in defines
+    )
     expected: dict[str, Any] = {
         "state_label": (
             "s2" if "CH6_LEGACY_R0_SCAN" in defines else "s3"
@@ -158,7 +172,62 @@ def expected_configuration(
         "subgroup_membership_test": (
             "none"
             if "CH6_NO_SUBGROUP_FILTER" in defines
-            else "cofactor-5-frobenius-tate-trace"
+            else (
+                (
+                    "cofactor-5-frobenius-tate-trace-prac-20-interleaved-2"
+                    if subgroup_lucas_lanes == 2
+                    else (
+                        "cofactor-5-frobenius-tate-trace-prac-20-fused"
+                        if "CH6_FUSED_PRAC_INTERPRETER" in defines
+                        else (
+                            "cofactor-5-frobenius-tate-trace-prac-20-generic"
+                        )
+                    )
+                )
+                if subgroup_uses_prac
+                else (
+                    "cofactor-5-frobenius-tate-trace"
+                    if subgroup_lucas_lanes == 1
+                    else (
+                        "cofactor-5-frobenius-tate-trace-interleaved-"
+                        f"{subgroup_lucas_lanes}"
+                    )
+                )
+            )
+        ),
+        "subgroup_constant_layout": (
+            "function-local-static"
+            if "CH6_RUNTIME_SUBGROUP_CONSTANTS" in defines
+            else "constexpr-montgomery"
+        ),
+        "subgroup_batch_layout": (
+            "xy-separated"
+            if "CH6_XY_SUBGROUP_BATCH" in defines
+            else "direct-in-place-fraction"
+        ),
+        "subgroup_lucas_bit_scan": (
+            "u64-msb-stream"
+            if "CH6_U64_LUCAS_BIT_STREAM" in defines
+            else "variable-u128-shift"
+        ),
+        "subgroup_lucas_step": (
+            "fixed-prac-schedule"
+            if subgroup_uses_prac
+            else (
+                "branchless-select"
+                if "CH6_BRANCHLESS_LUCAS_STEP" in defines
+                else "fixed-pattern-branch"
+            )
+        ),
+        "scan_buffer_initialization": (
+            "eager-zero"
+            if "CH6_EAGER_ZERO_SCAN_BUFFERS" in defines
+            else "write-before-read"
+        ),
+        "curve_constant_layout": (
+            "function-local-static"
+            if "CH6_RUNTIME_CURVE_CONSTANTS" in defines
+            else "constexpr-montgomery"
         ),
     }
     if "CH6_GENERIC_MONTGOMERY" in defines:
@@ -276,9 +345,20 @@ def compiler_version(compiler: str) -> str:
     return process.stdout.splitlines()[0]
 
 
-def compiler_predefines(compiler: str) -> set[str]:
+def compiler_predefines(
+    compiler: str, cxxflags: tuple[str, ...] = ()
+) -> set[str]:
     process = subprocess.run(
-        (compiler, "-march=native", "-dM", "-E", "-x", "c++", "-"),
+        (
+            compiler,
+            "-march=native",
+            *cxxflags,
+            "-dM",
+            "-E",
+            "-x",
+            "c++",
+            "-",
+        ),
         input="",
         check=False,
         capture_output=True,
@@ -348,6 +428,7 @@ def build_variant(
         "-march=native",
         "-std=c++20",
         "-fopenmp",
+        *variant.cxxflags,
         *(f"-D{item}" for item in variant.defines),
         str(source),
         "-o",
@@ -648,6 +729,8 @@ def main() -> None:
     parser.add_argument("--candidate-label", default="candidate")
     parser.add_argument("--baseline-define", action="append", default=[])
     parser.add_argument("--candidate-define", action="append", default=[])
+    parser.add_argument("--baseline-cxxflag", action="append", default=[])
+    parser.add_argument("--candidate-cxxflag", action="append", default=[])
     parser.add_argument("--threads", type=int, default=1)
     parser.add_argument("--cpus")
     parser.add_argument("--block-size", type=int, default=64)
@@ -712,6 +795,7 @@ def main() -> None:
         parser.error("warmup pairs must be positive")
     if (
         tuple(args.baseline_define) == tuple(args.candidate_define)
+        and tuple(args.baseline_cxxflag) == tuple(args.candidate_cxxflag)
         and block_sizes["A"] == block_sizes["B"]
         and schedules["A"] == schedules["B"]
         and not args.null_calibration
@@ -796,13 +880,23 @@ def main() -> None:
             args.baseline_label,
             temporary / "baseline",
             tuple(args.baseline_define),
+            tuple(args.baseline_cxxflag),
         )
         candidate = Variant(
             args.candidate_label,
             temporary / "candidate",
             tuple(args.candidate_define),
+            tuple(args.candidate_cxxflag),
         )
         variants = {"A": baseline, "B": candidate}
+        variant_bmi2_adx = {
+            key: {
+                "__x86_64__",
+                "__BMI2__",
+                "__ADX__",
+            } <= compiler_predefines(compiler, variant.cxxflags)
+            for key, variant in variants.items()
+        }
         build_commands = {
             "A": build_variant(compiler, source_snapshot, baseline),
             "B": build_variant(compiler, source_snapshot, candidate),
@@ -886,7 +980,7 @@ def main() -> None:
                     args.threads,
                     block_sizes[key],
                     schedules[key],
-                    native_bmi2_adx,
+                    variant_bmi2_adx[key],
                 )
                 print(
                     f"warmup {index + 1}/{args.warmup_pairs} "
@@ -912,7 +1006,7 @@ def main() -> None:
                     args.threads,
                     block_sizes[key],
                     schedules[key],
-                    native_bmi2_adx,
+                    variant_bmi2_adx[key],
                 )
                 event.update(
                     {
@@ -1023,10 +1117,14 @@ def main() -> None:
                 "A": {
                     "label": baseline.label,
                     "defines": list(baseline.defines),
+                    "cxxflags": list(baseline.cxxflags),
+                    "compiler_bmi2_adx": variant_bmi2_adx["A"],
                 },
                 "B": {
                     "label": candidate.label,
                     "defines": list(candidate.defines),
+                    "cxxflags": list(candidate.cxxflags),
+                    "compiler_bmi2_adx": variant_bmi2_adx["B"],
                 },
             },
             "events": events,

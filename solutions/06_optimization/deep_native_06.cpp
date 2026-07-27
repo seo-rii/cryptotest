@@ -77,6 +77,43 @@ constexpr U128 SUBGROUP_TANGENT_M2 =
 constexpr U128 SUBGROUP_RATIONAL_TORSION_X =
     parse_hex("20b363e845196f8282e59d");
 constexpr U128 SUBGROUP_LUCAS_EXPONENT = (FIELD + 1U) / 5U;
+constexpr U128 SUBGROUP_PRAC_EXPONENT =
+    SUBGROUP_LUCAS_EXPONENT / 20U;
+// Canonical values z + z^-1 for the 11 inversion orbits in mu_20.
+constexpr std::array<U128, 11> SUBGROUP_20TH_ROOT_TRACES{
+    parse_hex("2"),
+    parse_hex("49321ac5168966c4e21a84"),
+    parse_hex("464f7cf080ef9f665193b9"),
+    parse_hex("bf1ef683b3802a2312bcf5"),
+    parse_hex("464f7cf080ef9f665193b8"),
+    parse_hex("0"),
+    parse_hex("92b4fe6eb1ee06641dc2e3"),
+    parse_hex("19e584db7f5d7ba75c99a6"),
+    parse_hex("92b4fe6eb1ee06641dc2e2"),
+    parse_hex("8fd2609a1c543f058d3c17"),
+    parse_hex("d9047b5f32dda5ca6f5699"),
+};
+// Offline Montgomery-PRAC schedule for H=(p+1)/100 with seed
+// r=0x1575ba2094b05be88186b.  The high bit requests a pre-swap and
+// the low bits select a PRAC rule.  SHA-256:
+// 18b8ddcc131e735e129646411153b5ad76d413e76087e42503cfd56f16a5d739.
+constexpr std::array<std::uint8_t, 115> SUBGROUP_PRAC_SCHEDULE{
+    0x03, 0x83, 0x83, 0x83, 0x83, 0x83, 0x83, 0x83,
+    0x83, 0x83, 0x83, 0x83, 0x83, 0x83, 0x83, 0x83,
+    0x83, 0x83, 0x83, 0x83, 0x83, 0x83, 0x83, 0x83,
+    0x83, 0x83, 0x83, 0x83, 0x83, 0x83, 0x83, 0x83,
+    0x83, 0x83, 0x83, 0x83, 0x83, 0x83, 0x83, 0x83,
+    0x83, 0x03, 0x83, 0x83, 0x83, 0x83, 0x03, 0x83,
+    0x03, 0x03, 0x83, 0x03, 0x83, 0x83, 0x83, 0x83,
+    0x83, 0x83, 0x03, 0x83, 0x83, 0x03, 0x83, 0x03,
+    0x83, 0x83, 0x83, 0x83, 0x83, 0x83, 0x03, 0x83,
+    0x83, 0x83, 0x83, 0x85, 0x03, 0x03, 0x03, 0x84,
+    0x04, 0x04, 0x03, 0x83, 0x83, 0x83, 0x83, 0x83,
+    0x83, 0x03, 0x83, 0x83, 0x83, 0x84, 0x03, 0x83,
+    0x83, 0x83, 0x81, 0x03, 0x83, 0x83, 0x83, 0x83,
+    0x03, 0x83, 0x83, 0x03, 0x03, 0x83, 0x83, 0x83,
+    0x03, 0x03, 0x83,
+};
 constexpr U128 ORIGINAL_X_FROM_TRANSFORMED_SCALE =
     parse_hex("9b4427ecf55d466c0bbf44");
 constexpr U128 TRANSFORMED_X_MONTGOMERY_R2 =
@@ -160,7 +197,68 @@ constexpr std::string_view LIFT_RESIDUE_TEST = "sqrt";
 #define CH6_FIXED_WINDOW_BITS 8
 #endif
 
+#if !defined(CH6_SUBGROUP_LUCAS_LANES)
+#define CH6_SUBGROUP_LUCAS_LANES 1
+#endif
+
+#if defined(CH6_BINARY_SUBGROUP_LUCAS) && \
+    defined(CH6_PRAC_SUBGROUP_LUCAS)
+#error "select either binary or PRAC subgroup Lucas evaluation"
+#elif !defined(CH6_BINARY_SUBGROUP_LUCAS) && \
+    !defined(CH6_PRAC_SUBGROUP_LUCAS)
+#define CH6_PRAC_SUBGROUP_LUCAS
+#endif
+#if defined(CH6_BINARY_SUBGROUP_LUCAS) && \
+    (defined(CH6_GENERIC_PRAC_INTERPRETER) || \
+     defined(CH6_FUSED_PRAC_INTERPRETER))
+#error "PRAC interpreter selection requires PRAC subgroup evaluation"
+#endif
+#if defined(CH6_GENERIC_PRAC_INTERPRETER) && \
+    defined(CH6_FUSED_PRAC_INTERPRETER)
+#error "select either the generic or fused PRAC interpreter"
+#endif
+#if defined(CH6_PRAC_SUBGROUP_LUCAS) && \
+    !defined(CH6_GENERIC_PRAC_INTERPRETER) && \
+    !defined(CH6_FUSED_PRAC_INTERPRETER)
+#define CH6_GENERIC_PRAC_INTERPRETER
+#endif
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS) && \
+    defined(CH6_XY_SUBGROUP_BATCH)
+#error "select either direct fractions or separate subgroup x/RHS arrays"
+#elif !defined(CH6_DIRECT_SUBGROUP_FRACTIONS) && \
+    !defined(CH6_XY_SUBGROUP_BATCH)
+#define CH6_DIRECT_SUBGROUP_FRACTIONS
+#endif
+#if defined(CH6_U64_LUCAS_BIT_STREAM) && \
+    defined(CH6_VARIABLE_U128_LUCAS_BITS)
+#error "select either the U64 or variable-U128 Lucas bit scan"
+#endif
+#if !defined(CH6_U64_LUCAS_BIT_STREAM) && \
+    !defined(CH6_VARIABLE_U128_LUCAS_BITS)
+#define CH6_VARIABLE_U128_LUCAS_BITS
+#endif
+
 constexpr std::size_t FIXED_WINDOW_BITS = CH6_FIXED_WINDOW_BITS;
+constexpr std::size_t SUBGROUP_LUCAS_LANES = CH6_SUBGROUP_LUCAS_LANES;
+#if CH6_SUBGROUP_LUCAS_LANES != 1 && \
+    CH6_SUBGROUP_LUCAS_LANES != 2 && \
+    CH6_SUBGROUP_LUCAS_LANES != 4
+#error "CH6_SUBGROUP_LUCAS_LANES must be 1, 2, or 4"
+#endif
+#if defined(CH6_PRAC_SUBGROUP_LUCAS) && \
+    CH6_SUBGROUP_LUCAS_LANES != 1 && \
+    CH6_SUBGROUP_LUCAS_LANES != 2
+#error "CH6_PRAC_SUBGROUP_LUCAS requires one or two Lucas lanes"
+#endif
+#if defined(CH6_BRANCHLESS_LUCAS_STEP) && \
+    (defined(CH6_PRAC_SUBGROUP_LUCAS) || \
+     CH6_SUBGROUP_LUCAS_LANES != 1)
+#error "CH6_BRANCHLESS_LUCAS_STEP requires one binary Lucas lane"
+#endif
+#if defined(CH6_U64_LUCAS_BIT_STREAM) && \
+    defined(CH6_PRAC_SUBGROUP_LUCAS)
+#error "CH6_U64_LUCAS_BIT_STREAM is a binary Lucas ablation"
+#endif
 constexpr std::size_t FIXED_RADIX = 1U << FIXED_WINDOW_BITS;
 constexpr std::size_t FIXED_UNSIGNED_ROWS =
     (88U + FIXED_WINDOW_BITS - 1U) / FIXED_WINDOW_BITS;
@@ -181,13 +279,75 @@ constexpr std::string_view FIXED_MULTIPLICATION = "candidate-jacobian";
 #endif
 #if defined(CH6_NO_SUBGROUP_FILTER)
 constexpr std::string_view SUBGROUP_MEMBERSHIP_TEST = "none";
+#elif defined(CH6_PRAC_SUBGROUP_LUCAS)
+#if CH6_SUBGROUP_LUCAS_LANES == 2
+constexpr std::string_view SUBGROUP_MEMBERSHIP_TEST =
+    "cofactor-5-frobenius-tate-trace-prac-20-interleaved-2";
+#elif defined(CH6_GENERIC_PRAC_INTERPRETER)
+constexpr std::string_view SUBGROUP_MEMBERSHIP_TEST =
+    "cofactor-5-frobenius-tate-trace-prac-20-generic";
 #else
 constexpr std::string_view SUBGROUP_MEMBERSHIP_TEST =
+    "cofactor-5-frobenius-tate-trace-prac-20-fused";
+#endif
+#elif CH6_SUBGROUP_LUCAS_LANES == 1
+constexpr std::string_view SUBGROUP_MEMBERSHIP_TEST =
     "cofactor-5-frobenius-tate-trace";
+#elif CH6_SUBGROUP_LUCAS_LANES == 2
+constexpr std::string_view SUBGROUP_MEMBERSHIP_TEST =
+    "cofactor-5-frobenius-tate-trace-interleaved-2";
+#elif CH6_SUBGROUP_LUCAS_LANES == 4
+constexpr std::string_view SUBGROUP_MEMBERSHIP_TEST =
+    "cofactor-5-frobenius-tate-trace-interleaved-4";
+#else
+#error "CH6_SUBGROUP_LUCAS_LANES must be 1, 2, or 4"
+#endif
+#if defined(CH6_RUNTIME_SUBGROUP_CONSTANTS)
+constexpr std::string_view SUBGROUP_CONSTANT_LAYOUT =
+    "function-local-static";
+#else
+constexpr std::string_view SUBGROUP_CONSTANT_LAYOUT =
+    "constexpr-montgomery";
+#endif
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+constexpr std::string_view SUBGROUP_BATCH_LAYOUT =
+    "direct-in-place-fraction";
+#else
+constexpr std::string_view SUBGROUP_BATCH_LAYOUT = "xy-separated";
+#endif
+#if defined(CH6_VARIABLE_U128_LUCAS_BITS)
+constexpr std::string_view SUBGROUP_LUCAS_BIT_SCAN =
+    "variable-u128-shift";
+#else
+constexpr std::string_view SUBGROUP_LUCAS_BIT_SCAN =
+    "u64-msb-stream";
+#endif
+#if defined(CH6_PRAC_SUBGROUP_LUCAS)
+constexpr std::string_view SUBGROUP_LUCAS_STEP = "fixed-prac-schedule";
+#elif defined(CH6_BRANCHLESS_LUCAS_STEP)
+constexpr std::string_view SUBGROUP_LUCAS_STEP = "branchless-select";
+#else
+constexpr std::string_view SUBGROUP_LUCAS_STEP = "fixed-pattern-branch";
+#endif
+#if defined(CH6_EAGER_ZERO_SCAN_BUFFERS)
+#define CH6_SCAN_BUFFER_INITIALIZER {}
+constexpr std::string_view SCAN_BUFFER_INITIALIZATION = "eager-zero";
+#else
+#define CH6_SCAN_BUFFER_INITIALIZER
+constexpr std::string_view SCAN_BUFFER_INITIALIZATION = "write-before-read";
+#endif
+#if defined(CH6_RUNTIME_CURVE_CONSTANTS)
+constexpr std::string_view CURVE_CONSTANT_LAYOUT = "function-local-static";
+#else
+constexpr std::string_view CURVE_CONSTANT_LAYOUT = "constexpr-montgomery";
 #endif
 constexpr std::size_t FIXED_NORMALIZE_CAPACITY =
     std::max(FIXED_TABLE_ROWS, FIXED_TABLE_ENTRIES);
 static_assert(FIXED_WINDOW_BITS >= 4 && FIXED_WINDOW_BITS <= 11);
+static_assert(
+    SUBGROUP_LUCAS_LANES == 1 ||
+    SUBGROUP_LUCAS_LANES == 2 ||
+    SUBGROUP_LUCAS_LANES == 4);
 
 std::string hex(U128 value) {
     const auto high = static_cast<std::uint64_t>(value >> 64U);
@@ -213,7 +373,7 @@ constexpr U128 sub_mod(U128 left, U128 right, U128 modulus) {
     return left >= right ? left - right : modulus - (right - left);
 }
 
-U128 mul_mod_reference(U128 left, U128 right, U128 modulus) {
+constexpr U128 mul_mod_reference(U128 left, U128 right, U128 modulus) {
     U128 result = 0;
     while (right != 0) {
         if ((right & 1U) != 0) {
@@ -291,6 +451,51 @@ constexpr FieldElement split(U128 value) {
     return {static_cast<std::uint64_t>(value),
             static_cast<std::uint64_t>(value >> 64U)};
 }
+
+constexpr FieldElement SUBGROUP_ALPHA_MONT = split(mul_mod_reference(
+    SUBGROUP_ALPHA, MONTGOMERY_ONE_CANON, FIELD));
+constexpr FieldElement SUBGROUP_BETA_MONT = split(mul_mod_reference(
+    SUBGROUP_BETA, MONTGOMERY_ONE_CANON, FIELD));
+constexpr FieldElement SUBGROUP_GAMMA_MONT = split(mul_mod_reference(
+    SUBGROUP_GAMMA, MONTGOMERY_ONE_CANON, FIELD));
+constexpr FieldElement SUBGROUP_DELTA_MONT = split(mul_mod_reference(
+    SUBGROUP_DELTA, MONTGOMERY_ONE_CANON, FIELD));
+constexpr FieldElement SUBGROUP_TANGENT_M1_MONT = split(mul_mod_reference(
+    SUBGROUP_TANGENT_M1, MONTGOMERY_ONE_CANON, FIELD));
+constexpr FieldElement SUBGROUP_TANGENT_M2_MONT = split(mul_mod_reference(
+    SUBGROUP_TANGENT_M2, MONTGOMERY_ONE_CANON, FIELD));
+constexpr FieldElement CURVE_A_MONT = split(mul_mod_reference(
+    CURVE_A_CANON, MONTGOMERY_ONE_CANON, FIELD));
+constexpr FieldElement CURVE_B_MONT = split(mul_mod_reference(
+    CURVE_B_CANON, MONTGOMERY_ONE_CANON, FIELD));
+constexpr FieldElement TRANSFORMED_CURVE_A_MONT = split(mul_mod_reference(
+    TRANSFORMED_CURVE_A, MONTGOMERY_ONE_CANON, FIELD));
+constexpr FieldElement TRANSFORMED_CURVE_B_MONT = split(mul_mod_reference(
+    TRANSFORMED_CURVE_B, MONTGOMERY_ONE_CANON, FIELD));
+constexpr std::array<FieldElement, 11> SUBGROUP_20TH_ROOT_TRACES_MONT{
+    split(mul_mod_reference(
+        SUBGROUP_20TH_ROOT_TRACES[0], MONTGOMERY_ONE_CANON, FIELD)),
+    split(mul_mod_reference(
+        SUBGROUP_20TH_ROOT_TRACES[1], MONTGOMERY_ONE_CANON, FIELD)),
+    split(mul_mod_reference(
+        SUBGROUP_20TH_ROOT_TRACES[2], MONTGOMERY_ONE_CANON, FIELD)),
+    split(mul_mod_reference(
+        SUBGROUP_20TH_ROOT_TRACES[3], MONTGOMERY_ONE_CANON, FIELD)),
+    split(mul_mod_reference(
+        SUBGROUP_20TH_ROOT_TRACES[4], MONTGOMERY_ONE_CANON, FIELD)),
+    split(mul_mod_reference(
+        SUBGROUP_20TH_ROOT_TRACES[5], MONTGOMERY_ONE_CANON, FIELD)),
+    split(mul_mod_reference(
+        SUBGROUP_20TH_ROOT_TRACES[6], MONTGOMERY_ONE_CANON, FIELD)),
+    split(mul_mod_reference(
+        SUBGROUP_20TH_ROOT_TRACES[7], MONTGOMERY_ONE_CANON, FIELD)),
+    split(mul_mod_reference(
+        SUBGROUP_20TH_ROOT_TRACES[8], MONTGOMERY_ONE_CANON, FIELD)),
+    split(mul_mod_reference(
+        SUBGROUP_20TH_ROOT_TRACES[9], MONTGOMERY_ONE_CANON, FIELD)),
+    split(mul_mod_reference(
+        SUBGROUP_20TH_ROOT_TRACES[10], MONTGOMERY_ONE_CANON, FIELD)),
+};
 
 constexpr U128 join(const FieldElement& value) {
     return (static_cast<U128>(value.high) << 64U) | value.low;
@@ -727,23 +932,55 @@ const FieldElement& field_one() {
 }
 
 const FieldElement& curve_a() {
+#if defined(CH6_RUNTIME_CURVE_CONSTANTS)
     static const FieldElement value = to_montgomery(CURVE_A_CANON);
     return value;
+#else
+    return CURVE_A_MONT;
+#endif
 }
 
 const FieldElement& curve_b() {
+#if defined(CH6_RUNTIME_CURVE_CONSTANTS)
     static const FieldElement value = to_montgomery(CURVE_B_CANON);
     return value;
+#else
+    return CURVE_B_MONT;
+#endif
 }
 
 const FieldElement& transformed_curve_b() {
+#if defined(CH6_RUNTIME_CURVE_CONSTANTS)
     static const FieldElement value = to_montgomery(TRANSFORMED_CURVE_B);
     return value;
+#else
+    return TRANSFORMED_CURVE_B_MONT;
+#endif
 }
 
 const FieldElement& transformed_curve_a() {
+#if defined(CH6_RUNTIME_CURVE_CONSTANTS)
     static const FieldElement value = to_montgomery(TRANSFORMED_CURVE_A);
     return value;
+#else
+    return TRANSFORMED_CURVE_A_MONT;
+#endif
+}
+
+const std::array<FieldElement, 11>& subgroup_20th_root_traces() {
+#if defined(CH6_RUNTIME_SUBGROUP_CONSTANTS)
+    static const auto values = [] {
+        std::array<FieldElement, 11> result{};
+        for (std::size_t index = 0; index < result.size(); ++index) {
+            result[index] =
+                to_montgomery(SUBGROUP_20TH_ROOT_TRACES[index]);
+        }
+        return result;
+    }();
+    return values;
+#else
+    return SUBGROUP_20TH_ROOT_TRACES_MONT;
+#endif
 }
 
 inline FieldElement transformed_curve_rhs(
@@ -1125,6 +1362,7 @@ struct SubgroupTraceFraction {
 
 SubgroupTraceFraction subgroup_trace_fraction(
     const FieldElement& x, const FieldElement& rhs) {
+#if defined(CH6_RUNTIME_SUBGROUP_CONSTANTS)
     static const FieldElement alpha = to_montgomery(SUBGROUP_ALPHA);
     static const FieldElement beta = to_montgomery(SUBGROUP_BETA);
     static const FieldElement gamma = to_montgomery(SUBGROUP_GAMMA);
@@ -1133,7 +1371,14 @@ SubgroupTraceFraction subgroup_trace_fraction(
         to_montgomery(SUBGROUP_TANGENT_M1);
     static const FieldElement tangent_m2 =
         to_montgomery(SUBGROUP_TANGENT_M2);
-
+#else
+    constexpr FieldElement alpha = SUBGROUP_ALPHA_MONT;
+    constexpr FieldElement beta = SUBGROUP_BETA_MONT;
+    constexpr FieldElement gamma = SUBGROUP_GAMMA_MONT;
+    constexpr FieldElement delta = SUBGROUP_DELTA_MONT;
+    constexpr FieldElement tangent_m1 = SUBGROUP_TANGENT_M1_MONT;
+    constexpr FieldElement tangent_m2 = SUBGROUP_TANGENT_M2_MONT;
+#endif
     const FieldElement a = field_add(
         beta, field_multiply(tangent_m1, field_subtract(x, alpha)));
     const FieldElement b = field_add(
@@ -1156,7 +1401,7 @@ SubgroupTraceFraction subgroup_trace_fraction(
     };
 }
 
-bool subgroup_member_from_trace(const FieldElement& trace) {
+bool subgroup_member_from_trace_binary(const FieldElement& trace) {
     static_assert((FIELD + 1U) % 5U == 0);
     static_assert((SUBGROUP_LUCAS_EXPONENT >> 85U) == 1U);
     static_assert(
@@ -1169,10 +1414,42 @@ bool subgroup_member_from_trace(const FieldElement& trace) {
     FieldElement l_k = l2;
     FieldElement l_k_plus_one =
         field_subtract(field_multiply(trace, l2), trace);
+#if defined(CH6_VARIABLE_U128_LUCAS_BITS)
     for (int bit = 83; bit >= 0; --bit) {
+        const bool bit_set =
+            ((SUBGROUP_LUCAS_EXPONENT >> bit) & 1U) != 0;
+#else
+    std::uint64_t exponent_bits =
+        static_cast<std::uint64_t>(SUBGROUP_LUCAS_EXPONENT >> 64U) << 44U;
+    for (int remaining = 84; remaining > 0; --remaining) {
+        const bool bit_set = (exponent_bits >> 63U) != 0;
+        exponent_bits <<= 1U;
+        if (remaining == 65) {
+            exponent_bits =
+                static_cast<std::uint64_t>(SUBGROUP_LUCAS_EXPONENT);
+        }
+#endif
         const FieldElement middle = field_subtract(
             field_multiply(l_k, l_k_plus_one), trace);
-        if (((SUBGROUP_LUCAS_EXPONENT >> bit) & 1U) != 0) {
+#if defined(CH6_BRANCHLESS_LUCAS_STEP)
+        const std::uint64_t mask =
+            0U - static_cast<std::uint64_t>(bit_set);
+        const FieldElement square_input{
+            (l_k.low & ~mask) | (l_k_plus_one.low & mask),
+            (l_k.high & ~mask) | (l_k_plus_one.high & mask),
+        };
+        const FieldElement squared =
+            field_subtract(field_square(square_input), two);
+        l_k = {
+            (squared.low & ~mask) | (middle.low & mask),
+            (squared.high & ~mask) | (middle.high & mask),
+        };
+        l_k_plus_one = {
+            (middle.low & ~mask) | (squared.low & mask),
+            (middle.high & ~mask) | (squared.high & mask),
+        };
+#else
+        if (bit_set) {
             l_k = middle;
             l_k_plus_one =
                 field_subtract(field_square(l_k_plus_one), two);
@@ -1180,8 +1457,132 @@ bool subgroup_member_from_trace(const FieldElement& trace) {
             l_k_plus_one = middle;
             l_k = field_subtract(field_square(l_k), two);
         }
+#endif
     }
     return field_equal(l_k, two);
+}
+
+bool subgroup_member_from_trace_prac(const FieldElement& trace) {
+    static_assert(SUBGROUP_LUCAS_EXPONENT % 20U == 0);
+    static_assert(
+        SUBGROUP_PRAC_EXPONENT ==
+        parse_hex("22b9097fdf2db42063bbf"));
+    static_assert(SUBGROUP_PRAC_SCHEDULE.size() == 115);
+    const FieldElement two = field_double(field_one());
+    FieldElement a = field_subtract(field_square(trace), two);
+    FieldElement b = trace;
+    FieldElement c = trace;
+    for (const std::uint8_t encoded_rule : SUBGROUP_PRAC_SCHEDULE) {
+#if defined(CH6_GENERIC_PRAC_INTERPRETER)
+        if ((encoded_rule & 0x80U) != 0) {
+            std::swap(a, b);
+        }
+        const std::uint8_t rule = encoded_rule & 0x7fU;
+        if (rule == 5) {
+            const FieldElement c_new =
+                field_subtract(field_multiply(c, a), b);
+            a = field_subtract(field_square(a), two);
+            c = c_new;
+            continue;
+        }
+        const FieldElement t =
+            field_subtract(field_multiply(a, b), c);
+        switch (rule) {
+        case 1: {
+            const FieldElement t2 =
+                field_subtract(field_multiply(t, a), b);
+            const FieldElement b_new =
+                field_subtract(field_multiply(b, t), a);
+            a = t2;
+            b = b_new;
+            break;
+        }
+        case 3:
+            c = b;
+            b = t;
+            break;
+        case 4:
+            a = field_subtract(field_square(a), two);
+            b = t;
+            break;
+        default:
+            throw std::runtime_error("invalid fixed PRAC rule");
+        }
+#else
+        switch (encoded_rule) {
+        case 0x03: {
+            const FieldElement t =
+                field_subtract(field_multiply(a, b), c);
+            c = b;
+            b = t;
+            break;
+        }
+        case 0x83: {
+            const FieldElement t =
+                field_subtract(field_multiply(a, b), c);
+            const FieldElement old_a = a;
+            a = b;
+            b = t;
+            c = old_a;
+            break;
+        }
+        case 0x04: {
+            const FieldElement t =
+                field_subtract(field_multiply(a, b), c);
+            a = field_subtract(field_square(a), two);
+            b = t;
+            break;
+        }
+        case 0x84: {
+            const FieldElement t =
+                field_subtract(field_multiply(a, b), c);
+            a = field_subtract(field_square(b), two);
+            b = t;
+            break;
+        }
+        case 0x85: {
+            const FieldElement old_a = a;
+            const FieldElement c_new =
+                field_subtract(field_multiply(c, b), a);
+            a = field_subtract(field_square(b), two);
+            b = old_a;
+            c = c_new;
+            break;
+        }
+        case 0x81: {
+            std::swap(a, b);
+            const FieldElement t =
+                field_subtract(field_multiply(a, b), c);
+            const FieldElement t2 =
+                field_subtract(field_multiply(t, a), b);
+            const FieldElement b_new =
+                field_subtract(field_multiply(b, t), a);
+            a = t2;
+            b = b_new;
+            break;
+        }
+        default:
+            throw std::runtime_error("invalid fused PRAC rule");
+        }
+#endif
+    }
+    const FieldElement result =
+        field_subtract(field_multiply(a, b), c);
+    for (const FieldElement& root_trace :
+         subgroup_20th_root_traces()) {
+        if (field_equal(result, root_trace)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool subgroup_member_from_trace(const FieldElement& trace) {
+#if defined(CH6_PRAC_SUBGROUP_LUCAS)
+    return subgroup_member_from_trace_prac(trace);
+#else
+    return subgroup_member_from_trace_binary(trace);
+#endif
 }
 
 bool subgroup_member_scalar(
@@ -1196,9 +1597,14 @@ bool subgroup_member_scalar(
     return subgroup_member_from_trace(trace);
 }
 
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+void batch_subgroup_membership(
+    SubgroupTraceFraction* fractions, bool* members, std::size_t count) {
+#else
 void batch_subgroup_membership(
     const FieldElement* x_values, const FieldElement* rhs_values,
     bool* members, std::size_t count) {
+#endif
     if (count > 256) {
         throw std::runtime_error("subgroup batch capacity exceeded");
     }
@@ -1207,21 +1613,39 @@ void batch_subgroup_membership(
         return;
     }
 
-    std::array<std::size_t, 256> indices{};
-    std::array<FieldElement, 256> numerators{};
-    std::array<FieldElement, 256> denominators{};
-    std::array<FieldElement, 256> prefixes{};
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+    using BatchIndex = std::uint8_t;
+    static_assert(std::numeric_limits<BatchIndex>::max() == 255);
+#else
+    using BatchIndex = std::size_t;
+#endif
+    std::array<BatchIndex, 256> indices CH6_SCAN_BUFFER_INITIALIZER;
+#if !defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+    std::array<FieldElement, 256> numerators CH6_SCAN_BUFFER_INITIALIZER;
+    std::array<FieldElement, 256> denominators CH6_SCAN_BUFFER_INITIALIZER;
+#endif
+    std::array<FieldElement, 256> prefixes CH6_SCAN_BUFFER_INITIALIZER;
     std::size_t active_count = 0;
     FieldElement product = field_one();
     for (std::size_t index = 0; index < count; ++index) {
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+        const SubgroupTraceFraction fraction = fractions[index];
+#else
         const SubgroupTraceFraction fraction =
             subgroup_trace_fraction(x_values[index], rhs_values[index]);
+#endif
         if (field_is_zero(fraction.denominator)) {
             continue;
         }
-        indices[active_count] = index;
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+        if (active_count != index) {
+            fractions[active_count] = fraction;
+        }
+#else
         numerators[active_count] = fraction.numerator;
         denominators[active_count] = fraction.denominator;
+#endif
+        indices[active_count] = static_cast<BatchIndex>(index);
         prefixes[active_count] = product;
         product = field_multiply(product, fraction.denominator);
         ++active_count;
@@ -1231,15 +1655,241 @@ void batch_subgroup_membership(
     }
 
     FieldElement inverse_product = field_inverse(product);
+#if CH6_SUBGROUP_LUCAS_LANES == 1
     for (std::size_t active = active_count; active-- > 0;) {
         const FieldElement inverse_denominator =
             field_multiply(inverse_product, prefixes[active]);
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+        inverse_product = field_multiply(
+            inverse_product, fractions[active].denominator);
+        const FieldElement trace = field_multiply(
+            fractions[active].numerator, inverse_denominator);
+#else
         inverse_product =
             field_multiply(inverse_product, denominators[active]);
         const FieldElement trace =
             field_multiply(numerators[active], inverse_denominator);
+#endif
         members[indices[active]] = subgroup_member_from_trace(trace);
     }
+#else
+    for (std::size_t active = active_count; active-- > 0;) {
+        const FieldElement inverse_denominator =
+            field_multiply(inverse_product, prefixes[active]);
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+        inverse_product = field_multiply(
+            inverse_product, fractions[active].denominator);
+        fractions[active].numerator = field_multiply(
+            fractions[active].numerator, inverse_denominator);
+#else
+        inverse_product =
+            field_multiply(inverse_product, denominators[active]);
+        numerators[active] =
+            field_multiply(numerators[active], inverse_denominator);
+#endif
+    }
+
+    const FieldElement two = field_double(field_one());
+    std::size_t active = 0;
+    for (;
+         active + SUBGROUP_LUCAS_LANES <= active_count;
+         active += SUBGROUP_LUCAS_LANES) {
+#if defined(CH6_PRAC_SUBGROUP_LUCAS)
+        std::array<FieldElement, SUBGROUP_LUCAS_LANES>
+            prac_a CH6_SCAN_BUFFER_INITIALIZER;
+        std::array<FieldElement, SUBGROUP_LUCAS_LANES>
+            prac_b CH6_SCAN_BUFFER_INITIALIZER;
+        std::array<FieldElement, SUBGROUP_LUCAS_LANES>
+            prac_c CH6_SCAN_BUFFER_INITIALIZER;
+        std::array<FieldElement, SUBGROUP_LUCAS_LANES>
+            prac_t CH6_SCAN_BUFFER_INITIALIZER;
+        std::array<FieldElement, SUBGROUP_LUCAS_LANES>
+            prac_next_a CH6_SCAN_BUFFER_INITIALIZER;
+        for (std::size_t lane = 0; lane < SUBGROUP_LUCAS_LANES; ++lane) {
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+            const FieldElement& trace =
+                fractions[active + lane].numerator;
+#else
+            const FieldElement& trace = numerators[active + lane];
+#endif
+            prac_a[lane] =
+                field_subtract(field_square(trace), two);
+            prac_b[lane] = trace;
+            prac_c[lane] = trace;
+        }
+        for (const std::uint8_t encoded_rule :
+             SUBGROUP_PRAC_SCHEDULE) {
+            if ((encoded_rule & 0x80U) != 0) {
+                for (
+                    std::size_t lane = 0;
+                    lane < SUBGROUP_LUCAS_LANES;
+                    ++lane) {
+                    std::swap(prac_a[lane], prac_b[lane]);
+                }
+            }
+            const std::uint8_t rule = encoded_rule & 0x7fU;
+            if (rule == 5) {
+                for (
+                    std::size_t lane = 0;
+                    lane < SUBGROUP_LUCAS_LANES;
+                    ++lane) {
+                    prac_t[lane] = field_subtract(
+                        field_multiply(prac_c[lane], prac_a[lane]),
+                        prac_b[lane]);
+                }
+                for (
+                    std::size_t lane = 0;
+                    lane < SUBGROUP_LUCAS_LANES;
+                    ++lane) {
+                    prac_a[lane] = field_subtract(
+                        field_square(prac_a[lane]), two);
+                    prac_c[lane] = prac_t[lane];
+                }
+                continue;
+            }
+            for (
+                std::size_t lane = 0;
+                lane < SUBGROUP_LUCAS_LANES;
+                ++lane) {
+                prac_t[lane] = field_subtract(
+                    field_multiply(prac_a[lane], prac_b[lane]),
+                    prac_c[lane]);
+            }
+            if (rule == 1) {
+                for (
+                    std::size_t lane = 0;
+                    lane < SUBGROUP_LUCAS_LANES;
+                    ++lane) {
+                    prac_next_a[lane] = field_subtract(
+                        field_multiply(prac_t[lane], prac_a[lane]),
+                        prac_b[lane]);
+                }
+                for (
+                    std::size_t lane = 0;
+                    lane < SUBGROUP_LUCAS_LANES;
+                    ++lane) {
+                    prac_t[lane] = field_subtract(
+                        field_multiply(prac_b[lane], prac_t[lane]),
+                        prac_a[lane]);
+                }
+                for (
+                    std::size_t lane = 0;
+                    lane < SUBGROUP_LUCAS_LANES;
+                    ++lane) {
+                    prac_a[lane] = prac_next_a[lane];
+                    prac_b[lane] = prac_t[lane];
+                }
+            } else if (rule == 3) {
+                for (
+                    std::size_t lane = 0;
+                    lane < SUBGROUP_LUCAS_LANES;
+                    ++lane) {
+                    prac_c[lane] = prac_b[lane];
+                    prac_b[lane] = prac_t[lane];
+                }
+            } else if (rule == 4) {
+                for (
+                    std::size_t lane = 0;
+                    lane < SUBGROUP_LUCAS_LANES;
+                    ++lane) {
+                    prac_a[lane] = field_subtract(
+                        field_square(prac_a[lane]), two);
+                    prac_b[lane] = prac_t[lane];
+                }
+            } else {
+                throw std::runtime_error(
+                    "invalid interleaved PRAC rule");
+            }
+        }
+        for (std::size_t lane = 0; lane < SUBGROUP_LUCAS_LANES; ++lane) {
+            const FieldElement result = field_subtract(
+                field_multiply(prac_a[lane], prac_b[lane]),
+                prac_c[lane]);
+            bool member = false;
+            for (const FieldElement& root_trace :
+                 subgroup_20th_root_traces()) {
+                member = member || field_equal(result, root_trace);
+            }
+            members[indices[active + lane]] = member;
+        }
+#else
+        std::array<FieldElement, SUBGROUP_LUCAS_LANES>
+            l_k CH6_SCAN_BUFFER_INITIALIZER;
+        std::array<FieldElement, SUBGROUP_LUCAS_LANES>
+            l_k_plus_one CH6_SCAN_BUFFER_INITIALIZER;
+        std::array<FieldElement, SUBGROUP_LUCAS_LANES>
+            middle CH6_SCAN_BUFFER_INITIALIZER;
+        for (std::size_t lane = 0; lane < SUBGROUP_LUCAS_LANES; ++lane) {
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+            const FieldElement& trace =
+                fractions[active + lane].numerator;
+#else
+            const FieldElement& trace = numerators[active + lane];
+#endif
+            l_k[lane] = field_subtract(field_square(trace), two);
+            l_k_plus_one[lane] = field_subtract(
+                field_multiply(trace, l_k[lane]), trace);
+        }
+#if defined(CH6_VARIABLE_U128_LUCAS_BITS)
+        for (int bit = 83; bit >= 0; --bit) {
+            const bool bit_set =
+                ((SUBGROUP_LUCAS_EXPONENT >> bit) & 1U) != 0;
+#else
+        std::uint64_t exponent_bits =
+            static_cast<std::uint64_t>(
+                SUBGROUP_LUCAS_EXPONENT >> 64U) << 44U;
+        for (int remaining = 84; remaining > 0; --remaining) {
+            const bool bit_set = (exponent_bits >> 63U) != 0;
+            exponent_bits <<= 1U;
+            if (remaining == 65) {
+                exponent_bits =
+                    static_cast<std::uint64_t>(SUBGROUP_LUCAS_EXPONENT);
+            }
+#endif
+            for (std::size_t lane = 0; lane < SUBGROUP_LUCAS_LANES; ++lane) {
+                middle[lane] = field_subtract(
+                    field_multiply(l_k[lane], l_k_plus_one[lane]),
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+                    fractions[active + lane].numerator);
+#else
+                    numerators[active + lane]);
+#endif
+            }
+            if (bit_set) {
+                for (
+                    std::size_t lane = 0;
+                    lane < SUBGROUP_LUCAS_LANES;
+                    ++lane) {
+                    l_k[lane] = middle[lane];
+                    l_k_plus_one[lane] = field_subtract(
+                        field_square(l_k_plus_one[lane]), two);
+                }
+            } else {
+                for (
+                    std::size_t lane = 0;
+                    lane < SUBGROUP_LUCAS_LANES;
+                    ++lane) {
+                    l_k_plus_one[lane] = middle[lane];
+                    l_k[lane] =
+                        field_subtract(field_square(l_k[lane]), two);
+                }
+            }
+        }
+        for (std::size_t lane = 0; lane < SUBGROUP_LUCAS_LANES; ++lane) {
+            members[indices[active + lane]] = field_equal(l_k[lane], two);
+        }
+#endif
+    }
+    for (; active < active_count; ++active) {
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+        members[indices[active]] = subgroup_member_from_trace(
+            fractions[active].numerator);
+#else
+        members[indices[active]] =
+            subgroup_member_from_trace(numerators[active]);
+#endif
+    }
+#endif
 }
 
 struct AffinePoint {
@@ -1441,7 +2091,7 @@ void batch_affine_x_impl(
     if (count == 0) {
         return;
     }
-    std::array<FieldElement, 256> prefixes{};
+    std::array<FieldElement, 256> prefixes CH6_SCAN_BUFFER_INITIALIZER;
     FieldElement product = field_one();
     for (std::size_t index = 0; index < count; ++index) {
         if (field_is_zero(points[index].z)) {
@@ -1991,16 +2641,16 @@ struct CandidateContext {
 };
 
 struct PreparedLift {
-    FieldElement x{};
-    FieldElement x_squared{};
-    FieldElement rhs{};
-    FieldElement y{};
+    FieldElement x CH6_SCAN_BUFFER_INITIALIZER;
+    FieldElement x_squared CH6_SCAN_BUFFER_INITIALIZER;
+    FieldElement rhs CH6_SCAN_BUFFER_INITIALIZER;
+    FieldElement y CH6_SCAN_BUFFER_INITIALIZER;
 #if defined(CH6_ORIGINAL_CURVE_SCAN) && \
     !defined(CH6_NO_SUBGROUP_FILTER)
-    FieldElement subgroup_x{};
-    FieldElement subgroup_rhs{};
+    FieldElement subgroup_x CH6_SCAN_BUFFER_INITIALIZER;
+    FieldElement subgroup_rhs CH6_SCAN_BUFFER_INITIALIZER;
 #endif
-    bool y_available = false;
+    bool y_available CH6_SCAN_BUFFER_INITIALIZER;
 };
 
 #if !defined(CH6_NO_SUBGROUP_FILTER)
@@ -2027,6 +2677,7 @@ bool prepare_lift(int low, PreparedLift& prepared) {
     if (canonical_x >= FIELD) {
         return false;
     }
+    prepared.y_available = false;
     prepared.x =
 #if !defined(CH6_ORIGINAL_CURVE_SCAN)
         curve_x_to_montgomery(canonical_x);
@@ -2077,9 +2728,13 @@ bool multiply_prepared_lift(
         // The simple Hamburg finalization has exceptional small-order inputs.
         // Recover y only on this exceptional path, then retain the complete
         // NAF implementation as a fail-closed fallback.
-        FieldElement y = prepared.y;
-        if (!prepared.y_available && !field_sqrt(prepared.rhs, y)) {
-            return false;
+        FieldElement y;
+        if (prepared.y_available) {
+            y = prepared.y;
+        } else {
+            if (!field_sqrt(prepared.rhs, y)) {
+                return false;
+            }
         }
 #if !defined(CH6_ORIGINAL_CURVE_SCAN)
         state_point =
@@ -2168,14 +2823,13 @@ bool evaluate_candidate(
 bool evaluate_candidate_block(
     int start, int stop, const CandidateContext& context,
     Prediction& result) {
-    std::array<PreparedLift, 256> prepared_lifts{};
-    std::array<int, 256> prepared_lows{};
+    std::array<PreparedLift, 256>
+        prepared_lifts CH6_SCAN_BUFFER_INITIALIZER;
+    std::array<int, 256> prepared_lows CH6_SCAN_BUFFER_INITIALIZER;
     std::size_t prepared_count = 0;
     for (int low = start; low < stop; ++low) {
-        PreparedLift prepared;
-        if (prepare_lift(low, prepared)) {
+        if (prepare_lift(low, prepared_lifts[prepared_count])) {
             prepared_lows[prepared_count] = low;
-            prepared_lifts[prepared_count] = prepared;
             ++prepared_count;
         }
     }
@@ -2183,10 +2837,23 @@ bool evaluate_candidate_block(
         return false;
     }
 
-    std::array<bool, 256> subgroup_members{};
+    std::array<bool, 256> subgroup_members CH6_SCAN_BUFFER_INITIALIZER;
 #if !defined(CH6_NO_SUBGROUP_FILTER)
-    std::array<FieldElement, 256> subgroup_x_values{};
-    std::array<FieldElement, 256> subgroup_rhs_values{};
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+    std::array<SubgroupTraceFraction, 256>
+        subgroup_fractions CH6_SCAN_BUFFER_INITIALIZER;
+    for (std::size_t index = 0; index < prepared_count; ++index) {
+        subgroup_fractions[index] = subgroup_trace_fraction(
+            prepared_subgroup_x(prepared_lifts[index]),
+            prepared_subgroup_rhs(prepared_lifts[index]));
+    }
+    batch_subgroup_membership(
+        subgroup_fractions.data(), subgroup_members.data(), prepared_count);
+#else
+    std::array<FieldElement, 256>
+        subgroup_x_values CH6_SCAN_BUFFER_INITIALIZER;
+    std::array<FieldElement, 256>
+        subgroup_rhs_values CH6_SCAN_BUFFER_INITIALIZER;
     for (std::size_t index = 0; index < prepared_count; ++index) {
         subgroup_x_values[index] =
             prepared_subgroup_x(prepared_lifts[index]);
@@ -2196,13 +2863,15 @@ bool evaluate_candidate_block(
     batch_subgroup_membership(
         subgroup_x_values.data(), subgroup_rhs_values.data(),
         subgroup_members.data(), prepared_count);
+#endif
 #else
     std::fill_n(subgroup_members.data(), prepared_count, true);
 #endif
 
-    std::array<int, 256> low_bits{};
-    std::array<JacobianPoint, 256> state_points{};
-    std::array<U128, 256> states{};
+    std::array<int, 256> low_bits CH6_SCAN_BUFFER_INITIALIZER;
+    std::array<JacobianPoint, 256>
+        state_points CH6_SCAN_BUFFER_INITIALIZER;
+    std::array<U128, 256> states CH6_SCAN_BUFFER_INITIALIZER;
     std::size_t count = 0;
     for (std::size_t index = 0; index < prepared_count; ++index) {
         if (!subgroup_members[index]) {
@@ -2225,12 +2894,13 @@ bool evaluate_candidate_block(
     batch_affine_x(state_points.data(), states.data(), count);
 #endif
 
-    std::array<U128, 256> output_x{};
+    std::array<U128, 256> output_x CH6_SCAN_BUFFER_INITIALIZER;
 #if defined(CH6_ROW_BATCHED_FIXED_MUL)
     batch_fixed_mul_affine_x(
         states.data(), output_x.data(), count, context.q_table);
 #else
-    std::array<JacobianPoint, 256> output_points{};
+    std::array<JacobianPoint, 256>
+        output_points CH6_SCAN_BUFFER_INITIALIZER;
     for (std::size_t index = 0; index < count; ++index) {
         output_points[index] = fixed_mul(states[index], context.q_table);
     }
@@ -2367,6 +3037,72 @@ void run_self_test() {
         !point_is_on_curve(point_q())) {
         throw std::runtime_error("constant or curve self-test failed");
     }
+    if (
+        !field_equal(
+            SUBGROUP_ALPHA_MONT, to_montgomery(SUBGROUP_ALPHA)) ||
+        !field_equal(
+            SUBGROUP_BETA_MONT, to_montgomery(SUBGROUP_BETA)) ||
+        !field_equal(
+            SUBGROUP_GAMMA_MONT, to_montgomery(SUBGROUP_GAMMA)) ||
+        !field_equal(
+            SUBGROUP_DELTA_MONT, to_montgomery(SUBGROUP_DELTA)) ||
+        !field_equal(
+            SUBGROUP_TANGENT_M1_MONT,
+            to_montgomery(SUBGROUP_TANGENT_M1)) ||
+        !field_equal(
+            SUBGROUP_TANGENT_M2_MONT,
+            to_montgomery(SUBGROUP_TANGENT_M2)) ||
+        !field_equal(CURVE_A_MONT, to_montgomery(CURVE_A_CANON)) ||
+        !field_equal(CURVE_B_MONT, to_montgomery(CURVE_B_CANON)) ||
+        !field_equal(
+            TRANSFORMED_CURVE_A_MONT,
+            to_montgomery(TRANSFORMED_CURVE_A)) ||
+        !field_equal(
+            TRANSFORMED_CURVE_B_MONT,
+            to_montgomery(TRANSFORMED_CURVE_B))) {
+        throw std::runtime_error(
+            "subgroup Montgomery constant self-test failed");
+    }
+    const FieldElement subgroup_two = field_double(field_one());
+    for (std::size_t index = 0;
+         index < SUBGROUP_20TH_ROOT_TRACES.size();
+         ++index) {
+        for (std::size_t earlier = 0; earlier < index; ++earlier) {
+            if (
+                SUBGROUP_20TH_ROOT_TRACES[index] ==
+                SUBGROUP_20TH_ROOT_TRACES[earlier]) {
+                throw std::runtime_error(
+                    "duplicate subgroup root-trace constant");
+            }
+        }
+        if (!field_equal(
+                subgroup_20th_root_traces()[index],
+                to_montgomery(SUBGROUP_20TH_ROOT_TRACES[index]))) {
+            throw std::runtime_error(
+                "subgroup root-trace constant self-test failed");
+        }
+        const FieldElement& trace =
+            subgroup_20th_root_traces()[index];
+        const FieldElement l2 =
+            field_subtract(field_square(trace), subgroup_two);
+        const FieldElement l3 =
+            field_subtract(field_multiply(trace, l2), trace);
+        const FieldElement l4 =
+            field_subtract(field_square(l2), subgroup_two);
+        const FieldElement l5 =
+            field_subtract(field_multiply(trace, l4), l3);
+        const FieldElement l10 =
+            field_subtract(field_square(l5), subgroup_two);
+        const FieldElement l20 =
+            field_subtract(field_square(l10), subgroup_two);
+        if (
+            !field_equal(l20, subgroup_two) ||
+            !subgroup_member_from_trace_binary(trace) ||
+            !subgroup_member_from_trace_prac(trace)) {
+            throw std::runtime_error(
+                "invalid subgroup root-trace constant");
+        }
+    }
     std::uint64_t state = UINT64_C(0x9e3779b97f4a7c15);
     const auto random64 = [&]() {
         state ^= state >> 12U;
@@ -2423,6 +3159,11 @@ void run_self_test() {
             field_is_square_subtractive_jacobi(left_mont) != expected_square ||
             field_is_square_binary_jacobi(left_mont) != expected_square) {
             throw std::runtime_error("binary Jacobi self-test failed");
+        }
+        if (
+            subgroup_member_from_trace_binary(left_mont) !=
+            subgroup_member_from_trace_prac(left_mont)) {
+            throw std::runtime_error("subgroup PRAC self-test failed");
         }
     };
     constexpr std::array<U128, 8> FIELD_BOUNDARIES{
@@ -2530,9 +3271,9 @@ void run_self_test() {
     }
 
     const NafDigits order_digits = make_naf(ORDER);
-    std::array<FieldElement, 128> subgroup_x_values{};
-    std::array<FieldElement, 128> subgroup_rhs_values{};
-    std::array<bool, 128> expected_subgroup_members{};
+    std::array<FieldElement, 256> subgroup_x_values{};
+    std::array<FieldElement, 256> subgroup_rhs_values{};
+    std::array<bool, 256> expected_subgroup_members{};
     int lifted_checked = 0;
     for (unsigned low = 0;
          low < (1U << 16U) && lifted_checked < 128;
@@ -2614,13 +3355,96 @@ void run_self_test() {
     if (lifted_checked != 128) {
         throw std::runtime_error("insufficient Hamburg lift self-tests");
     }
-    std::array<bool, 128> batch_subgroup_members{};
+    for (std::size_t index = 128; index < subgroup_x_values.size(); ++index) {
+        subgroup_x_values[index] = subgroup_x_values[index - 128];
+        subgroup_rhs_values[index] = subgroup_rhs_values[index - 128];
+        expected_subgroup_members[index] =
+            expected_subgroup_members[index - 128];
+    }
+    std::array<bool, 256> batch_subgroup_members{};
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+    std::array<SubgroupTraceFraction, 256> subgroup_fractions{};
+    for (std::size_t index = 0; index < subgroup_fractions.size(); ++index) {
+        subgroup_fractions[index] = subgroup_trace_fraction(
+            subgroup_x_values[index], subgroup_rhs_values[index]);
+    }
+    auto working_subgroup_fractions = subgroup_fractions;
+    batch_subgroup_membership(
+        working_subgroup_fractions.data(),
+        batch_subgroup_members.data(), batch_subgroup_members.size());
+#else
     batch_subgroup_membership(
         subgroup_x_values.data(), subgroup_rhs_values.data(),
         batch_subgroup_members.data(), batch_subgroup_members.size());
+#endif
     if (batch_subgroup_members != expected_subgroup_members) {
         throw std::runtime_error("batch subgroup self-test failed");
     }
+    constexpr std::array<std::size_t, 11> subgroup_tail_counts{
+        1, 2, 3, 4, 5, 7, 127, 128, 129, 255, 256};
+    for (const std::size_t count : subgroup_tail_counts) {
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+        working_subgroup_fractions = subgroup_fractions;
+        batch_subgroup_membership(
+            working_subgroup_fractions.data(),
+            batch_subgroup_members.data(), count);
+#else
+        batch_subgroup_membership(
+            subgroup_x_values.data(), subgroup_rhs_values.data(),
+            batch_subgroup_members.data(), count);
+#endif
+        for (std::size_t index = 0; index < count; ++index) {
+            if (
+                batch_subgroup_members[index] !=
+                expected_subgroup_members[index]) {
+                throw std::runtime_error(
+                    "batch subgroup tail self-test failed");
+            }
+        }
+    }
+#if defined(CH6_DIRECT_SUBGROUP_FRACTIONS)
+    auto compacted_subgroup_fractions = subgroup_fractions;
+    auto compacted_expected_subgroup_members =
+        expected_subgroup_members;
+    constexpr std::size_t known_member_index = 3;
+    if (!expected_subgroup_members[known_member_index]) {
+        throw std::runtime_error(
+            "subgroup compaction fixture lost its known member");
+    }
+    compacted_subgroup_fractions[255] =
+        subgroup_fractions[known_member_index];
+    compacted_expected_subgroup_members[255] = true;
+    constexpr std::array<std::size_t, 3> zero_denominator_indices{
+        0, known_member_index, 128};
+    for (const std::size_t index : zero_denominator_indices) {
+        compacted_subgroup_fractions[index].denominator = field_zero();
+        compacted_expected_subgroup_members[index] = false;
+    }
+    batch_subgroup_membership(
+        compacted_subgroup_fractions.data(),
+        batch_subgroup_members.data(),
+        compacted_subgroup_fractions.size());
+    if (batch_subgroup_members != compacted_expected_subgroup_members) {
+        throw std::runtime_error(
+            "batch subgroup compaction self-test failed");
+    }
+
+    std::fill(
+        compacted_subgroup_fractions.begin(),
+        compacted_subgroup_fractions.end(),
+        SubgroupTraceFraction{field_zero(), field_zero()});
+    batch_subgroup_membership(
+        compacted_subgroup_fractions.data(),
+        batch_subgroup_members.data(),
+        compacted_subgroup_fractions.size());
+    if (std::any_of(
+            batch_subgroup_members.begin(),
+            batch_subgroup_members.end(),
+            [](bool member) { return member; })) {
+        throw std::runtime_error(
+            "batch subgroup empty-compaction self-test failed");
+    }
+#endif
     const U128 d = recover_backdoor_scalar();
     if (d != EXPECTED_D) {
         throw std::runtime_error("telemetry self-test failed");
@@ -2740,6 +3564,18 @@ int main(int argc, char** argv) {
                       << "\",\"lift_residue_test\":\"" << LIFT_RESIDUE_TEST
                       << "\",\"subgroup_membership_test\":\""
                       << SUBGROUP_MEMBERSHIP_TEST
+                      << "\",\"subgroup_constant_layout\":\""
+                      << SUBGROUP_CONSTANT_LAYOUT
+                      << "\",\"subgroup_batch_layout\":\""
+                      << SUBGROUP_BATCH_LAYOUT
+                      << "\",\"subgroup_lucas_bit_scan\":\""
+                      << SUBGROUP_LUCAS_BIT_SCAN
+                      << "\",\"subgroup_lucas_step\":\""
+                      << SUBGROUP_LUCAS_STEP
+                      << "\",\"scan_buffer_initialization\":\""
+                      << SCAN_BUFFER_INITIALIZATION
+                      << "\",\"curve_constant_layout\":\""
+                      << CURVE_CONSTANT_LAYOUT
                       << "\",\"r3\":\""
                       << hex(prediction.r3)
                       << "\",\"lift_low_bits\":" << prediction.low_bits
@@ -2784,6 +3620,18 @@ int main(int argc, char** argv) {
                       << "lift residue test = " << LIFT_RESIDUE_TEST << '\n'
                       << "subgroup membership test = "
                       << SUBGROUP_MEMBERSHIP_TEST << '\n'
+                      << "subgroup constant layout = "
+                      << SUBGROUP_CONSTANT_LAYOUT << '\n'
+                      << "subgroup batch layout = "
+                      << SUBGROUP_BATCH_LAYOUT << '\n'
+                      << "subgroup Lucas bit scan = "
+                      << SUBGROUP_LUCAS_BIT_SCAN << '\n'
+                      << "subgroup Lucas step = "
+                      << SUBGROUP_LUCAS_STEP << '\n'
+                      << "scan buffer initialization = "
+                      << SCAN_BUFFER_INITIALIZATION << '\n'
+                      << "curve constant layout = "
+                      << CURVE_CONSTANT_LAYOUT << '\n'
                       << "fixed multiplication = " << FIXED_MULTIPLICATION << '\n'
                       << "backdoor scalar d = " << hex(d) << '\n'
                       << "P == d*Q: True\n"

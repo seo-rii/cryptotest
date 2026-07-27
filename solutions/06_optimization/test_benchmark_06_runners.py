@@ -65,8 +65,14 @@ def native_result() -> dict[str, object]:
             "euclidean-jacobi-deferred-sqrt"
         ),
         "subgroup_membership_test": (
-            "cofactor-5-frobenius-tate-trace"
+            "cofactor-5-frobenius-tate-trace-prac-20-generic"
         ),
+        "subgroup_constant_layout": "constexpr-montgomery",
+        "subgroup_batch_layout": "direct-in-place-fraction",
+        "subgroup_lucas_bit_scan": "variable-u128-shift",
+        "subgroup_lucas_step": "fixed-prac-schedule",
+        "scan_buffer_initialization": "write-before-read",
+        "curve_constant_layout": "constexpr-montgomery",
         "fixed_window_bits": 8,
         "fixed_digit_encoding": "unsigned",
         "fixed_multiplication": "candidate-jacobian",
@@ -365,8 +371,37 @@ class BenchmarkRunnerTests(unittest.TestCase):
 
     def test_promotion_runner_tracks_subgroup_filter(self) -> None:
         for defines, expected in (
-            ((), "cofactor-5-frobenius-tate-trace"),
+            (
+                (),
+                "cofactor-5-frobenius-tate-trace-prac-20-generic",
+            ),
             (("CH6_NO_SUBGROUP_FILTER",), "none"),
+            (
+                ("CH6_SUBGROUP_LUCAS_LANES=2",),
+                "cofactor-5-frobenius-tate-trace-prac-20-interleaved-2",
+            ),
+            (
+                (
+                    "CH6_BINARY_SUBGROUP_LUCAS",
+                    "CH6_SUBGROUP_LUCAS_LANES=4",
+                ),
+                "cofactor-5-frobenius-tate-trace-interleaved-4",
+            ),
+            (
+                ("CH6_BINARY_SUBGROUP_LUCAS",),
+                "cofactor-5-frobenius-tate-trace",
+            ),
+            (
+                ("CH6_FUSED_PRAC_INTERPRETER",),
+                "cofactor-5-frobenius-tate-trace-prac-20-fused",
+            ),
+            (
+                (
+                    "CH6_BINARY_SUBGROUP_LUCAS",
+                    "CH6_SUBGROUP_LUCAS_LANES=2",
+                ),
+                "cofactor-5-frobenius-tate-trace-interleaved-2",
+            ),
         ):
             with self.subTest(defines=defines):
                 variant = PROMOTION.Variant(
@@ -378,6 +413,165 @@ class BenchmarkRunnerTests(unittest.TestCase):
                     ],
                     expected,
                 )
+
+    def test_promotion_runner_tracks_subgroup_codegen(self) -> None:
+        cases = {
+            (): (
+                "constexpr-montgomery",
+                "variable-u128-shift",
+                "fixed-prac-schedule",
+            ),
+            ("CH6_RUNTIME_SUBGROUP_CONSTANTS",): (
+                "function-local-static",
+                "variable-u128-shift",
+                "fixed-prac-schedule",
+            ),
+            (
+                "CH6_BINARY_SUBGROUP_LUCAS",
+                "CH6_U64_LUCAS_BIT_STREAM",
+            ): (
+                "constexpr-montgomery",
+                "u64-msb-stream",
+                "fixed-pattern-branch",
+            ),
+            (
+                "CH6_BINARY_SUBGROUP_LUCAS",
+                "CH6_BRANCHLESS_LUCAS_STEP",
+            ): (
+                "constexpr-montgomery",
+                "variable-u128-shift",
+                "branchless-select",
+            ),
+        }
+        for defines, expected in cases.items():
+            with self.subTest(defines=defines):
+                variant = PROMOTION.Variant(
+                    "subgroup-codegen",
+                    Path("/tmp/deep_native_06"),
+                    defines,
+                )
+                configuration = PROMOTION.expected_configuration(variant, True)
+                self.assertEqual(
+                    (
+                        configuration["subgroup_constant_layout"],
+                        configuration["subgroup_lucas_bit_scan"],
+                        configuration["subgroup_lucas_step"],
+                    ),
+                    expected,
+                )
+
+    def test_promotion_runner_tracks_scan_buffer_initialization(self) -> None:
+        for defines, expected in (
+            ((), "write-before-read"),
+            (("CH6_EAGER_ZERO_SCAN_BUFFERS",), "eager-zero"),
+        ):
+            with self.subTest(defines=defines):
+                variant = PROMOTION.Variant(
+                    "scan-buffer",
+                    Path("/tmp/deep_native_06"),
+                    defines,
+                )
+                self.assertEqual(
+                    PROMOTION.expected_configuration(variant, True)[
+                        "scan_buffer_initialization"
+                    ],
+                    expected,
+                )
+
+    def test_promotion_runner_tracks_subgroup_batch_layout(self) -> None:
+        for defines, expected in (
+            ((), "direct-in-place-fraction"),
+            (("CH6_XY_SUBGROUP_BATCH",), "xy-separated"),
+        ):
+            with self.subTest(defines=defines):
+                variant = PROMOTION.Variant(
+                    "subgroup-batch", Path("/tmp/deep_native_06"), defines
+                )
+                self.assertEqual(
+                    PROMOTION.expected_configuration(variant, True)[
+                        "subgroup_batch_layout"
+                    ],
+                    expected,
+                )
+
+    def test_promotion_runner_tracks_curve_constants(self) -> None:
+        for defines, expected in (
+            ((), "constexpr-montgomery"),
+            (("CH6_RUNTIME_CURVE_CONSTANTS",), "function-local-static"),
+        ):
+            with self.subTest(defines=defines):
+                variant = PROMOTION.Variant(
+                    "curve-constants",
+                    Path("/tmp/deep_native_06"),
+                    defines,
+                )
+                self.assertEqual(
+                    PROMOTION.expected_configuration(variant, True)[
+                        "curve_constant_layout"
+                    ],
+                    expected,
+                )
+
+    def test_promotion_runner_applies_variant_cxxflags(self) -> None:
+        variant = PROMOTION.Variant(
+            "lto",
+            Path("/tmp/deep_native_06_lto"),
+            (),
+            ("-flto",),
+        )
+        completed = subprocess.CompletedProcess(
+            args=(), returncode=0, stdout="", stderr=""
+        )
+        with patch.object(
+            PROMOTION.subprocess, "run", return_value=completed
+        ) as run:
+            command = PROMOTION.build_variant(
+                "g++", Path("/tmp/deep_native_06.cpp"), variant
+            )
+        self.assertIn("-flto", command)
+        run.assert_called_once_with(
+            command, check=False, capture_output=True, text=True
+        )
+
+    def test_promotion_runner_queries_predefines_with_variant_cxxflags(
+        self,
+    ) -> None:
+        completed = subprocess.CompletedProcess(
+            args=(),
+            returncode=0,
+            stdout=(
+                "#define __x86_64__ 1\n"
+                "#define __BMI2__ 1\n"
+                "#define __ADX__ 1\n"
+            ),
+            stderr="",
+        )
+        with patch.object(
+            PROMOTION.subprocess, "run", return_value=completed
+        ) as run:
+            predefines = PROMOTION.compiler_predefines(
+                "g++", ("-mno-bmi2", "-mno-adx")
+            )
+        self.assertEqual(
+            predefines, {"__x86_64__", "__BMI2__", "__ADX__"}
+        )
+        run.assert_called_once_with(
+            (
+                "g++",
+                "-march=native",
+                "-mno-bmi2",
+                "-mno-adx",
+                "-dM",
+                "-E",
+                "-x",
+                "c++",
+                "-",
+            ),
+            input="",
+            check=False,
+            capture_output=True,
+            text=True,
+        )
 
     def test_promotion_runner_rejects_accidental_noop(self) -> None:
         process = subprocess.run(
