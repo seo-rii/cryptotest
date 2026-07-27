@@ -361,10 +361,10 @@ benchmark는 correctness gate를 먼저 수행하며, 7번의 전체 격자 공�
 | 1 | Caesar shift `6`, Kasiski period `5`와 key `KLVOJ`, 동일 corpus/key의 paired holdout 58/58; 관측 구조와 출제 의도 추정 label 분리 |
 | 2 | 제공 1-round 1,000개와 20-round vector, 100,000개 deterministic random differential case 통과 |
 | 3 | GCM bit ordering self-test, pcap record 경계, nonce 재사용, 유일 `H`, known-plaintext 출처, tag와 77바이트 제출 hex 일치 |
-| 4 | 모든 F32 tensor의 bounded-memory discovery, SafeTensors 범위와 로그 증거 보존을 합성 테스트 5개로 검증; 공식 대형 원본 재실행은 별도 필요 |
+| 4 | 모든 F32 tensor의 bounded-memory discovery, SafeTensors 범위와 로그 증거 보존을 합성 테스트 5개로 검증; 대상 TinyLlama ZIP과 서버 로그 재실행은 별도 필요 |
 | 5 | 네 자리 Gregorian 다음날 delta 11종 전체에서 ternary 후보를 수집하고, 연속 날짜·동일 `State`·padding·error·제출 TXT를 통과한 후보가 1개인지 확인 |
 | 6 | `P=dQ`, `d`, legacy `s2`/shifted `s3`, `r3` 확인; native preflight에서 random field 2,000 pair, boundary 64 pair, point/table 256개, Hamburg/NAF lift 128개 및 Euclidean/subtractive Jacobi reference 대조; 요청/실제 thread와 모든 후보 metadata 검사 |
-| 7 | pinned FLATTER로 `cid=155` 복원과 선택 다항식 12개의 정수 평가 0 확인; `p*q=N`, mask, RSA 재암호화 일치. 256개 blind runner는 제공하되 전체 scan은 이번 정리에서 재실행하지 않음 |
+| 7 | pinned FLATTER로 `cid=155` 복원과 선택 다항식 12개의 정수 평가 0 확인; `p*q=N`, mask, RSA 재암호화 일치. blind runner는 `cid=0..255`의 실행·검증·요약을 자동화 |
 | 8 | 모든 partial completion을 generator로 열거·중복 제거해 유일 key를 얻고, 50,000개 평문/암문 pair 전체 재암호화 mismatch 0 |
 
 ## 7번 장기 탐색의 최종 정리
