@@ -60,12 +60,16 @@
 
 \resultbox{CRYPTO\{G00D\_J0B!\_y0u\_f0und\_7h3\_h1dd3n\_s3cr37\_1n\_LLM\}}
 
-\section{재현 구조와 입력 무결성}
+\section{최종 재현과 입력 무결성}
 
-제출 코드 \texttt{solve.py}는 Python 표준 라이브러리만 사용한다. (1) 17GB
-\texttt{server.log}를 bounded-memory로 검색하고, (2) SafeTensors의 모든 F32
-tensor를 8MiB chunk로 조사하며, (3) 발견한 tensor와 row에서 payload를
-추출한다.
+제출 코드 \texttt{solve.py}는 Python 표준 라이브러리만 사용한다. 공식
+TinyLlama ZIP에서 SafeTensors의 목표 embedding row만 순차적으로 읽고,
+F32 원시 byte의 low nibble을 결합해 FLAG를 출력한다.
+
+\begin{lstlisting}
+python3 solve.py TinyLlama-1.1B-Chat-v1.0.zip \
+  --verify-sha256
+\end{lstlisting}
 
 \begin{tabularx}{\linewidth}{@{}lX@{}}
 \toprule
@@ -83,23 +87,16 @@ d7e3c1fb4c94754c80cedddbd2a6caa0fb7f2aa6a3344bcba9a25e132d1f4cd5\\
 \bottomrule
 \end{tabularx}
 
-\texttt{--verify-sha256}은 두 ZIP을 streaming hash한다. 로그 검색 중에는
-압축 해제된 \texttt{server.log}의 모든 byte도 다시 해시하므로 외부 ZIP과
-내부 member를 모두 검증한다.
+\texttt{--verify-sha256}은 모델 ZIP을 8MiB씩 읽어 첫 번째 값을 직접
+확인한다. 모델 전체나 tensor 전체를 메모리에 올리지 않는다.
 
-\section{로그 분석과 증거 보존}
+\section{로그 분석에서 얻은 단서}
 
-\begin{lstlisting}
-python3 solve.py \
-  --model ../../4_raw/TinyLlama-1.1B-Chat-v1.0.zip \
-  --extract --scan-log ../../4_raw/server.zip \
-  --verify-sha256 --log-report log-evidence.jsonl
-\end{lstlisting}
-
-\texttt{q1}, \texttt{a1}은 부족한 base64 \texttt{=}만 복원해 decode한 뒤
-알파벳 Caesar \(+11\)을 적용한다. 복호문에
-\texttt{secret, square, flag, crypto, 4 bit, nibble} 중 하나가 포함된
-record만 후보로 출력한다. 기존 분석에서 얻은 핵심 복호 결과는 다음과 같다.
+17GB \texttt{server.log}를 ZIP member에서 한 줄씩 읽었다. 각 chat
+record의 \texttt{q1}, \texttt{a1}은 부족한 base64 \texttt{=}만 보충해
+decode한 뒤 알파벳 Caesar \(+11\)을 적용했다. 복호문에
+\texttt{secret, square, flag, crypto, 4 bit, nibble}이 있는 record만
+후보로 남겼다.
 
 \begin{lstlisting}
 model: TinyLlama/TinyLlama-1.1B-Chat-v1.0
@@ -109,97 +106,50 @@ A: The LLM knows the secret. Trust me.
    "square" for open seasame!!!
 \end{lstlisting}
 
-\texttt{log-evidence.jsonl}은 검색 조건과 함께 후보의 1-based line number,
-압축 해제된 로그 기준 line/record 0-based byte offset, newline 포함 line
-SHA-256, exact record SHA-256, raw line/record text와 base64, 복호문, 전체
-chat/후보/제외 수, 내부 로그 SHA-256을 기록한다. record를 리스트에 모으지
-않고 즉시 기록한다. 논리 line은 기본
-1MiB로 제한하고, 초과 line은 작은 조각으로 끝까지 해시하되 정규식
-분석에서는 제외한 수를 보고한다.
+복호문 끝의 \texttt{l}은 padding이라는 근거가 없으므로 임의로 삭제하지
+않았다. \texttt{square} 입력에 기록된
+\texttt{Wouldn't about 4 bits be enough?}라는 응답은 low 4-bit 채널을
+조사하게 한 가설이었다. 당시 generation 환경은 보존되지 않았으므로 이
+응답의 결정론적 재현을 최종 공격의 전제로 삼지 않았다.
 
-이전 코드의 \verb|caesar_shift(decoded).rstrip("l")|은 삭제했다. padding
-길이를 모르는 상태에서 정상 평문의 마지막 \texttt{l}까지 지울 수 있기
-때문이다. 현재 코드는 복호된 문자를 임의로 삭제하지 않는다.
+\section{F32 tensor blind discovery}
 
-\subsection*{LLM 응답 단서의 한계}
-
-기존 분석에는 \texttt{square} 입력에
-\texttt{Wouldn't about 4 bits be enough?}라는 응답을 보았다고 남아 있다.
-이는 low 4-bit 채널을 조사하게 한 가설이지만, 당시의
-\texttt{transformers}/\texttt{torch} 버전, chat template, system prompt,
-generation parameter와 seed가 기록되지 않았다. 따라서 결정론적으로 같은
-응답이 나온다고 주장하지 않는다. 최종 공격은 생성 결과가 아닌 모델 byte를
-직접 검증한다.
-
-\section{모든 F32 tensor의 blind discovery}
-
-float32 한 개는 little-endian 4 byte다. 각 값의 첫 byte에서
-\(v \mathbin{\&} \texttt{0x0f}\)를 취한다. 원래 가중치의 low bit가 거의
-모두 0인 tensor에서는 비영 nibble과 연속 ASCII가 강한 이상치다.
-
-\begin{minipage}{\linewidth}
-\begin{lstlisting}
-python3 solve.py \
-  --model ../../4_raw/TinyLlama-1.1B-Chat-v1.0.zip \
-  --discover --verify-sha256 \
-  --discovery-report discovery.json
-\end{lstlisting}
-\end{minipage}
-
-JSON 대신 \texttt{discovery.csv}를 지정할 수도 있다. 각 F32 tensor마다
-다음을 기록한다.
-
-\begin{itemize}
-  \item dtype, shape, data buffer 상대 offset
-  \item 비영 low nibble 수/비율과 첫/마지막 element
-  \item 연속된 비영 nibble의 최장 길이
-  \item 첫 비영 nibble-pair부터 마지막 pair까지의 span
-  \item span의 printable ASCII(\texttt{TAB/LF/CR} 포함) 비율
-  \item 최대 192 byte의 escaped/hex preview
-\end{itemize}
-
-기존 분석 기록에서 두드러진 결과는 다음이었다.
+SafeTensors의 F32 하나는 little-endian 4 byte다. 각 값의 첫 byte에서
+\[
+  nibble = raw\_f32\_bytes[0]\mathbin{\&}\texttt{0x0f}
+\]
+를 취했다. 모든 F32 tensor를 8MiB chunk로 순차 처리하면서 비영 nibble
+수와 nibble-pair ASCII preview를 비교했다. 가장 두드러진 후보는 다음과
+같았다.
 
 \begin{lstlisting}
-model.embed_tokens.weight:
-    low nibble non-zero count = 345
+tensor = model.embed_tokens.weight
+row    = 0
+non-zero low nibbles = 345
 \end{lstlisting}
 
-stdout은 ASCII score와 비영 nibble 수로 후보를 정렬한다. JSON/CSV에는
-순위와 무관하게 모든 F32 tensor 통계가 들어간다.
+로그 증거 보존, 모든 tensor 순위화와 방어적 형식 검증은 분석용 완전판에
+남기고, 제출 \texttt{solve.py}에는 최종 추출식을 사람이 바로 확인할 수
+있도록 확정된 tensor와 row 경로만 남겼다.
 
-\subsection*{SafeTensors 경계 검증}
+\newpage
+\section{payload 추출}
 
-\texttt{data\_offsets}는 파일 절대 위치가 아니라 JSON header 직후 data
-buffer 기준이다. parser는 읽기 전에 다음을 검증한다.
+SafeTensors의 \texttt{data\_offsets}는 파일 절대 위치가 아니라 JSON
+header 직후 data buffer 기준이다. 제출 코드는 다음 순서로 동작한다.
 
 \begin{enumerate}
-  \item header 길이가 파일 범위와 reference implementation의
-    100,000,000-byte 한계 안에 있다.
-  \item header는 \texttt{\{}로 시작하고 JSON 뒤에는 ASCII space padding만
-    있으며 duplicate key가 없다.
-  \item \texttt{\_\_metadata\_\_}는 string-to-string map이고 dtype, shape가
-    유효하다.
-  \item \(0 \le start \le end \le data\_buffer\_size\)다.
-  \item \((end-start)8 = \prod shape_i \cdot dtype\_bits\)이고 sub-byte
-    dtype도 byte-aligned다.
-  \item 모든 tensor range가 겹침이나 빈 구간 없이 buffer 전체를 덮는다.
-  \item 지정한 row가 tensor 끝을 넘지 않는다.
+  \item ZIP 안의 유일한 \texttt{.safetensors} member를 연다.
+  \item 앞 8바이트의 little-endian header 길이와 JSON을 읽는다.
+  \item \texttt{model.embed\_tokens.weight}가 2차원 F32인지 확인한다.
+  \item shape와 \texttt{data\_offsets}로 첫 행만 순차 읽는다.
+  \item 각 F32의 첫 byte에서 low nibble을 취한다.
+  \item 두 nibble을 \((high\ll4)\mathbin{|}low\)로 결합한다.
+  \item 복원 byte열에서 \texttt{CRYPTO\{...\}}를 찾아 출력한다.
 \end{enumerate}
 
-전체 tensor를 메모리에 올리지 않고 8MiB chunk만 유지한다.
-
-\section{payload 추출과 검증}
-
-\begin{lstlisting}
-python3 solve.py \
-  --model ../../4_raw/TinyLlama-1.1B-Chat-v1.0.zip \
-  --extract --tensor model.embed_tokens.weight \
-  --row 0 --verify-sha256
-\end{lstlisting}
-
-첫 embedding row에서 nibble 두 개를
-\((high \ll 4)\mathbin{|}low\)로 결합하면 다음 payload가 나온다.
+중간의 0 nibble이나 0 byte를 삭제하지 않으며, float로 변환했다가 다시
+직렬화하지도 않는다. 복원 payload는 다음과 같다.
 
 \begin{lstlisting}
 "The lighthouse opens at midnight. Meet me at the bar."
@@ -210,21 +160,15 @@ The flag is:
 CRYPTO{G00D_J0B!_y0u_f0und_7h3_h1dd3n_s3cr37_1n_LLM}
 \end{lstlisting}
 
-\texttt{secBet}은 추출 기록의 철자다. 코드는 복원 byte stream에서
-\texttt{CRYPTO\{...\}}를 다시 찾아야만 성공하며 PyTorch나 Transformers를
-로드하지 않는다.
+\texttt{secBet}과 \texttt{open seasame}은 원 기록의 철자를 그대로 적었다.
+코드는 복원된 원시 byte열에서 FLAG를 실제로 찾아야만 성공한다.
 
-\section{재현성 주의}
+\section{재현 범위}
 
-문제에서 제공한 다섯 모델 가운데 분석 대상은
-\texttt{TinyLlama-1.1B-Chat-v1.0.zip}이다. 제출 패키지에는 이 대상 ZIP과
-17GB \texttt{server.zip}을 포함하지 않으며, 보고서 검증 환경에도 두 대상
-입력이 없었다. 다른 후보 모델은 대상 TinyLlama와 로그를 대신할 수 없다.
-따라서 검증하지 못한 raw record, offset, line hash나 생성 환경을 지어
-넣지 않았다. 대상 입력으로 생성한
-\texttt{log-evidence.jsonl}과 \texttt{discovery.json}을 보존하면 기존
-분석의 \texttt{chat-000005}, 비영 nibble 수 345, payload를 blind
-discovery부터 독립 검증할 수 있다. 합성 회귀 테스트만으로 이 재실행을
-대신할 수는 없다.
+대형 TinyLlama ZIP과 약 17GB \texttt{server.zip}은 제출물에 중복 포함하지
+않는다. 현재 문서 검토 환경에도 두 공식 대상 입력이 없어 기존 분석의
+\texttt{chat-000005}, 비영 nibble 수 345와 payload를 새로 측정했다고
+주장하지 않는다. 공식 모델 ZIP이 주어지면 제출 코드는 archive SHA-256,
+target tensor 경계와 FLAG를 다시 검증한다.
 
 \end{document}
