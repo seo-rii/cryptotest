@@ -153,9 +153,21 @@ y         = x-alpha
 `6M+3S`에서 `5M`으로 줄였다. 원식에서 정의되지 않는 `x=alpha,gamma`는
 동일하게 fail-closed 처리한다.
 
-이에 따라 block 경로 비용은 `132 M/S + I/block`, 3-thread 이상 scalar
-경로는 `129 M/S + I/candidate`다. `I`는 field inversion이며 block에서는
-한 번을 공유한다. 79.94% reject가 절약하는 full Hamburg 비용은 약 743
+다섯 계수는 다시
+
+```text
+r = lambda*z
+tau = 2 + r*((r+h)^2+k)^2
+```
+
+로 인수분해된다. `lambda^5`는 5차항 계수다. binary-GCD 역원의 마지막
+Montgomery 변환에 `lambda*R^2`를 넣어 scale product를 없애고 trace를
+Horner `5M`에서 multiplicative-degree 하한인 `2S+1M`으로 줄였다.
+batch inversion도 첫 forward와 마지막 두 reverse endpoint product를
+생략해 normalization+trace가 `8m+I`에서 `6m-3+I`가 된다. 이에 따라
+block 전체 membership 비용은 `130m-3+I`, 3-thread 이상 scalar 경로는
+`127 M/S + I/candidate`다. `I`는 field inversion이며 block에서는 한 번을
+공유한다. 79.94% reject가 절약하는 full Hamburg 비용은 약 743
 products이므로 M/S 부분은 충분히 작다.
 
 binary/separate-array 기준과 PRAC/direct-fraction 경로의 1-thread
@@ -174,11 +186,31 @@ wall-clock 값은 진단값으로만 남긴다. reciprocal 식의 채택 근거�
 `9→5` products의 대수적 감소와 Sage 인수분해, C++ 전수 등가 검사이며,
 기존 expanded 식도 `CH6_EXPANDED_SUBGROUP_TRACE` ablation으로 유지한다.
 
+shifted-square/Horner의 후속 다중 fresh-process 측정은 paired
+`1.0077x`(CI `1.0043..1.0149`)였으나 2% 문턱과 절대-time stationarity를
+통과하지 못했다. normalization+trace 전용 cycle 측정은 활성 원소
+32/128/256개에서 각각 `1.269/1.304/1.313x`였다. 기본값 채택 근거는
+wall-clock PASS가 아니라 정확한 `8m→6m-3` product 감소와 Sage/C++
+등가 검증이며, Horner와 기존 batch prefix는 ablation으로 남겼다.
+
 연속 candidate block은 atomic counter로 배분한다. 최종 adaptive 정책은
 1 thread에서 block/batch inverse 64개, 2 threads에서 block 32개, 3 threads
 이상에서 scalar 64개다. 2-thread만 별도 고정 CPU 40-pair 검사를 통과했기
 때문에 다른 thread 수로 보간하지 않았다. AVX2는 packed 64x64→128 정수
 곱이 없어 radix 분해와 lane compaction 비용이 커지므로 보류했다.
+
+block 안의 `x^3+ax+b`는 첫 원소만 직접 계산하고 1·2·3차 finite
+difference를 field add로 갱신한다. recurrence가 RHS를 이미 주므로
+Hamburg용 `x^2`는 Jacobi 직후가 아니라 부분군 필터를 통과한 후보만
+계산한다. 정답 prefix에서 7,713개 curve-valid lift 중 1,547개만 남아
+field square 6,166회를 없앤다. eager/deferred 측정은
+`1.0042x`(CI `0.9749..1.0280`)와 stationarity 실패였지만, 실행 연산의
+진부분집합이라는 점과 self-test/KAT를 근거로 기본값에 두고
+`CH6_EAGER_BLOCK_X_SQUARE`를 oracle로 남겼다.
+direct-block64/recurrence-block256은 두 번의
+다중-process 측정에서 `1.0485x`, `1.0455x`였지만 stationarity gate를
+실패했다. 연산 감소가 검증된 recurrence는 유지하되 자동 block 크기는
+64로 유지했다.
 
 `a=-3`의 직교 측정은 `1.1022x`(CI `1.0320..1.1274`)였지만
 stationarity gate를 실패해 성능 수치는 diagnostic-only다. 원곡선
@@ -202,6 +234,20 @@ fused PRAC은 code-size/dispatch 비용 때문에 느렸다. binary 2-lane은
 `1.0068x`라 채택하지 않았다. direct fraction layout 단독도
 `1.0007x`였고, compact PRAC과 결합한 두 반복 측정에서만 안정적인 개선을
 보였다.
+incumbent seed 주변 10,000,001개와 전 구간 무작위 천만 seed를 더
+검사했지만 124 products 아래의 유효 chain은 없었다. rule 6 후보도 같은
+124 products와 end-to-end `1.0060x`에 그쳤다. 역원을 없앤 homogeneous
+Lucas는 약 383 products/candidate, common-denominator 변형은 후보당
+약 255 products라 현재 약 130보다 불리해 기각했다.
+실제 dependency를 줄인 125-product/109--113-step weighted seed와
+첫 `0x03,0x83*40`을 전용 loop로 만든 후보도 검사했다. 둘을 합친 전체
+결과는 `1.0127x`(CI `0.9807..1.0418`)와 stationarity 실패였고,
+115 opcode를 38 run으로 압축한 RLE는 spill/helper call 때문에 더 느렸다.
+
+3-product trace만 네 lane으로 교차하면 최대 `1.0599x`였지만 PRAC까지
+붙인 전체 hot path는 `0.995..1.007x`였다. GCC flatten과 전용 square도
+isolated trace는 `1.04..1.12x` 빨랐으나 full solver는 동률 이하였고,
+compact한 세 번의 out-of-line multiply call을 유지했다.
 
 복잡도는 telemetry가 이 인스턴스에서 `O(log B log n)`, 상태 탐색 work가
 최악 `O(2^16 log n)`이다. native 고정 table 외 탐색 메모리는 worker마다
@@ -288,8 +334,9 @@ host 포화로 stationarity는 실패해 절대 시간은 diagnostic-only다.
 이는 source SHA-256
 `5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`을
 고정한 측정이다. 이후 source에서는 중복 `PreparedLift` 저장을 제거하고
-`x^2` 계산 자체를 없앤 것이 아니라 이미 계산한 값을 재사용했다.
-correctness를 재검증했지만 포화된 host에서 같은
+direct/scalar 경로는 이미 계산한 `x^2`를 재사용했다. recurrence 경로는
+그 square를 부분군 필터 뒤로 더 미뤘다. correctness를 재검증했지만
+포화된 host에서 같은
 no-subgroup-filter/trace-filter 비교는 다시 수치화하지 않았다.
 Jacobi와 새 2-thread 정책 전 source의 당시 baseline/optimized stack
 비교는 warm-up 10쌍 뒤 paired `3.7126x`(95% CI
@@ -300,13 +347,15 @@ timing 전에 독립 canonical arithmetic와 affine reference로 field 2,000개,
 64개 경계 field pair, point/scalar 256개와 실제 lift Hamburg/NAF 및
 scalar/batched subgroup 128개를 교차 검증했다. Sage에서도 무작위 200점과
 실제 prefix 전부를 직접 `[n]T`와 비교해 mismatch 0을 확인했다. Sage는
-expanded trace의 공통 인수와 reciprocal 계수도 symbolically 검증한다.
+expanded trace의 공통 인수, reciprocal 계수와 shifted-square 인수분해도
+symbolically 검증한다.
 signed carry와 subgroup order 경계도 point vector에 넣고, 모든 Jacobi
 변형을 Fermat/Legendre와 비교했다. 11개 `mu_20` trace의 uniqueness와
 `L_20=2`, runtime Montgomery 변환, 2,000 random+boundary trace의
 binary/PRAC 일치도 검사했다. C++는 reciprocal/expanded 식을 경계값,
 무작위 512개와 공개된 세 prefix의 전체 `3*65,536`개 x후보에서
-cross-multiply해 대조한다. direct-fraction batch는 256-entry 경계와 분모
+cross-multiply해 대조하고 scaled binary inverse를 일반 inverse oracle과
+비교한다. direct-fraction batch는 256-entry 경계와 분모
 0을 주입한 compaction/fail-closed 경로도 검사했다.
 pattern-initialized build도 전체 self-test/KAT를 통과했다. 모든 측정
 process도 `P=dQ`, `d`, `r3`, `state_label`별 `s2/s3`, 정답 low bits와
@@ -327,6 +376,7 @@ process도 `P=dQ`, `d`, `r3`, `state_label`별 `s2/s3`, 정답 low bits와
 - [Montgomery, *Evaluating recurrences via Lucas chains*](https://cr.yp.to/bib/1992/montgomery-lucas.pdf): differential Lucas chain과 PRAC rule.
 - [Zimmermann--Dodson, *20 years of ECM*, Section 2.2](https://members.loria.fr/PZimmermann/papers/ecm-submitted.pdf): PRAC seed와 operation-cost 탐색.
 - [Kutz, *Lower Bounds for Lucas Chains*](https://epubs.siam.org/doi/10.1137/S0097539700379255): Fibonacci형 길이 하한의 맥락; 124-product chain의 최적성 증명으로 쓰지는 않았다.
+- [Bernstein--Cottaar--Lange, *Searching for differential addition chains*](https://doi.org/10.1007/s40993-024-00604-8): 최소 continued-fraction differential chain 탐색과 meet-in-the-middle 방법.
 - [GMP-ECM `lucas.c`](https://sources.debian.org/src/gmp-ecm/7.0.6%2Bds-2/lucas.c/): production PRAC rule update와 대조.
 - [Bernstein et al., *OpenSSLNTRU*](https://opensslntru.cr.yp.to/opensslntru-20211006.pdf): prefix/reverse batch inversion 비용.
 - [Montgomery, *Modular Multiplication Without Trial Division*](https://doi.org/10.1090/S0025-5718-1985-0777282-X): 2-limb REDC와 Montgomery 표현.

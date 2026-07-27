@@ -169,12 +169,39 @@ python3 solutions/06_optimization/benchmark_06_promotion.py \
   --output /tmp/ch6-reciprocal-trace.json
 ```
 
+The later three-product trace factorization can be isolated from its Horner
+oracle with:
+
+```bash
+python3 solutions/06_optimization/benchmark_06_promotion.py \
+  --baseline-label reciprocal-horner --candidate-label shifted-square \
+  --baseline-define CH6_HORNER_SUBGROUP_TRACE \
+  --threads 1 --cpus 7 --block-size 64 \
+  --warmup-pairs 10 --pairs 40 --trials-per-pair 5 \
+  --output /tmp/ch6-shifted-square.json
+```
+
+The block-recurrence square deferral can be compared with its eager oracle
+without changing the cubic formula:
+
+```bash
+python3 solutions/06_optimization/benchmark_06_promotion.py \
+  --baseline-label eager-x-square --candidate-label deferred-x-square \
+  --baseline-define CH6_EAGER_BLOCK_X_SQUARE \
+  --threads 1 --cpus 7 --block-size 64 \
+  --warmup-pairs 10 --pairs 40 --trials-per-pair 5 \
+  --output /tmp/ch6-eager-vs-deferred-square.json
+```
+
 Replace `--cpus 7` with an allowed idle CPU on another host.
 
 The promotion protocol uses four chronological blocks, each with five AB and
 five BA pairs, 5,000 deterministic bootstrap resamples within the eight
 block-by-order strata, both order strata, and an absolute/effect stationarity
-gate. It rejects identical build/runtime configurations unless
+gate. `--trials-per-pair N` optionally runs `N` fresh-process adjacent AB or BA
+trials and uses their median as one logical pair; every raw trial and logical
+aggregate remains in the schema-3 report. It rejects identical build/runtime
+configurations unless
 `--null-calibration` is explicit. All runners clear inherited OpenMP thread and
 affinity overrides, use the current affinity mask for `auto`, and record what
 was cleared. The measured source is preserved beside the report as
@@ -219,20 +246,43 @@ zero-denominator compaction, and multi-lane tails; the timed path is unchanged.
 The 8-thread diagnostic median was `1.0381x`, but its CI
 `0.9070..1.1621` and stationarity both failed on the saturated shared VM.
 
-The current source SHA-256
-`33920f4851b7d9a318a0242e730915b4d15a971e9019d24e595ac2c00ce9ba1e`
-adds a subsequent algebraic trace simplification. Symbolic Sage expansion
-proves
+The next algebraic trace simplification is independently checked by Sage.
+Symbolic expansion proves
 `U-V=(x-gamma)^4(x-alpha)^5`; after cancelling the common fourth power,
 the trace is a degree-5 polynomial in `(x-alpha)^-1`. This changes the trace
 from nine field products (`6M+3S`) to five and reduces the whole subgroup check
-to approximately `132 M/S + I/block` or `129 M/S + I/candidate`. A CPU-7-pinned
+at that stage to approximately `132m+I` per block or `129+I` per scalar
+candidate. A CPU-7-pinned
 one-thread run after ten warm-up pairs measured 40 balanced pairs at
 `1.0270x` (bootstrap CI `1.0027..1.0360`), but failed the chronological
 stationarity gate. The timing is therefore diagnostic, while the default is
 based on the exact operation reduction plus symbolic and exhaustive
 equivalence checks. `CH6_EXPANDED_SUBGROUP_TRACE` preserves the former formula
 as an ablation and independent oracle.
+
+That reciprocal quintic factors further. For
+`z=(x-alpha)^-1`, the checked-in constants satisfy
+
+```text
+r = lambda*z
+tau = 2 + r*((r+h)^2+k)^2
+```
+
+with `lambda^5` equal to the leading coefficient. The final binary-GCD
+conversion uses `lambda*R^2` instead of `R^2`, so the scale is free in
+Montgomery form. Trace evaluation is therefore `2S+1M`, the three-product
+multiplicative-degree lower bound, rather than Horner's `5M`. Batch inversion
+also skips its first forward and final two reverse endpoint products, changing
+normalization plus trace from `8m+I` to `6m-3+I` for `m` active inputs.
+
+A pinned cycle microbenchmark measured Horner/factorized speedups of `1.269x`,
+`1.304x`, and `1.313x` for `m=32,128,256`. The full one-thread solver measured
+`1.0077x` with bootstrap CI `1.0043..1.0149`; shared-host absolute-time
+stationarity failed and the effect is below the 2% promotion threshold, so
+this is not presented as a promotion PASS. The default is instead supported
+by the exact product reduction, Sage factorization oracle, scaled-inverse
+cross-check, and full KAT. `CH6_HORNER_SUBGROUP_TRACE` and
+`CH6_EXCLUSIVE_BATCH_PREFIX` preserve the previous hot paths.
 
 The new cofactor-5 filter was compared in frozen source snapshot SHA-256
 `5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`,
@@ -263,7 +313,22 @@ statistical parity at `1.0072x` with a parity-containing CI. A w4 fixed table
 lost to w8 (`0.9483x`, CI `0.9243..0.9737`), and block 128
 did not beat block 64 before the subgroup filter (`0.9948x`, CI
 `0.9093..1.0473`). With the filter, block 256 was a promising `1.0365x`
-(CI `1.0173..1.0503`) but missed stationarity, so block 64 remains automatic.
+(CI `1.0173..1.0503`) but missed stationarity. The later forward-cubic
+recurrence plus block-256 candidate reproduced the direction twice at
+`1.0485x` (CI `1.0347..1.0667`) and `1.0455x`
+(CI `1.0336..1.0510`), but both campaigns still missed the strict
+chronological gate. The recurrence remains the arithmetic default, while
+block 64 remains the automatic one-thread policy.
+
+The recurrence supplies `rhs` without needing `x^2`. The final path therefore
+delays that square until after the subgroup filter instead of computing it
+immediately after Jacobi. On the exact solution prefix this removes 6,166 field
+squares: 7,713 curve-valid lifts enter the filter and only 1,547 reach Hamburg.
+The noisy five-trial logical-pair campaign measured `1.0042x` with CI
+`0.9749..1.0280` and failed stationarity, so it is not a promotion PASS. The
+default is retained for the exact operation deletion and full self-test/KAT;
+`CH6_EAGER_BLOCK_X_SQUARE` preserves the eager oracle.
+
 Specialized square,
 direct U128 add, a straight-line sqrt chain, w9, field-multiply `noinline`,
 Hamburg inline, elliptic-point scalar PRAC, and GLV/endomorphism variants were
@@ -281,6 +346,33 @@ promotion-grade win. A branchless binary step reduced the Lucas symbol from
 `1.0001..1.0191`) but missed the threshold and stationarity, so the default
 keeps the former U128 bit scan. Final-source block-256 (`1.0183x`) and LTO
 (`1.0083x`) likewise stayed below the promotion rule.
+
+A further search checked the incumbent seed's complete
+`+/-5,000,000` neighborhood and ten million uniformly sampled seeds. No valid
+schedule below 124 products was found. Allowing PRAC rule 6 produced a
+112-byte schedule with the same `119M+5S=124` cost; it reached only `1.0060x`
+end-to-end with a parity-containing CI. Projective denominator-free Lucas
+recurrences were also rejected by exact counts: they need about 383 products
+per candidate, and common-denominator variants remain around 255 products per
+candidate, versus roughly 130 plus one shared block inversion now.
+Weighted 125-product schedules shortened the interpreter to 109--113 steps,
+and a dedicated `0x03,0x83*40` prefix removed 41 dispatches, but their combined
+full-solver result was only `1.0127x` (CI `0.9807..1.0418`) with failed
+stationarity. Whole-schedule RLE was substantially slower because larger code
+and helper calls introduced spills.
+
+Stack-only cleanups were measured separately rather than assumed faster.
+Removing the unused reciprocal numerator, shrinking the deferred-sqrt
+`PreparedLift`, and combining both reduced the evaluator frame by 4,096,
+6,160, and 10,256 bytes, but their paired results were `0.9996x`, `1.0051x`,
+and `1.0033x`; none had a decisive CI. Branchless final REDC (`0.6702x` in its
+primitive benchmark), a CIOS Montgomery kernel (about `0.694x`), manual Horner
+unrolling, and forced inlining also lost or remained indistinguishable.
+Four-lane scheduling sped up the isolated three-product trace by
+`1.029--1.060x`, but trace plus the 124-product PRAC stayed within
+`0.995--1.007x`. GCC flattening and specialized-square variants likewise made
+the isolated trace `1.04--1.12x` faster while the full solver stayed at parity
+or regressed, so the compact three-call GCC code remains the default.
 
 The hybrid Jacobi kernel itself reduced a dedicated Jacobi microbenchmark from
 `0.08616 s` for full U128 Euclidean reduction to `0.05543 s`; using the

@@ -13,9 +13,11 @@ r3  = 0x2443c8daf1a9d52b09
 
 최종 native source는 `solutions/06_optimization/deep_native_06.cpp`다.
 고정 2-limb Montgomery REDC, 동형 `a=-3` 곡선의 Hamburg x-only ladder,
-deferred-sqrt Jacobi 판정, reciprocal-polynomial cofactor-5
-Frobenius--Tate trace와 fixed Lucas-PRAC, affine byte-comb table 및 OpenMP
-탐색을 결합했다. 실행 전에 field/point/table, Hamburg/NAF,
+deferred-sqrt Jacobi 판정, shifted-square reciprocal cofactor-5
+Frobenius--Tate trace와 fixed Lucas-PRAC, block cubic recurrence와
+post-subgroup x-square deferral,
+affine byte-comb table 및 OpenMP 탐색을 결합했다. 실행 전에
+field/point/table, Hamburg/NAF,
 scalar/batched subgroup와 known answer self-test를 모두 통과한다.
 
 기본 build와 검증은 다음과 같다.
@@ -426,9 +428,33 @@ tau = 2 + c1*z + c2*z^2 + c3*z^3 + c4*z^4 + c5*z^5
 `5M`만 필요하다. 원식이 `0/0`인 `x=gamma`와 분모가 0인 `x=alpha`는
 제거 가능한 특이점이라고 임의로 연장하지 않고 기존처럼 fail-closed한다.
 
-PRAC의 124 products까지 포함하면 block 경로는 batch inversion의
-후보당 약 3M을 더한 `132 M/S + I/block`, 3-thread 이상의 scalar 경로는
-`129 M/S + I/candidate`다. 여기서 `I`는 field inversion이며 block
+다섯 계수는 다시 다음처럼 정확히 인수분해된다.
+
+```text
+r      = lambda*z
+tau    = 2 + r*((r+h)^2+k)^2
+lambda = 0x33982bff439c0aac1c38c7
+h      = 0xb26c40e89155897f96df9d
+k      = 0x5e4ed38e19913a2d6e2fc8
+```
+
+`lambda^5`는 5차항 계수이고 `gcd(5,p-1)=1`이라 이 fifth root는 유일하다.
+따라서 shifted-square 평가는 add 두 번, square 두 번, multiply 한 번인
+`2S+1M`이다. 차수 5는 두 field product만으로 만들 수 없으므로 세 product는
+multiplicative-degree 하한이기도 하다. binary-GCD inverse가 마지막 canonical
+계수를 Montgomery domain으로 옮길 때 `R^2` 대신 `lambda*R^2`를 곱해
+`r=lambda/y`를 추가 product 없이 얻는다. Fermat-inverse ablation만
+block당 scale product 하나가 더 필요하다.
+
+표준 Montgomery trick도 exclusive prefix의 양 끝을 특수 처리했다. 첫
+분모를 곱셈 없이 accumulator로 시작하고, 역방향 마지막 원소는 현재
+accumulator 자체가 역원이므로 prefix multiply와 accumulator update를
+생략한다. `m`개 활성 원소의 normalization은 `3m`에서 `3m-3` products로
+줄고, trace까지 합치면 `8m+I`에서 `6m-3+I`가 된다.
+
+PRAC의 124 products까지 포함하면 block 경로는 `130m-3+I/block`,
+3-thread 이상의 scalar 경로는 `127 M/S + I/candidate`다. 여기서 `I`는
+field inversion이며 block
 전체가 하나를 공유한다. 초기화와 마무리를 포함한 full Hamburg는 약 930
 products이고 79.94% reject율이 절약하는 비용은 약 743 products다. 따라서
 M/S 부분은 두 경로 모두 손익분기점보다 충분히 작다. caller가 trace
@@ -446,13 +472,19 @@ transformed-alpha seed 주변을 추가 탐색했지만 더 짧은 schedule은 �
 못했다.
 
 수학적 정확성은 성능 승격 여부와 별개로 Sage와 C++ 양쪽에서 확인했다.
-Sage는 고정 torsion/Frobenius 관계, Miller 식, 위 인수분해와 다섯
-reciprocal 계수, 무작위 200점, 실제 prefix의 7,713개 curve-valid lift를
-검사했다. trace member 1,547개와 직접 `[n]T=O` 1,547개 사이 mismatch는
-0이었다. C++ self-test도 실제 lift 128개에서 scalar/batched trace를 직접
+Sage는 고정 torsion/Frobenius 관계, Miller 식, 위 공통인수와
+shifted-square 인수분해, 다섯 reciprocal 계수, 무작위 200점, 실제
+prefix의 7,713개 curve-valid lift를 검사했다. trace member 1,547개와 직접
+`[n]T=O` 1,547개 사이 mismatch는 0이었다. C++ self-test도 실제 lift
+128개에서 scalar/batched trace를 직접
 order 곱과 비교하고 `Q` 양성 벡터, `Fp`-rational order-5 음성 벡터를
 검사한다. expanded/reciprocal 식은 경계 11개, 무작위 512개 및 공개된 세
 prefix의 전체 `3*65,536`개 x후보에서 cross-product identity로 대조한다.
+Horner와 shifted-square normalized trace도 경계와 무작위 표본에서 직접
+비교하고, `lambda*R^2` binary-GCD 출력은 일반 역원에 `lambda`를 곱한
+oracle과 field 경계/random 전체에서 비교한다. batch count
+`1,2,3,4,5,7,127,128,129,255,256`은 endpoint-elided 역원의 첫/끝
+불변식과 tail 처리를 함께 검사한다.
 11개 root trace의 uniqueness/`L_20=2`, runtime Montgomery 변환,
 8개 고유 boundary trace를 포함한 64개 field pair와 2,000개 random
 trace의 binary/PRAC 일치도 함께 검사한다.
@@ -480,7 +512,7 @@ CI가 parity를 포함하고 baseline/candidate block spread가
 이 PRAC/direct 측정 뒤 reciprocal trace가 timed path에 추가됐으므로 위
 수치는 현재 expanded/reciprocal 비교로 소급하지 않는다.
 
-현재 native source SHA-256
+당시 frozen native source SHA-256
 `33920f4851b7d9a318a0242e730915b4d15a971e9019d24e595ac2c00ce9ba1e`에서
 `CH6_EXPANDED_SUBGROUP_TRACE`만 바꾼 1-thread 측정은 CPU 7 고정,
 warm-up 10쌍 뒤 40쌍으로 수행했다. expanded/reciprocal 중앙값은
@@ -490,6 +522,22 @@ stationarity를 실패했으므로 wall-clock 승격 PASS로 세지 않는다. �
 reciprocal 식은 `9→5` products의 대수적 감소와 위 독립 인수분해·전수
 등가 검증에 근거하며, expanded 식은 정확성 oracle이자 ablation macro로
 보존한다.
+
+후속 shifted-square는 Horner와 같은 block64에서
+`CH6_HORNER_SUBGROUP_TRACE`만 바꿔 비교했다. 한 logical pair 안에서
+fresh process 다섯 개의 중앙값을 취하고 warm-up 10쌍 뒤 40쌍을
+측정한 결과 paired median은 `1.0077x`, 층화 bootstrap 95% CI는
+`1.0043..1.0149`였다. effect block spread는 1.95%였지만 공유 host의
+baseline/candidate 절대 block spread가 각각 8.15%/8.10%라 stationarity를
+실패했고 2% 승격 문턱에도 못 미친다. 반면 normalization+trace만 분리한
+CPU-7 cycle 측정은 활성 원소 `m=32/128/256`에서
+`5198→4095`, `18990→14558`, `37373→28485 cycles`, 즉
+`1.269/1.304/1.313x`였다. 큰 `m`의 이론적 `8/6=1.333x` 방향과
+일치한다. end-to-end 이득이 작은 것은 뒤의 124-product PRAC과
+Hamburg/fixed-base 단계에 희석되기 때문이다. 따라서 wall-clock
+promotion PASS로 세지는 않되, `8m→6m-3`의 정확한 product 감소와
+Sage/C++ 등가 검증을 근거로 기본값으로 두고 Horner/기존 prefix를 각각
+ablation macro로 보존한다.
 
 source SHA-256
 `5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`을
@@ -799,6 +847,38 @@ BMI2 intrinsic square는 `0.9230x`로 더 느렸다.
 spill이 생겼다. 작은 field primitive는 inline하고 큰 Hamburg 함수만
 `noinline`으로 뒀다.
 
+**Block-local cubic recurrence.** 변환 곡선의 연속 low-bit 후보는 고정
+step `h`에 대해 `f(x)=x^3+ax+b`를 계산한다. 각 block 첫 원소에서만
+직접 평가하고
+
+```text
+Delta f   = 3x^2h + 3xh^2 + h^3 + ah
+Delta^2 f = 6xh^2 + 6h^3
+Delta^3 f = 6h^3
+```
+
+를 세 번의 field add로 갱신한다. 다섯 block 시작점에서 128개씩 direct
+식과 비교하고
+전체 self-test/KAT를 통과했다. 같은 block64의 direct/recurrence는
+`1.0089x`(CI `0.9884..1.0193`)로 단독 승격 근거는 아니었다. 그러나
+direct-block64/recurrence-block256의 다중 fresh-process 측정 두 번은
+`1.0485x`(CI `1.0347..1.0667`)와 `1.0455x`
+(CI `1.0336..1.0510`)로 방향을 재현했다. 첫 측정의 effect spread가
+2.13%로 2% 문턱을 아주 조금 넘었고 두 번째는 shared-host 절대
+stationarity까지 실패했다. 따라서 operation 감소가 확정된 recurrence는
+기본으로 두되 자동 block은 64에 유지한다.
+
+recurrence가 `rhs`를 직접 공급하므로 부분군 판정에는 `x^2`가 필요 없다.
+기존 순서는 Jacobi를 통과한 curve-valid 7,713개 모두에 square를 수행한
+뒤 trace가 1,547개만 남겼다. 최종 경로는 `multiply_prepared_lift` 직전,
+즉 부분군을 통과한 후보만 square해 정답 prefix에서 정확히 6,166 products를
+없앤다. direct-cubic과 scalar 경로는 RHS 계산 때 만든 square를 계속
+재사용한다. eager/deferred 5-trial logical-pair 결과는 shared-host drift
+속에서 `1.0042x`(CI `0.9749..1.0280`)와 stationarity 실패였다. timing
+PASS는 아니지만 실행 연산의 진부분집합이고 self-test/KAT가 같으므로
+deferred 경로를 기본으로 두며, `CH6_EAGER_BLOCK_X_SQUARE`로 이전 순서를
+재현한다.
+
 **table 폭과 block 크기.** w4--w7은 작은 table 대신 addition이 늘었고,
 w9의 작은 명목상 이득은 CI가 parity를 포함했다. balanced signed-w9도
 table을 82,560바이트로 줄였지만 `1.0065x`에 그쳤다. 최신 w8/w4 결과는
@@ -839,6 +919,39 @@ division/remainder와 불규칙 rule 선택이 hot path에 들어간다. 여기�
 지수가 고정이므로 schedule을 offline에서 만들고 bytecode만 실행하는 쪽이
 낫다.
 
+**PRAC seed/규칙 재탐색.** incumbent seed 주변 `+/-5,000,000`을 전수
+조사하고 전 구간에서 천만 seed를 균등 표집했지만 rules 1/3/4/5로
+124 products보다 짧은 유효 schedule은 없었다. `gcd`, 최종 Euclid
+상태와 실제 index가 모두 `H`인지 검사해, 104-product처럼 보이지만
+`gcd=117787`이라 `L_(H/117787)`을 계산하던 거짓 후보도 제거했다.
+rule 6까지 허용하면 112-byte, `119M+5S=124`인 동률 schedule을 찾았지만
+전체 풀이는 `1.0060x`(CI `0.9871..1.0184`)와 stationarity 실패였다.
+고정 시작점에서 123-product 이하의 Table-4 변환을 branch-and-bound로
+찾은 탐색도 경로가 없었다. `H=117787*q`를 이용한 512KiB/2MiB Bloom
+split은 각각 동률/약 5.9% 손실이라 asset과 cache 비용을 정당화하지 못했다.
+
+**Weighted seed, 고정 prefix와 RLE.** 이 backend는 M/S가 같은 routine을
+쓰므로 product 수뿐 아니라 step 수와 dependency proxy도 함께 줄이는
+125-product seed를 찾았다. 가장 유력한 후보는 `117M+8S`, 110 steps로
+단발 PRAC micro에서 약 2.9% 빨랐지만 반복 end-to-end로 재현되지 않았다.
+기존 schedule의 첫 `0x03` 뒤 `0x83` 40연속을 전용 recurrence loop로
+분리하면 41번의 load/dispatch가 사라졌지만 quick 측정은 1.9--2.6%로
+흔들렸다. weighted seed와 합친 3-trial logical-pair 결과도 `1.0127x`
+(CI `0.9807..1.0418`)와 stationarity 실패였다. 115 opcode를 38 run으로
+줄인 RLE는 hot body 확대, spill과 helper call 때문에 기준 약
+1.35--1.47us보다 1.91--3.96us로 더 느렸다.
+
+**Projective/common-denominator Lucas.** `tau=N/D`를 정규화하지 않고
+`F_k=D^k L_k(N/D)`, `K_k=D^(2k)`로 올리면 역원은 없앨 수 있다. 그러나
+binary recurrence가 약 383 products/candidate, homogeneous PRAC은 약
+496이어서 현재 scalar `127+I`보다 훨씬 크다. block의 모든 분모를 한
+공통분모로 묶어도 새 3-product trace 기준 binary는
+`250m+137`, PRAC은 `248m+251 products/block`이다. `m=32`에서 후보당
+약 254--256 products로 현재 `130-3/m+I/m`의 거의 두 배다.
+`Fp^m` componentwise recurrence로 표현해도 bilinear rank 때문에 기본
+field multiplication 수는 줄지 않고, 기존 2/4-lane은 spill로 이기지
+못했으므로 기각했다.
+
 **완전 unroll과 fused PRAC.** binary 84-step loop를 template로 완전히
 펼친 후보는 code가 약 `0x510`에서 `0x298e`바이트로 커졌고 paired
 `1.0451x`, CI `0.9133..1.1072`로 불확실했다. PRAC opcode body를 크게
@@ -852,6 +965,14 @@ division/remainder와 불규칙 rule 선택이 hot path에 들어간다. 여기�
 느렸다. 후보 수가 lane 배수와 맞지 않는 tail도 scalar 처리해야 해
 기본 1-lane을 유지했다.
 
+3-product trace만 독립적으로 4-lane software-pipeline하면 활성 원소
+32/128/256개에서 `1.0287/1.0521/1.0599x`였지만, 124-product PRAC까지
+포함하면 2/4-lane은 모두 `0.995..1.007x`였다. reverse와 trace/PRAC을
+두 pass로 나눈 후보도 최대 약 `1.006x`, numerator에 prefix를 겹친
+layout도 `0.999..1.002x`로 동률이었다. 활성 원소 8--16개부터
+membership가 약 2,859 cycles/active로 평탄해져 block64의 inverse
+amortization은 이미 충분했다.
+
 **Branchless binary step과 U64 bit stream.** bit branch를 mask select로
 바꾸면 함수 크기는 `0x579`에서 `0x44c`로 줄었지만 매 step의 limb 선택이
 늘어 `0.9770x`(CI `0.9609..0.9914`)로 졌다. exponent를 U64 MSB stream으로
@@ -863,6 +984,16 @@ division/remainder와 불규칙 rule 선택이 hot path에 들어간다. 여기�
 `1.0007x`(CI `0.9912..1.0082`)로 동률이었다. 성능 주장 없이 PRAC과
 결합해 다시 측정했고, 그 조합만 승격했다.
 
+**추가 stack/codegen 정리.** reciprocal 기본 경로의 쓰지 않는 numerator를
+없애면 evaluator frame이 4,096바이트, deferred-sqrt/Hamburg의 사용하지
+않는 `PreparedLift::y/y_available`를 조건부 제거하면 6,160바이트,
+둘을 합치면 10,256바이트 줄었다. 그러나 전체 paired 결과는 각각
+`0.9996x`(CI `0.9935..1.0075`), `1.0051x`
+(CI `0.9987..1.0162`), `1.0033x`(CI `0.9831..1.0291`)로 동률이었다.
+scan 범위에서 불가능한 `x=gamma` guard 생략도 `1.0050x`였다. stack
+headroom만을 위해 template/preprocessor 복잡도를 늘리지 않고 기본 구조를
+유지했다.
+
 **ADX, compiler와 cache hint.** GCC 12와 Clang 21의 현 hot assembly는
 `mulx+adc`만 쓰고 `adcx/adox`는 생성하지 않았다. 직접 짠 dual-carry
 REDC는 KAT를 통과했지만 약 4--5% 느렸다. Clang+libomp는 quick 1-thread에서
@@ -871,6 +1002,20 @@ REDC는 KAT를 통과했지만 약 4--5% 느렸다. Clang+libomp는 quick 1-thre
 `0.9953/0.9921/0.9805x`, row padding 1/3 cache line은
 `0.9814/0.9826x`, `-funroll-loops`는 `1.0074x`였다. signed-w10과
 4-thread chunk 변형도 2% 문턱 또는 안정성을 넘지 못했다.
+REDC 마지막 보정은 발생 확률 상한이 약 `7.71e-13`이라 조건분기가 잘
+예측되며, branchless select는 primitive `0.6702x`로 크게 느렸다.
+CIOS Montgomery 재작성도 primitive 약 `0.694x`, Horner 수동 unroll과
+`field_add` 강제 inline도 전체 측정에서 동률 이하라 기존 unrolled
+2-limb REDC를 유지했다.
+
+factorized trace의 GCC 12 helper는 330바이트와 32-byte stack에서 세
+multiply를 out-of-line 호출한다. `flatten`은 isolated trace를
+`1.1174x`로 만들었지만 helper가 945바이트로 커지고 full solver는
+`0.9882x`로 느려졌다. 전역/trace 전용 BMI2 square도 isolated
+`1.0891/1.0429x`와 달리 전체 `1.0042/0.9845x`였다. 마지막 `+2`를
+tail helper로 옮긴 후보는 첫 전체 측정 `1.0355x`가 3-trial 재측정에서
+`0.9603x`로 뒤집혔다. Clang의 inline code도 full solver
+`1.0101x`와 parity-containing CI여서 compact GCC body를 유지했다.
 
 **상수 guard와 zero-fill.** subgroup/곡선/`mu_20` 상수를 compile-time
 Montgomery 값으로 바꿔 function-local static guard를 없앴다.
@@ -912,17 +1057,18 @@ multi-buffer 구현을 다시 비교할 수 있다.
   binary/PRAC 결과를 8개 고유 경계 trace가 들어 있는 64개 field pair와
   2,000개 random trace에서 교차 검증한다. expanded/reciprocal trace는
   경계 11개, 무작위 512개와 공개된 세 prefix의 전체 `3*65,536`개
-  x후보를 cross-multiply해 대조한다. direct-fraction batch는 최대 256개와
+  x후보를 cross-multiply해 대조하고 shifted-square/scale inverse도
+  normalized oracle와 비교한다. direct-fraction batch는 최대 256개와
   255번 index,
   여러 tail 길이, 양성 하나를 포함한 분모 0 세 개를 넣어 active count가
   253이 되는 in-place compaction, 양성 255번 index 복원, 전부 분모 0인
   fail-closed 입력도 검사한다.
 - promotion runner는 field backend, curve model, `d` multiplication,
-  lift residue와 subgroup membership/constant/batch layout, Lucas bit
-  scan/step, subgroup trace formula, scan-buffer/curve-constant layout,
-  table 폭/부호 encoding, scan output index, fixed multiplication, 요청/실효 block,
-  thread/schedule/inverse/sqrt metadata가 요청한 후보와 일치하는지
-  검사한다.
+  lift residue와 subgroup membership/constant/batch layout/inversion,
+  Lucas bit scan/step, subgroup trace formula, block cubic RHS/x-square timing,
+  scan-buffer/curve-constant layout, table 폭/부호 encoding, scan output
+  index, fixed multiplication, 요청/실효 block, thread/schedule/inverse/sqrt
+  metadata가 요청한 후보와 일치하는지 검사한다.
   solver는 실제 생성된 OpenMP team 크기를 `threads_actual`로 보고하고,
   요청값과 다르면 timing 전에 종료한다. 서로 다른 compile-time 후보가
   같은 binary hash를 만들거나 build/runtime 설정이 같은 A/A 비교도
@@ -979,6 +1125,11 @@ mask보다 많은 thread를 요청하면 build 전에 거부한다.
 median이 `1.02x`를 넘고, 시간 block과 AB/BA 순서의 8개 stratum 안에서
 각각 재표집한 5,000회 bootstrap CI가 parity를 제외하며 AB/BA 두 stratum과
 absolute/effect stationarity를 모두 통과해야 승격한다.
+짧은 20--40ms solver가 공유 VM의 단일 process 지연에 흔들릴 때는
+`--trials-per-pair N`으로 한 logical pair 안에서 `N`개의 fresh-process
+AB/BA trial을 실행하고 trial ratio/각 variant 시간의 중앙값을 사용한다.
+schema 3 보고서는 raw trial, logical pair aggregate와 집계 규칙을 모두
+남기며, bootstrap 표본 수는 부풀리지 않고 여전히 40 logical pair다.
 보고서 옆에는 측정 source snapshot과 source/runner/binary SHA-256, build
 argv, CPU model/flags/topology, 모든 timestamp와 child CPU time을 보존한다.
 
@@ -1063,6 +1214,11 @@ CI, AB/BA와 시간 block stationarity를 포함한 성능 승격 gate의 판정
 | binary/xy / PRAC20/direct, 1T 측정 B | 1.0311x | 1.0268..1.0376 | PASS | 독립 재현 |
 | binary/xy / PRAC20/direct, 포화 host | 1.0289x | 0.9791..1.0878 | FAIL | 진단값 |
 | expanded / reciprocal trace, 1T | 1.0270x | 1.0027..1.0360 | FAIL | 연산 수 감소 채택, timing은 진단값 |
+| reciprocal Horner / shifted-square, 1T | 1.0077x | 1.0043..1.0149 | FAIL | `5→3` products 채택, 2% 미달 |
+| direct cubic / block-local recurrence, block64 | 1.0089x | 0.9884..1.0193 | FAIL | recurrence 연산 감소만 채택 |
+| direct block64 / recurrence block256, 측정 A | 1.0485x | 1.0347..1.0667 | FAIL | effect spread 2.13% |
+| direct block64 / recurrence block256, 측정 B | 1.0455x | 1.0336..1.0510 | FAIL | block64 정책 유지 |
+| eager / post-subgroup deferred x-square | 1.0042x | 0.9749..1.0280 | FAIL | square 6,166회 제거만 채택 |
 | binary branch / branchless select | 0.9770x | 0.9609..0.9914 | FAIL | branch 유지 |
 | U128 bit scan / U64 stream | 1.0068x | 1.0001..1.0191 | FAIL | U128 유지 |
 | xy-separated / direct fraction only | 1.0007x | 0.9912..1.0082 | PASS | 단독 승격 안 함 |
@@ -1156,6 +1312,28 @@ python3 solutions/06_optimization/benchmark_06_promotion.py \
   --candidate-schedule block --block-size 64 \
   --warmup-pairs 10 --pairs 40 --seed 1145324612 \
   --output /tmp/challenge06-reciprocal-trace.json
+
+python3 solutions/06_optimization/benchmark_06_promotion.py \
+  --baseline-label reciprocal-horner --candidate-label shifted-square \
+  --baseline-define CH6_HORNER_SUBGROUP_TRACE \
+  --threads 1 --cpus 7 --block-size 64 \
+  --warmup-pairs 10 --pairs 40 --trials-per-pair 5 \
+  --output /tmp/challenge06-shifted-square.json
+
+python3 solutions/06_optimization/benchmark_06_promotion.py \
+  --baseline-label direct-block64 --candidate-label recurrence-block256 \
+  --baseline-define CH6_DIRECT_BLOCK_CUBIC \
+  --threads 1 --cpus 7 \
+  --baseline-block-size 64 --candidate-block-size 256 \
+  --warmup-pairs 10 --pairs 40 --trials-per-pair 5 \
+  --output /tmp/challenge06-cubic-block.json
+
+python3 solutions/06_optimization/benchmark_06_promotion.py \
+  --baseline-label eager-x-square --candidate-label deferred-x-square \
+  --baseline-define CH6_EAGER_BLOCK_X_SQUARE \
+  --threads 1 --cpus 7 --block-size 64 \
+  --warmup-pairs 10 --pairs 40 --trials-per-pair 5 \
+  --output /tmp/challenge06-deferred-square.json
 ```
 
 C++만 직접 실행하려면:
@@ -1236,6 +1414,7 @@ g++ -O3 -DNDEBUG -std=c++20 -fopenmp \
 - [Montgomery, *Evaluating recurrences of form X_(m+n)=f(X_m,X_n,X_(m-n)) via Lucas chains*](https://cr.yp.to/bib/1992/montgomery-lucas.pdf) — differential Lucas chain과 PRAC rule의 원자료다.
 - [Zimmermann--Dodson, *20 years of ECM*, Section 2.2](https://members.loria.fr/PZimmermann/papers/ecm-submitted.pdf) — golden-ratio 및 transformed-alpha PRAC seed와 operation-cost 탐색을 대조했다.
 - [Kutz, *Lower Bounds for Lucas Chains*](https://epubs.siam.org/doi/10.1137/S0097539700379255) — Fibonacci 성장에 따른 Lucas-chain 하한의 맥락이다. 현재 124-product schedule의 전역 최적성을 뜻하지는 않는다.
+- [Bernstein, Cottaar, Lange, *Searching for differential addition chains*](https://doi.org/10.1007/s40993-024-00604-8) — continued-fraction differential chain의 최소 길이 탐색과 meet-in-the-middle 방법을 참고해 PRAC seed 및 123-product 이하 경로 재탐색의 범위를 정했다.
 - [GMP-ECM `lucas.c`](https://sources.debian.org/src/gmp-ecm/7.0.6%2Bds-2/lucas.c/) — `pp1_mul_prac`의 production rule 순서와 alias-safe state update를 확인했다.
 - [Montgomery, *Speeding the Pollard and Elliptic Curve Methods of Factorization*](https://doi.org/10.1090/S0025-5718-1987-0866113-7) — differential ladder와 inversion amortization의 원형을 확인했다.
 - [Bernstein et al., *OpenSSLNTRU: Faster post-quantum TLS key exchange*](https://opensslntru.cr.yp.to/opensslntru-20211006.pdf) — prefix/reverse batch inversion의 `3n-3` multiplication과 1 inversion 비용을 확인했다.

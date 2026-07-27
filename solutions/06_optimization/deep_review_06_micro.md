@@ -354,9 +354,11 @@ scan, final prediction을 포함한다.
   bootstrap은 block×order 8개 stratum 안에서 재표집한다. AB/BA 두
   stratum과 absolute/effect stationarity를 모두 통과하고 median이
   `1.02x`를 넘어야 작은 후보를 승격한다. compile define뿐 아니라 서로
-  다른 runtime schedule/block도 같은 binary로 비교할 수 있다. 저장된 JSON
-  옆에는 source snapshot, source/runner/binary SHA-256, build argv, CPU
-  model/flags/topology와 raw event를 함께 보존한다.
+  다른 runtime schedule/block도 같은 binary로 비교할 수 있다.
+  `--trials-per-pair N`은 각 logical pair를 `N`개 fresh-process trial의
+  중앙값으로 만들되 bootstrap 표본 수는 40으로 유지한다. 저장된 schema-3
+  JSON 옆에는 source snapshot, source/runner/binary SHA-256, build argv,
+  CPU model/flags/topology, raw trial과 pair aggregate를 함께 보존한다.
 
 ### 이전 native의 동일-run 기준선
 
@@ -802,6 +804,110 @@ AVX2 코드를 만들지 않았다.
 AVX-512 IFMA52가 있는 다른 CPU라면 radix-44/52 multi-buffer field를
 다시 검토할 수 있지만, 측정 host에는 AVX-512가 없으므로 이 결과에
 포함하지 않는다.
+
+### block cubic recurrence와 trace DAG
+
+변환 곡선의 연속 후보에서 `f(x)=x^3+ax+b`는 block 첫 원소만 직접
+평가하고 고정 step `h`의 1·2·3차 차분을 field add로 갱신한다.
+따라서 recurrence 경로는 부분군 필터까지 `x^2` 없이 진행한다.
+direct/recurrence
+준비 결과는 다섯 시작점에서 각 128개, 전체 known-answer에서는
+정답 low와 `candidates_started`까지 같았다. 같은 block64의 단독 결과는
+`1.0089x`로 CI가 parity를 포함했지만, direct-block64 대비
+recurrence-block256은 fresh-process 5/7-trial logical pair campaign에서
+각각 `1.0485x`, `1.0455x`였다. CI는 모두 parity를 제외했으나 effect
+spread 2.13% 또는 공유 host absolute drift 때문에 stationarity를
+통과하지 못했다. recurrence는 정확한 product 제거로 유지하고 자동
+block은 64에 둔다.
+
+기존 recurrence는 Jacobi 직후 `x^2`를 계산해 curve-valid 7,713개 모두에
+square를 썼지만, trace를 통과해 Hamburg에 들어가는 것은 1,547개다.
+square를 `multiply_prepared_lift` 직전으로 옮겨 정답 prefix에서 정확히
+6,166 products를 없앴다. direct-cubic과 scalar 경로는 RHS 계산 때 만든
+square를 계속 재사용한다. eager/deferred 5-trial logical-pair campaign은
+shared-host drift 속에서 `1.0042x`(CI `0.9749..1.0280`)와 stationarity
+실패였으므로 timing PASS로 세지 않는다. 기본값은 정확한 연산 제거와
+self-test/KAT에 근거하며 `CH6_EAGER_BLOCK_X_SQUARE`를 ablation으로 남겼다.
+
+reciprocal trace의 다섯 계수에는 더 강한 구조가 있다. 유일한 fifth root
+`lambda`로 `r=lambda/(x-alpha)`를 잡으면
+
+```text
+tau = 2 + r*((r+h)^2+k)^2
+```
+
+가 정확히 성립한다. binary-GCD의 마지막 Montgomery 변환 상수를
+`lambda*R^2`로 바꿔 scale을 흡수했고, trace는 Horner `5M`에서
+`2S+1M`으로 줄었다. batch prefix/reverse 양 끝의 불필요한 세 곱도
+없애 normalization+trace를 `8m+I`에서 `6m-3+I`로 줄였다.
+
+CPU 7 고정 cycle microbenchmark는 2,000-call warm-up 뒤 다음 결과를
+보였다.
+
+| 활성 원소 `m` | Horner cycles | shifted-square cycles | 비율 |
+|---:|---:|---:|---:|
+| 32 | 5,198 | 4,095 | 1.269x |
+| 128 | 18,990 | 14,558 | 1.304x |
+| 256 | 37,373 | 28,485 | 1.313x |
+
+full solver의 5-trial logical-pair 결과는 `1.0077x`
+(CI `1.0043..1.0149`)였지만 절대-time stationarity와 2% 문턱을
+놓쳤다. 뒤의 124-product PRAC과 나머지 pipeline이 micro 이득을
+희석한다. Sage는 symbolic polynomial identity와 실제 sample을,
+C++는 Horner/shifted-square, 일반/scaled binary inverse와
+batch count `1..256`의 선택된 경계를 교차 검증한다.
+
+3-product trace 네 개를 software-pipeline한 isolated micro는 활성 원소
+32/128/256개에서 `1.0287/1.0521/1.0599x`였지만, 124-product PRAC까지
+붙이면 2/4-lane 모두 `0.995..1.007x`로 희석됐다. reverse sweep 뒤 별도
+trace/PRAC pass도 최대 약 `1.006x`, numerator에 prefix를 겹쳐 저장한
+layout도 `0.999..1.002x`였다. 활성 원소별 membership cost는 8--16개에서
+이미 약 2,859 cycles/active로 평탄해져 block64의 평균 약 32개면 inverse
+amortization이 충분했다. 따라서 더 큰 block의 명목상 이득을 subgroup
+inverse 하나만으로 설명하지 않는다.
+
+PRAC도 실제 dependency를 반영한 125-product/109--113-step seed,
+`0x03,0x83*40` 전용 prefix와 38-run RLE를 추가 검사했다. prefix는
+41 dispatch를 없앴지만 weighted seed와 결합한 전체 결과가 `1.0127x`
+(CI `0.9807..1.0418`)와 stationarity 실패였다. RLE는 hot body 확대,
+spill과 rare-rule helper 호출 때문에 기준 약 1.35--1.47us에서
+1.91--3.96us로 느려졌다.
+
+### frame 축소와 추가 codegen 후보
+
+reciprocal 기본 경로의 unused numerator 제거는 evaluator frame을
+4,096바이트, deferred-sqrt/Hamburg에서 불필요한 `PreparedLift::y`를
+조건부 제거하면 6,160바이트, 둘을 합치면 10,256바이트 줄였다. 그러나
+paired 결과는 `0.9996x`, `1.0051x`, `1.0033x`로 모두 CI가 parity를
+포함했다. scan 범위의 `gamma` singularity guard 제거도 `1.0050x`였다.
+속도 근거 없이 조건부 layout 복잡도를 늘리지 않았다.
+
+현재 `field_multiply`는 GCC 12에서 253 bytes/70 instructions이며
+`mulx` 7회와 짧은 carry chain을 쓴다. 최종 REDC 보정 확률 상한이
+`p/2^128≈7.71e-13`이라 조건분기는 사실상 항상 같은 방향이다.
+branchless 보정은 primitive `0.6702x`, unlikely hint는 `0.9596x`,
+CIOS kernel은 약 `0.694x`로 졌다. high×high 상위 limb 생략은 full
+solver에서 `1.0196x`였지만 isolated primitive가 `0.7832x`이고
+callee-save push가 늘어 불안정 후보로 보류했다. Horner 수동 unroll,
+`field_add` always-inline과 PRAC 상수 재사용도 결정적 이득이 없었다.
+
+새 factorized trace의 GCC 12 helper는 330 bytes, 32-byte stack과 세 번의
+out-of-line multiply call을 쓴다. `flatten`은 isolated trace를
+`1.1174x`로 만들었지만 helper가 945 bytes로 커지고 full solver는
+`0.9882x`로 명확히 느렸다. 전역/trace 전용 BMI2 square도 isolated
+`1.0891x/1.0429x`와 달리 full solver `1.0042x/0.9845x`에 그쳤다.
+마지막 `+2`를 tail helper로 분리한 후보는 한 run의 `1.0355x`가
+3-trial 재측정에서 `0.9603x`로 뒤집혀 기각했다. Clang inline code도
+전체 `1.0101x`와 parity-containing CI여서 작은 GCC 3-call body를 유지한다.
+
+### 다중 trial logical pair
+
+20--40ms process 한 번의 scheduler 지연이 작은 후보를 뒤집지 않도록
+promotion runner에 `--trials-per-pair N`을 추가했다. 각 logical pair는
+동일 순서의 `N`개 fresh-process AB 또는 BA trial을 수행하고, variant
+시간과 trial ratio의 중앙값을 사용한다. bootstrap과 stationarity의
+표본 수는 여전히 logical pair 40개이며 raw event, `trial_index`,
+pair aggregate와 집계 규칙을 schema 3 JSON에 모두 보존한다.
 
 ## 참고 자료와 논문
 

@@ -3,7 +3,7 @@
 ## 결론
 
 첫 GMP 후보군에서는 안정적인 개선을 찾지 못했지만, native 경로를 다시
-검토해 서로 독립적인 다섯 알고리즘 개선을 채택했다.
+검토해 서로 독립적인 여덟 알고리즘 개선을 채택했다.
 
 1. `r0`를 lift해 `r1`로 거르는 대신 **`r1`을 lift해 `r2`로 거른다**.
    이 인스턴스의 순차 검사량은 21,305개에서 15,595개로 26.8% 줄었다.
@@ -20,6 +20,15 @@
    `E=(p+1)/5=20H` 분해와 고정 Lucas-PRAC chain으로 바꾸고, `L_H`를
    `mu_20`의 11개 trace와 비교한다. trace fraction도 caller 배열에
    직접 준비하고 in-place compact한다.
+6. reciprocal trace의 quintic를 shifted-square로 인수분해하고
+   binary-GCD의 마지막 Montgomery 변환에 scale을 흡수해 Horner `5M`을
+   이론적 하한인 `2S+1M`으로 줄인다. batch inversion 양 끝의 세 product도
+   생략한다.
+7. 연속 low-bit block의 `x^3+ax+b`를 3차 finite difference로 갱신하고,
+   후보마다 cubic을 직접 다시 계산하지 않는다.
+8. recurrence가 `rhs`를 이미 공급하므로 Hamburg용 `x^2`를 Jacobi 직후가
+   아니라 부분군 필터 뒤로 미뤄, 정답 prefix에서 field square 6,166회를
+   없앤다.
 
 40개 adjacent balanced AB/BA pair, 5,000회 deterministic bootstrap,
 4개 시간 block stationarity gate를 사용한 1-thread 측정에서 shifted scan은
@@ -32,9 +41,12 @@ paired median `1.3428x`(95% CI `1.3336..1.3510`), Hamburg는
 기본값에 넣었다. 다섯 번째 후보는 아래 1-thread 승격 campaign 두 번에서
 각각 `1.0345x`(CI `1.0271..1.0448`)와
 `1.0311x`(CI `1.0268..1.0376`)로 모든 gate를 통과했다.
-Brier--Joye, GMP batch
-inversion, finite difference, Legendre 선필터와 넓은 임의점 wNAF는 아래
-실패 기록처럼 유지하지 않는다.
+여섯째부터 여덟째까지는 end-to-end 2% gate를 통과하지 못했지만 정확한 field
+product 감소와 Sage/C++ 등가 검증을 근거로 기본 arithmetic에 넣고 이전
+Horner/direct-cubic/eager-square를 ablation으로 보존했다. Brier--Joye,
+초기 GMP batch
+inversion/finite-difference 구성, Legendre 선필터와 넓은 임의점 wNAF는
+아래 실패 기록처럼 유지하지 않는다.
 
 모든 후보는 선택한 scan window에 맞춰 다음 값을 검증했다.
 
@@ -402,10 +414,21 @@ opcode가 pre-swap을 갖는다. schedule SHA-256은
 적다. 이 backend에서 square도 `field_multiply(x,x)`이므로 M/S를 같은
 단위로 합산했다. 11개 table equality에는 field multiplication이 없다.
 
-trace 준비 `6M+3S`, batch inverse의 후보당 약 4M까지 더하면 최종
-membership 비용은 약 137 products다. Hamburg의 초기화와 마무리를
-포함한 전체 비용은 약 930 products이고, 79.94% reject율을 곱한 filter
-손익분기점은 약 743 products이므로 충분히 작다. caller가
+expanded trace의 `6M+3S`는 먼저 `z=(x-alpha)^-1`의 5M Horner로
+줄였고, 다섯 계수를 다시
+
+```text
+r = lambda*z
+tau = 2 + r*((r+h)^2+k)^2
+```
+
+로 인수분해했다. binary-GCD의 마지막 Montgomery 변환에서
+`lambda*R^2`를 사용해 scale을 공짜로 얻으므로 trace는 `2S+1M`이다.
+batch inverse도 양 끝 세 product를 생략해 `m`개 normalization+trace가
+`8m+I`에서 `6m-3+I`로 줄었다. PRAC까지의 membership 비용은
+`130m-3+I/block`, scalar는 `127+I/candidate`다. Hamburg의 초기화와
+마무리를 포함한 전체 비용은 약 930 products이고, 79.94% reject율을 곱한
+filter 손익분기점은 약 743 products이므로 충분히 작다. caller가
 `SubgroupTraceFraction`을 직접 준비하고 batch
 함수가 이를 앞쪽으로 in-place compact한다. 최종 1-lane 경로는 reverse
 pass에서 normalized trace를 지역값으로 계산하고, multi-lane ablation만
@@ -413,6 +436,15 @@ numerator를 덮어쓴다. GCC 12의 raw function-prologue stack allocation은
 binary/xy의 `0x38a8`에서 PRAC/direct의 `0x1180`으로 줄었다. 유효
 rational lift에서는 trace 분모 `U-V`가 0이 될 수 없지만 구현은 0을
 만나면 fail-closed로 거부한다.
+
+block recurrence에서는 `rhs`가 이미 준비돼 있어 `x^2`는 부분군 판정에
+필요하지 않다. 기존에는 Jacobi를 통과한 7,713개에 모두 square를 수행한
+뒤 trace가 1,547개만 남겼다. 최종 경로는 `multiply_prepared_lift` 직전에
+square해 정확히 6,166회를 없앤다. eager/deferred 5-trial logical-pair
+측정은 `1.0042x`(CI `0.9749..1.0280`)와 stationarity 실패로 timing
+PASS는 아니었다. 다만 실행하는 field operation의 진부분집합이고
+direct-cubic/scalar 경로는 이미 계산한 square를 그대로 전달한다.
+`CH6_EAGER_BLOCK_X_SQUARE`는 이전 순서를 독립 oracle로 보존한다.
 
 124는 증명된 전역 최적값이 아니라 찾은 schedule 중 최선이다.
 Fibonacci 성장으로 보는 이 지수의 하한 맥락은 약 117 products이고,
@@ -425,7 +457,8 @@ golden ratio와 Zimmermann--Dodson의 transformed-alpha 후보 주변을 더
 trace를 실제 lift 128개에서 직접 `[n]T`와 비교하고, `Q` 양성 벡터와
 `Fp`-rational order-5 점 음성 벡터를 검사한다. 추가 self-test는 11개
 상수가 서로 다르고 모두 `L_20=2`인지 확인하며, canonical-to-Montgomery
-상수를 runtime 변환과 대조한다. 64개 field 경계 pair와 2,000개
+상수를 runtime 변환과 대조한다. expanded/Horner/shifted-square trace와
+일반/scaled inverse도 서로 대조한다. 64개 field 경계 pair와 2,000개
 deterministic random trace에서 fixed PRAC 결과가 binary `L_E=2`
 oracle과 일치하고, schedule byte hash와 연산 수는 독립 생성기로
 재계산했다. direct-fraction batch는 `1/2/3/4/5/7/127/128/129/255/256`
@@ -484,6 +517,59 @@ Lucas를 교차 배치한 2-lane 경로는 `1.0180x`로 문턱 아래였고 PRAC
 `0x579`에서 `0x44c`바이트로 줄었지만 매 bit의 limb select가 늘어
 `0.9770x`(CI `0.9609..0.9914`)로 명확히 느렸다.
 
+### 후속 chain 전수/무작위 탐색
+
+현재 seed의 `+/-5,000,000` 범위 10,000,001개를 전수 조사하고 전
+구간에서 천만 seed를 균등 표집했다. `gcd(H,seed)=1`, 최종 Euclid
+상태 `d=e=1`, symbolic index가 정확히 `H`인 schedule만 인정했다.
+rules 1/3/4/5에서는 현재 124-product seed가 주변의 유일 최선이었고,
+무작위 최선은 131 products였다. 초기에 나온 104-product 후보는
+`gcd=117787`이라 `L_(H/117787)`을 계산하는 거짓 양성이었다.
+
+Montgomery Table 4의 rule 6까지 허용하면 seed
+`0x1575ba2094b05be884fb0`에서 112-byte, 90 pre-swap,
+`119M+5S=124`인 schedule을 얻는다. index oracle, 경계/무작위
+1,005 trace와 C++ self-test를 통과했지만 PRAC micro는 `1.0170x`,
+전체 풀이는 `1.0060x`(CI `0.9871..1.0184`)와 stationarity 실패였다.
+고정 시작점에서 123-product 이하만 허용한 branch-and-bound도 경로를
+찾지 못했다. 이는 허용한 변환 계열의 결과이지 임의 Lucas chain의 전역
+최적성 증명은 아니다.
+
+실제 M/S routine이 같은 점을 반영해 step 수와 dependency proxy까지
+가중한 125-product 후보도 검사했다. 가장 유력한 compact seed는
+`117M+8S`, 110 steps였고 단발 PRAC micro에서는 약 2.9% 빨랐지만
+end-to-end로 재현되지 않았다. 기존 schedule의
+`0x03` 뒤 `0x83` 40연속을 전용 loop로 바꾸면 41번의 dispatch를
+없앴지만 quick 결과가 1.9--2.6%로 흔들렸다. 두 아이디어의 결합도
+`1.0127x`(CI `0.9807..1.0418`)와 stationarity 실패였다. 115 opcode를
+38 run으로 압축한 RLE 변형은 큰 body, spill과 helper 호출 때문에
+기준 약 1.35--1.47us보다 1.91--3.96us로 오히려 느렸다.
+
+`H=117787*22273940938441081133` 분해를 이용해 짧은 첫 recurrence 뒤
+Bloom filter를 통과한 후보만 `L_117787`로 마무리하는 방법도 검사했다.
+2MiB filter는 약 5.9% 느렸고 512KiB filter는 `1.003x`
+(CI `0.991..1.016`)로 동률이었다. 생성 asset 로딩과 cache traffic을
+정당화하지 못해 저장소에는 넣지 않았다.
+
+### 역원 없는 Lucas 표현
+
+`tau=N/D`에 대해 `F_k=D^k L_k(N/D)`, `K_k=D^(2k)`로 두면
+
+```text
+F_(2k)   = F_k^2 - 2*K_k
+F_(2k+1) = F_k*F_(k+1) - N*K_k
+```
+
+로 정규화 역원을 피할 수 있다. 그러나 `H`의 82비트/popcount 46을
+그대로 따라가면 binary가 약 383 products/candidate, homogeneous
+PRAC은 약 496이다. 여러 후보의 공통분모를 만들어도 새 3-product
+trace 기준 binary `250m+137`, PRAC `248m+251 products/block`이며
+`m=32`에서 후보당 약 254--256이다. 현재 normalized 경로의
+`130-3/m+I/m`에 비해 거의 두 배다. 후보들을 `Fp^m`의 한 recurrence로
+묶는 표현도 componentwise multiplication의 bilinear rank가 최소 `m`이라
+기본 field-product 수를 줄이지 못하며, 가능한 ILP 이득은 기존 lane
+실험의 register spill로 상쇄됐다.
+
 필터를 끈 동일 source와의 CPU 고정 40-pair 측정은 1 thread에서 외부
 중앙값 `0.085280/0.044124 s`, paired `1.9444x`(CI
 `1.9113..1.9687`)였고 2 thread에서는 `0.053521/0.030619 s`,
@@ -494,8 +580,9 @@ paired `1.7448x`(CI `1.7161..1.7904`)였다. 모든 시간 block이 각각
 이 campaign의 고정 source SHA-256은
 `5f169154d1c3b681a496169b6f4ec456a5a55c41c5986bf1ae27b5e1e90005a8`이다.
 이후 최종 source에서는 중복 `PreparedLift` 저장을 없애고 이미 계산한
-`x^2`를 재사용했으며, 정확성 suite는 다시 통과시켰지만 포화된 host에서
-같은 no-filter/filter ablation을 다시 측정하지는 않았다.
+`x^2`를 재사용했다. 더 뒤의 recurrence 경로는 이 square 자체를 부분군
+필터 뒤로 미뤘다. 정확성 suite는 다시 통과시켰지만 포화된 host에서 같은
+no-filter/filter ablation을 다시 측정하지는 않았다.
 
 ## 반복 측정
 
@@ -567,6 +654,11 @@ runner는 두 C++ 실행 파일을 임시 디렉터리에 빌드하고 각 실�
   Computing* 31(6), 2002](https://epubs.siam.org/doi/10.1137/S0097539700379255) —
   Fibonacci 성장과 Lucas-chain 길이 하한의 맥락을 제공한다. 이 논문을
   124-op schedule의 전역 최적성 증명으로 사용하지는 않았다.
+- [Daniel J. Bernstein, Jolijn Cottaar, Tanja Lange, "Searching for
+  differential addition chains", *Research in Number Theory* 11, 45
+  (2025)](https://doi.org/10.1007/s40993-024-00604-8) —
+  continued-fraction differential chain의 최소 길이 및 meet-in-the-middle
+  탐색을 후속 seed/경로 탐색과 대조했다.
 - [GMP-ECM `lucas.c`](https://sources.debian.org/src/gmp-ecm/7.0.6%2Bds-2/lucas.c/) —
   `pp1_mul_prac` rule 순서와 alias-safe state update를 구현과 대조했다.
 - [Peter L. Montgomery, "Speeding the Pollard and Elliptic Curve Methods of Factorization" (Mathematics of Computation, 1987)](https://www.ams.org/journals/mcom/1987-48-177/S0025-5718-1987-0866113-7/S0025-5718-1987-0866113-7.pdf) — differential-addition ladder와 inversion amortization의 원형을 확인했다.

@@ -67,7 +67,7 @@ P-only/E-only/P+E/all-core 및 block-size 후보를 각각 별도 JSON으로
 | 3 | [네트워크보안](writeups/03_네트워크보안.md) | 유효한 TLS-GCM 위조 record | [`solve_03_tls_gcm_nonce_reuse.py`](solutions/solve_03_tls_gcm_nonce_reuse.py) |
 | 4 | [디지털포렌식](writeups/04_디지털포렌식.md) | bounded-memory 전체 tensor 발견 scanner와 `CRYPTO{...}` payload 추출 | [`solve_04_digital_forensics.py`](solutions/solve_04_digital_forensics.py) |
 | 5 | [동형암호](writeups/05_동형암호.md) | 네 자리 전체 날짜 delta와 유일 후보 검증으로 BGV secret·State 복원 | [`solve_05_bgv.py`](solutions/solve_05_bgv.py) |
-| 6 | [PRNG](writeups/06_PRNG.md) | `r3=0x2443c8daf1a9d52b09`; analytic telemetry, shifted `s3` scan, BMI2/ADX와 Hamburg native 경로 | [`Python`](solutions/solve_06_prng.py), [`native C++`](solutions/06_optimization/deep_native_06.cpp) |
+| 6 | [PRNG](writeups/06_PRNG.md) | `r3=0x2443c8daf1a9d52b09`; analytic telemetry, shifted `s3`, Jacobi lift, cofactor-5 trace/PRAC 선필터와 block recurrence native 경로 | [`Python`](solutions/solve_06_prng.py), [`native C++`](solutions/06_optimization/deep_native_06.cpp) |
 | 7 | [소인수분해](writeups/07_소인수분해.md) | pinned FLATTER HM 복원, heuristic 경계와 RSA 인수·`FLAG{...}` 검증 | [`scan`](solutions/run_07_grouped_hm_scan.py), [`verify`](solutions/solve_07_final.py) |
 | 8 | [블록암호](writeups/08_블록암호.md) | leak-assisted key-byte constraint join과 50,000쌍 검증, key `2923be84e16cd6ae529049f1f1bbe9eb` | [`solve_08_aes_key.py`](solutions/solve_08_aes_key.py) |
 

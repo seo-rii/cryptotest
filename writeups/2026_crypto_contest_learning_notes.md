@@ -1,6 +1,6 @@
 # 2026 암호분석경진대회 전체 정리
 
-> 최종 갱신: 2026-07-23
+> 최종 갱신: 2026-07-27
 
 이 문서는 `cryptotest`의 8개 문제에 대한 현재 완료 상태, 핵심 결과,
 재현 진입점과 검증 수준을 한곳에 모은 전체 색인이다. 문제별 수식,
@@ -15,7 +15,7 @@
 | 3 | TLS 1.2 AES-GCM 위조 | 완료 | nonce 재사용으로 `H`와 `E_K(J0)`를 복원하고 유효한 급여 변경 record 생성 | [03_네트워크보안](03_네트워크보안.md) |
 | 4 | LLM weight steganography | 완료 | `CRYPTO{G00D_J0B!_y0u_f0und_7h3_h1dd3n_s3cr37_1n_LLM}` 추출 | [04_디지털포렌식](04_디지털포렌식.md) |
 | 5 | textbook-BGV | 완료 | ternary secret 64계수, 날짜 `20260410→20260411`, 고정 `State` 복원 | [05_동형암호](05_동형암호.md) |
-| 6 | Dual_EC_DRBG | 풀이·최적화 완료 | `d`와 `r3` 복원; shifted scan·Hamburg·Jacobi와 2T adaptive scheduler 채택 | [06_PRNG](06_PRNG.md) |
+| 6 | Dual_EC_DRBG | 풀이·최적화 완료 | `d`와 `r3` 복원; shifted scan·Jacobi·cofactor-5 trace/PRAC·block recurrence 채택 | [06_PRNG](06_PRNG.md) |
 | 7 | RSA partial key exposure | 완료 | `p`, `q`와 `FLAG{d1rty_b1t_l34k_c0pp3rsm1th_m33ts_str4t3gy}` 복원 | [07_소인수분해](07_소인수분해.md) |
 | 8 | 변형 AES 7라운드 | 완료 | master key `2923be84e16cd6ae529049f1f1bbe9eb` 복원 | [08_블록암호](08_블록암호.md) |
 
@@ -269,14 +269,27 @@
 - Hamburg 정상 경로에서 y가 필요 없다는 점을 이용해 모든 lift의 sqrt를
   88비트 Euclidean Jacobi 판정으로 바꿨다. sqrt/Jacobi 40-pair는
   `1.0819x`(95% CI `1.0769..1.0842`)로 gate를 통과했다.
+- cofactor가 5인 곡선 구조를 이용해, `Fp2`의 order-5 Miller 값에서
+  y좌표가 소거되는 Frobenius--Tate trace를 유도했다. 고정
+  Lucas-PRAC으로 order-`n` 부분군을 먼저 판정해 정답 prefix의
+  curve-valid 7,713개 중 6,166개(79.94%)를 Hamburg 전에 제거한다.
+- trace quintic를 shifted-square 형태로 인수분해해 Horner `5M`을
+  `2S+1M`으로 줄였고, endpoint-elided batch inversion으로
+  normalization+trace를 `8m+I`에서 `6m-3+I`로 줄였다. Sage 전 구간
+  oracle과 C++ self-test/KAT가 직접 부분군 판정과의 일치를 확인한다.
+- block-local cubic recurrence는 후보별 RHS의 두 field multiplication을
+  두 field addition으로 바꾼다. recurrence가 RHS를 이미 제공하므로
+  `x^2`도 부분군 판정 뒤로 미뤄 탈락 후보의 field square 6,166회를
+  추가로 제거했다.
 - runtime schedule까지 같은 frozen binary에서 비교해 2-thread만
   `scalar64`에서 `block32`로 바꿨다. paired `1.2121x`(95% CI
   `1.2051..1.2163`)였으며 최종 adaptive 정책은 `1T=block64`,
   `2T=block32`, `3T+=scalar64`다.
 - balanced signed-w9(`1.0065x`), subtractive Jacobi(`1.0072x`, parity 포함),
   row-batched affine fixed-`Q`(`0.9351x`)와 2-lane Hamburg(`0.8624x`)는
-  검증·반복 측정 뒤 기각했다. cofactor-5 subgroup 선필터는 유효 lift의
-  79.94%를 제거할 잠재력이 있지만 판정 비용 때문에 고위험 연구로 남겼다.
+  검증·반복 측정 뒤 기각했다. weighted Lucas seed, schedule RLE,
+  2/4-lane PRAC, compiler `flatten`과 전용 square도 isolated kernel의
+  이득이 full solver로 이어지지 않아 기본 경로에서 제외했다.
 - warm-up 10쌍 뒤 전체 legacy/당시-final 40-pair holdout의
   `3.7126x`(95% CI `3.7106..3.7251`)는 Jacobi와 새 2-thread 정책 전의
   역사적 합산 결과다. 현재 전체 stack 수치로 소급하지 않는다.
