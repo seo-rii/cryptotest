@@ -18,7 +18,7 @@
 
 \title{Challenge 2: Reconstruction and Optimization of a 256-bit Permutation}
 \author{Crypto Contest Submission}
-\date{23 July 2026}
+\date{28 July 2026}
 
 \begin{document}
 \maketitle
@@ -76,6 +76,33 @@ entire CPU 3 campaign is diagnostic-only.  A grammar-scoped three-instruction
 AVX2 synthesis search and exact split-shuffle controls found no smaller
 transform, while LLVM 19's tested target labels all selected the same scheduling
 metrics and do not supply Core Ultra 7 255H evidence.
+
+\section{Current submission status}
+
+\begin{itemize}
+  \item Correctness and the final scalar submission source are fixed.  The
+        submitted file is \path{submissions/02/contest.c}.
+  \item The recommended score build is:
+\end{itemize}
+
+\begin{lstlisting}
+gcc -O3 -Wall -Wextra -mbmi2 -finline-limit=2000 contest.c
+\end{lstlisting}
+
+\begin{itemize}
+  \item The performance winner remains provisional until direct measurements
+        separate the P, E, and LP-E cores of an Intel Core Ultra 7 255H.
+        Until then, the scalar incumbent remains the submitted implementation.
+  \item The highest-priority A/B candidate is lane-wise AVX2.  The counted
+        block2, block3+tail1, and block5 front ends are the next candidates.
+        A replacement requires consistent improvement on every requested core
+        type in two sessions run at different times.
+  \item Exact mnemonic counts and byte sizes in this report describe binaries
+        produced by the compiler version named with each table.  GCC 13.3.0
+        and other compilers may lay out equivalent C differently, so these
+        counts are audit records rather than correctness conditions or
+        target-performance rankings.
+\end{itemize}
 
 \section{Recovering the structure}
 
@@ -1102,6 +1129,11 @@ gcc -O3 -Wall -Wextra -o /tmp/challenge02-default \
     \href{https://gcc.gnu.org/onlinedocs/gcc/Byte-Swapping-Builtins.html}
     {Byte-Swapping Builtins}: the fixed reverse-map specialization.
   \item GCC,
+    \href{https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html}
+    {Common Function Attributes}: semantics and linker limitations of
+    \texttt{aligned}, \texttt{noinline}, \texttt{noclone}, and
+    \texttt{always\_inline}.
+  \item GCC,
     \href{https://gcc.gnu.org/onlinedocs/gcc/x86-Function-Attributes.html}
     {x86 Function Attributes}: local BMI2 code generation under the supplied
     build command.
@@ -1111,8 +1143,10 @@ gcc -O3 -Wall -Wextra -o /tmp/challenge02-default \
     and loop/jump/label-alignment controls.
   \item de Moura and Bj\o{}rner,
     \href{https://doi.org/10.1007/978-3-540-78800-3_24}
-    {Z3: An Efficient SMT Solver}, TACAS 2008: bit-vector equivalence and
-    UNSAT checks for the scalar operation-deletion search.
+    {Z3: An Efficient SMT Solver}, TACAS 2008, and the
+    \href{https://www.microsoft.com/en-us/research/project/z3-3/publications/}
+    {official Z3 publication list}: bit-vector equivalence and UNSAT checks
+    for the scalar operation-deletion search.
   \item Solar-Lezama et al.,
     \href{https://people.csail.mit.edu/asolar/papers/asplos06-final.pdf}
     {Combinatorial Sketching for Finite Programs}, ASPLOS 2006: the CEGIS-style
@@ -1188,6 +1222,10 @@ gcc -O3 -Wall -Wextra -o /tmp/challenge02-default \
     \href{https://www.intel.com/content/www/us/en/developer/articles/guide/12th-gen-intel-core-processor-gamedev-guide.html}
     {Game Dev Guide for 12th Gen Intel Core Processor}: hybrid CPUID flag,
     per-logical-CPU leaf 0x1a core type, and affinity-pinned probing.
+  \item Linux kernel,
+    \href{https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v1/cpusets.html}
+    {CPUSETS documentation}: affinity isolation and the system-level basis for
+    recording pinned benchmark CPUs.
   \item Linux kernel,
     \href{https://docs.kernel.org/admin-guide/cputopology.html}
     {CPU topology documentation} and the
