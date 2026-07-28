@@ -1,0 +1,670 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=19mm]{geometry}
+\usepackage{fontspec}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+
+\setmainfont{Noto Sans CJK KR}[AutoFakeSlant=0.2]
+\setsansfont{Noto Sans CJK KR}
+\setmonofont{D2Coding}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!55!black,
+  urlcolor=blue!65!black,
+  citecolor=blue!55!black,
+  pdftitle={7번 소인수분해: RSA 부분 비트 유출 복원},
+  pdfauthor={암호분석경진대회 제출 보고서},
+  pdfsubject={부분 비트가 유출된 RSA 소인수의 이변수 Herrmann--May 복원},
+  pdfkeywords={RSA, partial key exposure, Coppersmith, Herrmann--May, FLATTER}
+}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\setlength{\emergencystretch}{3em}
+\setlist{nosep,leftmargin=6mm}
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  columns=fullflexible,
+  breaklines=true,
+  keepspaces=true,
+  showstringspaces=false
+}
+
+\newcommand{\evidence}[1]{\textbf{배제 증거:} #1}
+\newcommand{\observed}[1]{\textbf{실제 관측:} #1}
+
+\title{7번 소인수분해\\RSA 부분 비트 유출 복원}
+\author{암호분석경진대회 제출 보고서}
+\date{2026년 7월 28일}
+
+\begin{document}
+\maketitle
+
+\section{결과 요약}
+
+복원한 big-endian 평문 바이트열은 다음 ASCII 문자열이다.
+
+\begin{lstlisting}
+FLAG{d1rty_b1t_l34k_c0pp3rsm1th_m33ts_str4t3gy}
+\end{lstlisting}
+
+동일한 바이트열의 hexadecimal 표현은 다음과 같다.
+
+\begin{lstlisting}
+464c41477b64317274795f6231745f6c33346b5f633070703372736d3174685f
+6d333374735f73747234743367797d
+\end{lstlisting}
+
+공격은 양끝의 미지 4비트씩을 합친 256개 edge 후보를 계획하고, 나머지
+미지 영역을 155비트와 230비트의 두 연속 변수로 완화한다. 각 후보에 대해
+171차원 Herrmann--May 격자를 만들고 FLATTER로 감축한 뒤, 짧은 행에서
+얻은 보조 다항식들의 modular resultant와 GCD를 계산하고 CRT로 근을
+복원한다. 실제 재검증한 \texttt{cid=155}에서 두 소인수를 얻었고,
+\[
+  pq=N,\qquad (p\mathbin{\&}\mathrm{MASK})=\mathrm{P\_AND\_MASK},
+  \qquad m^e\bmod N=ct
+\]
+를 모두 확인했다.
+
+저장소의 runner는 \texttt{cid=0,\ldots,255}를 숫자 순서로 모두 실행하도록
+작성되어 있다. 다만 이 보고서는 전체 256개 blind scan을 완료했다고
+주장하지 않는다. pinned 환경에서 실제로 다시 확인한 공격 branch는
+\texttt{cid=155}이며, 그 branch의 factor, mask, 보조 다항식 평가 및 RSA
+재암호화 검증을 성공했다.
+
+\section{문제와 유출 구조}
+
+2048비트 RSA modulus \(N=pq\), 공개 지수 \(e=65537\), textbook RSA
+암호문 \(ct\)가 주어진다. 1024비트 소수 \(p\)에 대해서는
+\(\mathrm{MASK}\)와 \(p\mathbin{\&}\mathrm{MASK}\)도 공개된다.
+MASK가 1인 비트는 \(p\)의 값이 알려졌고, 0인 비트만 미지수다.
+
+LSB를 0번 비트로 두고 파싱하면 \(p\)의 1024비트 중 672비트가 알려지고
+352비트가 다음 일곱 구간에 나뉘어 있다.
+
+\begin{center}
+\begin{tabular}{rrr}
+\toprule
+구간 & 길이 & 역할 \\
+\midrule
+150--153 & 4 & low edge 전수조사 \\
+265--348 & 84 & 첫 grouped 변수에 포함 \\
+362--419 & 58 & 첫 grouped 변수에 포함 \\
+600--668 & 69 & 둘째 grouped 변수에 포함 \\
+682--768 & 87 & 둘째 grouped 변수에 포함 \\
+784--829 & 46 & 둘째 grouped 변수에 포함 \\
+920--923 & 4 & high edge 전수조사 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+352비트를 그대로 열거하면 \(2^{352}\approx9.17\times10^{105}\)개다.
+초당 \(10^{12}\)개를 검사한다고 비현실적으로 낙관해도 약
+\(2.9\times10^{86}\)년이 필요하다. 반면 양끝 두 구간은 합쳐서
+8비트뿐이므로 이 부분만 256개로 열거하고, 큰 내부 구간은 격자 공격으로
+넘긴다.
+
+\section{최종 공격}
+
+\subsection{256개 edge 후보와 두 변수 완화}
+
+양끝 nibble을 다음처럼 하나의 후보 번호로 묶는다.
+
+\begin{lstlisting}
+low  = p[150..153]
+high = p[920..923]
+cid  = (high << 4) | low
+\end{lstlisting}
+
+한 후보를 고정한 뒤 \(265\ldots419\)와 \(600\ldots829\)를 각각 연속
+정수 \(x,y\)로 둔다. 두 구간 안에는 이미 알려진 bit island도 있지만,
+그 제약을 버려 변수 수를 줄인다.
+
+\[
+  p=C+2^{265}x+2^{600}y,\qquad
+  0\le x<2^{155},\quad 0\le y<2^{230}.
+\]
+
+\(C\)는 해당 edge nibble과 두 grouped 구간 밖의 알려진 비트를 합친
+상수다. known-bit 제약을 완화했어도 실제 \(p\)의 \((x_0,y_0)\)는 이
+상자 안에 남는다. 이는 실제 근을 모델에서 제거하지 않았다는 뜻이지,
+뒤의 휴리스틱 root extraction이 모든 branch의 근을 반드시 찾는다는
+뜻은 아니다.
+
+\subsection{이변수 Herrmann--May 격자}
+
+\(A=2^{265}\), \(B=2^{600}\)으로 두고 \(A^{-1}\bmod N\)을 곱해 \(x\)에
+대해 monic인 선형식을 만든다.
+
+\[
+ f(x,y)=x+(BA^{-1}\bmod N)y+(CA^{-1}\bmod N)\pmod N .
+\]
+
+실제 근에서 \(C+Ax_0+By_0=p\mid N\)이므로
+\(f(x_0,y_0)=0\bmod p\)다. 복원된 \(p\)는 약 \(N^{0.500038}\)인
+1024비트 divisor이며 실제 근은
+\[
+ \operatorname{bitlen}(x_0)=155,\qquad
+ \operatorname{bitlen}(y_0)=228
+\]
+이다. 선언한 \(X=2^{155}\), \(Y=2^{230}\) 안에 각각 0비트와 2비트의
+여유로 들어온다.
+
+\(m=17,t=5\)에서 다음 triangular shift를 사용한다
+\cite{herrmann-may}.
+
+\[
+  y^j f(x,y)^k N^{\max(t-k,0)},\qquad k+j\le m.
+\]
+
+차원은
+\[
+  \frac{(m+1)(m+2)}2=\frac{18\cdot19}2=171
+\]
+이다. 실제 근에서 \(f^k\)는 \(p^k\)의 배수이고, \(k<t\)인 행에는
+\(N^{t-k}\)가 들어가므로 모든 shift 평가값은 최소 \(p^t\)의 배수다.
+감축 후 스케일을 되돌린 다항식 \(g\)가
+\[
+  \lVert g(xX,yY)\rVert_1<p^t
+\]
+를 만족하면 \(|g(x_0,y_0)|<p^t\)이면서
+\(p^t\mid g(x_0,y_0)\)이므로 정수 관계 \(g(x_0,y_0)=0\)을 얻는다.
+
+계수는 해당 \(N\) 거듭제곱을 기준으로 centered residue에 가깝게 만들고,
+monomial \(x^iy^j\) 열을 \(X^iY^j\)로 스케일한다. 이 171차원 basis를
+목표 RHF 1.15로 FLATTER에서 감축했다 \cite{flatter}.
+
+삼각 basis의 determinant는
+\[
+  \det(L)=X^{969}Y^{969}N^{250}
+\]
+이다. 171차원에서
+\(\log_2(\det(L)^{1/171})\approx5175.58\)이고 RHF 1.15를 단순 적용한
+예상치는 약 5210.06비트인 반면
+\(\log_2(p^t)\approx5119.99\)다. 따라서 determinant 예상치만으로
+성공을 보장하지 않는다. 실제 \texttt{cid=155}에서 선택한 12개 행의
+scaled L1 bit length는 5107--5109였고 \(p^t\)보다 약 11비트 이상
+작았다. solver는 복원한 근을 이 12개 정수 다항식에 정확히 대입해 모두
+0인지 추가 확인한다.
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+파라미터 & 값 \\
+\midrule
+\(m,t\) & \(17,5\) \\
+dimension & 171 \\
+leading variable & \(x\) \\
+centered coefficients & true \\
+target RHF & 1.15 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Modular resultant, GCD와 CRT}
+
+감축된 행 중 L1 norm이 작은 12개를 보조 다항식으로 선택한다. 큰 정수
+위에서 결과식을 한 번에 계산하는 대신 FLINT의 소수체 다항식 연산을
+사용해 약 30비트 소수체에서 다음 과정을 반복한다 \cite{flint}.
+
+\begin{enumerate}
+  \item 보조 다항식 쌍의 resultant로 \(x\)를 제거한다.
+  \item 여러 resultant의 GCD로 \(y\)에 대한 일차식을 얻는다.
+  \item 얻은 \(y\)를 대입한 보조 다항식들의 GCD로 \(x\)를 얻는다.
+  \item \((x,y)\)가 선택한 모든 보조 다항식을 만족하는지 검사한다.
+  \item 서로 다른 소수체의 근을 CRT로 합친다.
+\end{enumerate}
+
+오답 edge 후보는 대개 첫 소수 \(1{,}000{,}000{,}007\)에서 resultant
+GCD가 1이 되어 탈락한다. 정답 후보에서는 8개 소수의 공통근이 일치했고,
+CRT modulus가 약 240비트가 되어 \(Y\)를 넘었을 때 정수 근과 \(p\)가
+유일하게 복원되었다. 구현도 종료 조건을
+\(\mathrm{modulus}>\max(X,Y)\)로 검사한다.
+
+12개 행 선택, 일부 다항식 쌍만 쓰는 resultant, 일차 GCD만 처리하는
+추출, 최대 10개 소수 제한은 heuristic이다. 후보가 나오면
+\(p\mid N\)을 검사하므로 잘못된 factor를 채택하지 않지만,
+\texttt{no\_recovery}가 나온 branch에 근이 없음을 증명하지는 않는다.
+
+\subsection{복원 결과와 RSA 복호화}
+
+성공 branch는 다음과 같다.
+
+\begin{lstlisting}
+cid  = 155 = 0x9b
+low  = 0xb
+high = 0x9
+\end{lstlisting}
+
+두 소인수는 다음과 같다.
+
+\begin{lstlisting}
+p =
+ffa360d46885c534d186538179633fafc2c0548a2e24a2c1c878569f522939e3
+8ff75ead1bcd442a834974a52e3ac66c1bc2ee00d63e2de4c436d2ca740a6246
+99e1a1af94045c63261323cb723a7ba1b3c00bbbb6a4e534c11469e73ddbb2e5
+0b0bc2461fcbac0726360c2c0ac9450a9a892cbf1d98ceee48827591ccc593c9
+
+q =
+e557fa8670389cb60c84416a65742a74fd11ed33b1631f787e92b90887b5391d
+acba00a386911bf8a8fbd57430b9b26e455329405ffe289e20616fe3b5562ea9
+b533f8f8db94bb8dcd280a6af056108e176008d3655428ad0ac6396318ba0f6e
+fe496eac3f8585675bfed67081e0c518be5685e4daf7060abe1c58b73cc5f1e9
+\end{lstlisting}
+
+그 뒤 표준 RSA primitive \cite{rfc8017}에 따라
+\[
+ \varphi(N)=(p-1)(q-1),\qquad
+ d=e^{-1}\bmod\varphi(N),\qquad m=ct^d\bmod N
+\]
+을 계산해 첫 절의 평문을 얻었다.
+
+\section{정확성 경계}
+
+\textbf{양성 결과의 soundness.}
+복원된 후보에 대해 \(pq=N\), mask 일치, 근의 bound, 선택한 12개 보조
+다항식의 정수 평가값 0, RSA 재암호화가 모두 독립적으로 확인된다.
+따라서 보고한 factor와 평문이 맞다는 결론은 격자 휴리스틱의 성공률에
+의존하지 않는다.
+
+\textbf{음성 결과의 completeness.}
+FLATTER 감축, 12개 행 선택, 일부 resultant 쌍, 일차 GCD 추출은
+완전 탐색이 아니다. 따라서 어떤 branch가 \texttt{no\_recovery}를
+반환해도 그 branch에 근이 없다는 뜻으로 사용하지 않는다. 전체 blind
+runner 역시 timeout/error가 하나라도 있거나 검증된 서로 다른 factor가
+정확히 하나가 아니면 성공으로 판정하지 않도록 설계했다.
+
+\section{재현과 검증}
+
+\subsection{결과 검증과 복호화}
+
+저장소 루트에서 다음 명령은 저장된 factor를 이용해 \(pq=N\), mask 일치,
+RSA 재암호화를 검사하고 평문을 출력한다.
+
+\begin{lstlisting}
+python3 solutions/solve_07_final.py
+\end{lstlisting}
+
+\subsection{격자 공격 재실행}
+
+검증 환경은 Debian 12 계열, GCC 12.2.0, FLINT 2.9.0, GMP 6.2.1,
+OpenBLAS 0.3.21, fplll 5.4.4, MPFR 4.2.0이다. FLATTER revision은
+다음으로 고정했다.
+
+\begin{lstlisting}
+d2b8026f29b4a69e987b15d4b240f8a5053275d3
+\end{lstlisting}
+
+FLATTER를 해당 revision에서 Release build하고 설치 prefix를
+\texttt{\$FLATTER\_PREFIX}로 두면 다음처럼 빌드한다.
+
+\begin{lstlisting}
+g++ -O3 -std=c++17 \
+  -DFLATTER_GIT_COMMIT='"d2b8026f29b4a69e987b15d4b240f8a5053275d3"' \
+  -I"$FLATTER_PREFIX/include" \
+  solutions/solve_07_grouped_hm_flatter.cpp \
+  -L"$FLATTER_PREFIX/lib" -Wl,-rpath,"$FLATTER_PREFIX/lib" \
+  -lflatter -lflint -lgmpxx -lgmp -lopenblas -pthread \
+  -o /tmp/solve_07_grouped_hm_flatter
+
+/tmp/solve_07_grouped_hm_flatter --modular-selftest
+
+OPENBLAS_NUM_THREADS=1 /tmp/solve_07_grouped_hm_flatter \
+  --challenge --cid 155 --m 17 --t 5 --rhf 1.15 \
+  --threads 4 --lead x --centered
+\end{lstlisting}
+
+마지막 명령은 이미 알려진 정답 branch \texttt{cid=155}를 다시 실행한다.
+검증 환경의 두 실행에서 감축은 약 62--73초가 걸렸다. 정답 branch를 모르는
+상태의 전체 탐색 진입점은 다음과 같다.
+
+\begin{lstlisting}
+python3 solutions/run_07_grouped_hm_scan.py \
+  /tmp/solve_07_grouped_hm_flatter \
+  --output-dir /tmp/challenge07-full-scan \
+  --jobs 2 --solver-threads 4 \
+  --flatter-commit d2b8026f29b4a69e987b15d4b240f8a5053275d3
+\end{lstlisting}
+
+runner는 0부터 255까지를 모두 계획하며 정답 cid를 입력이나 실행 순서에
+seed하지 않는다. 각 branch의 return code, wall time, stdout SHA-256,
+factor와 mask 검증을 JSON으로 남기고 binary/source SHA-256, compiler,
+\texttt{ldd}, 파라미터와 성공 후보 수를 summary에 모은다.
+\texttt{returncode=2}는 \texttt{no\_recovery}일 뿐 무근 증명이 아니다.
+이 보고서 작성 시 전체 256개 실행을 다시 완료하지 않았으므로, runner의
+설계와 실제 재검증한 \texttt{cid=155} 결과를 구분한다.
+
+\section{실패한 전략과 판단 근거}
+
+아래에서 ``실패''는 기법 자체가 틀렸다는 뜻이 아니라, 기록한 변수 분할과
+파라미터에서 검증된 factor를 얻지 못했다는 뜻이다. \texttt{UNSAT}이나
+\texttt{INFEASIBLE}, 정리의 bound와 안전 margin을 통과한
+\texttt{no-root}, heuristic \texttt{no-root},
+\texttt{UNKNOWN}/timeout을 구분했다.
+
+\subsection{1. 352비트 전수조사}
+
+\textbf{아이디어.} 숨은 비트를 모두 열거하고 각 후보에 대해 \(p\mid N\)을
+검사하는 가장 직접적인 기준선이다 \cite{rsa}.
+\observed{후보 수는 \(2^{352}\)이며, 가장 작은 내부 46비트 구간만
+열거해도 약 \(7.0\times10^{13}\)개다. 그 구간 하나를 정해도 나머지
+구간은 결정되지 않는다.}
+계산량이 현실적인 범위를 압도하므로 전체 공격으로 채택하지 않았다.
+다만 양끝 8비트만은 256개이므로 최종 공격의 edge enumeration으로
+제한해 사용했다.
+\evidence{열거하지 않은 공간을 배제하는 증거는 전혀 없으며, 단순한
+복잡도 평가다.}
+
+\subsection{2. 전체 2048비트 곱셈 SMT}
+
+\textbf{아이디어.} 1024비트 \(p,q\)와 \(pq=N\)을 bit-vector로 한 번에
+표현하고 누출 bit 및 유도한 \(q\) prefix를 함께 전파한다. Z3의 bit-vector
+SMT를 사용했다 \cite{z3}.
+\observed{\(p\) 672비트와 \(q\) 250비트를 고정한 full-size 실행이 약
+63초 뒤 \texttt{UNKNOWN}으로 끝났다.}
+흩어진 미지 구간의 부분곱과 carry가 먼 known-bit island까지 전달되어야
+해 제한 시간 안에 factor나 판정을 만들지 못했다.
+\evidence{\texttt{UNKNOWN}은 \texttt{UNSAT}이 아니므로 어떤 branch도
+배제하지 못한다.}
+
+\subsection{3. 하위 곱셈 exact-tail CP-SAT}
+
+\textbf{아이디어.} 전체 곱 대신 \(pq=N\bmod2^T\)의 limb 부분곱과 carry만
+정확히 모델링해 상태를 줄인다. 사용한 solver 계열은 CP-SAT-LP다
+\cite{cp-sat}.
+\observed{\(T=928\) 모델의 16회 얕은 탐색은 195.58초 동안
+247,599 branches와 14,095 conflicts를 만들었지만 모두
+\texttt{UNKNOWN}이었다. 48회 30초 탐색도 총 1,504.11초,
+852,177 branches, 77,505 conflicts 뒤 전부 \texttt{UNKNOWN}이었다.}
+꼬리 해가 완전한 factor를 보장하지도 않고, 실행 시간을 늘려도 유용한
+판정력이 생기지 않아 direct-hit 진단으로만 남겼다.
+\evidence{CP-SAT의 \texttt{INFEASIBLE}만 안전한 배제인데 실제로는
+\texttt{UNKNOWN}뿐이었다.}
+
+\subsection{4. Hensel-prefix 분기}
+
+\textbf{아이디어.} \(pq=N\bmod2^k\)를 만족하는 하위 prefix에 bit를 하나씩
+붙이고 새 known bit와 충돌하는 가지만 버린다. RSA key-bit
+branch-and-prune 연구와 관련된다 \cite{heninger-shacham}.
+\observed{top 16의 \(k=370,390,410\) 검사는 52.68초가 걸렸고,
+370비트에서 SAT 15개/UNKNOWN 1개, 390과 410비트에서는 모두
+UNKNOWN이었다. top 4의 \(k=430,500,600\)도 70.64초 뒤 모두
+UNKNOWN이었다.}
+긴 미지 구간에서 다음 known island에 닿기 전에 상태가 커져 유용한
+모순을 찾지 못했다.
+\evidence{\texttt{UNSAT}이라면 해당 modulus prefix를 배제할 수 있지만
+관측되지 않았다. SAT은 완전 factor의 존재를 뜻하지 않고 UNKNOWN도
+결론을 주지 않는다.}
+
+\subsection{5. Exact 다변수 Herrmann--May}
+
+\textbf{아이디어.} 일곱 미지 구간을 각각 변수로 보존해 unknown divisor
+modulo의 선형 작은 근을 직접 찾는다 \cite{herrmann-may}.
+\observed{7변수 \(m=4,t=1\)은 후보 하나에 약 340초 뒤 실패했고
+\(m=4,t=2\)는 1,200초 제한에도 끝나지 않았다. edge를 고정한 5변수
+\(m=2,t=1\)은 256개를 10.5초에 훑었지만 factor가 없었고
+\(m=3,t=1\)은 후보 하나도 300초 timeout이었다.}
+낮은 차수는 너무 약하고 한 단계만 올려도 monomial과 격자 비용이
+폭증해 256개 edge 후보에 적용할 수 없었다.
+\evidence{낮은 파라미터의 no-factor와 timeout은 격자 휴리스틱의
+관측이며 branch의 \texttt{UNSAT} 증명이 아니다.}
+
+\subsection{6. 얕은 grouped Herrmann--May}
+
+\textbf{아이디어.} known-bit island 일부를 완화해 변수 수를 둘로 낮추되
+각 변수 bound를 키운다. Herrmann--May의 다중-block 관점에 기반한다
+\cite{herrmann-may}.
+\observed{\([265,769)\) 504비트와 \([784,830)\) 46비트 분할,
+그리고 84비트/468비트 분할에서 \(m=1\ldots8,t=1,2\)의 4,096개 작업과
+\(m=10\)의 512개를 더 실행했지만 factor가 없었다. \(m=14\)는 오답
+표본 하나에도 73--106초가 들었다.}
+변수 크기가 지나치게 불균형한 얕은 basis는 관계를 드러내지 못했다.
+그러나 grouping 자체는 버리지 않고 155/230비트의 더 균형 잡힌 분할과
+\(m=17,t=5\)의 강한 basis로 바꾸어 최종 성공 경로가 되었다.
+\evidence{얕은 sweep의 no-factor는 branch 배제가 아니다.}
+
+\subsection{7. cuso mixed-shape}
+
+\textbf{아이디어.} grouped, exact, mixed 변수 shape를 한 실행기에 넣고
+자동 shift 구성과 graph heuristic으로 격자 크기를 줄이려 했다. cuso
+연구와 artifact를 참고했다 \cite{ryan,ryan-artifact}.
+\observed{S0=[155,230], S1=[84,58,69,87,46], S2=[84,58,230],
+S3=[155,69,87,46], S4=low600의 설계를 만들었지만, planted/toy
+root-extraction soundness gate를 통과한 완료 sweep까지 진행하지 못했다.}
+외부 실행 환경과 추출 경로가 검증되기 전에 나온 상태를 수학적 결과로
+해석할 수 없어 보류했다.
+\evidence{검증된 no-root가 없으므로 hard clause는 물론 soft
+no-root로도 사용하지 않았다.}
+
+\subsection{8. 단변수 two-sided \texorpdfstring{\(p\)}{p} window}
+
+\textbf{아이디어.} 알려진 하위와 상위 비트 사이를 하나의 연속 변수로
+두어 단변수 Coppersmith/Howgrave--Graham 공격을 적용한다
+\cite{coppersmith,howgrave-graham}.
+\observed{468비트 window는 첫 후보가 120초를 넘겼고, 504비트 gap도
+상위 후보가 90초 timeout이었다. 410비트로 줄인 변형도 후보당 약
+60초가 필요했다.}
+단변수의 단순함보다 410--504비트의 root bound가 더 큰 병목이었고,
+넓은 candidate oracle로 쓰기에는 너무 비쌌다.
+\evidence{timeout은 window에 근이 없다는 증거가 아니다.}
+
+\subsection{9. Residual partial-\texorpdfstring{\(p\)}{p} 격자}
+
+\textbf{아이디어.} 선행 ranker가 외부 비트를 맞혔다고 가정하고 남은
+2--3개 구간에만 작은 Herrmann--May 격자를 적용한다
+\cite{herrmann-may}.
+\observed{69/87/46비트 3변수에 대해 32개 후보와
+\(m=2\ldots4,t=1\ldots4\)를 시험했지만 factor가 없었고
+\(m=4,t=1\)은 모두 timeout이었다. 후속 128개씩의 sweep과
+58/69/87비트 분할의 상위 후보도 검증된 factor를 만들지 못했다.}
+검증되지 않은 ranker가 정답 근처를 고른다는 가정에 민감해 넓은 탐색보다
+선택 편향만 키웠다.
+\evidence{선정 후보의 no-factor 또는 timeout일 뿐, 미선정 공간이나
+해당 branch를 배제하지 않는다.}
+
+\subsection{10. Folded \texorpdfstring{\(p/q\)}{p/q} Coron 격자}
+
+\textbf{아이디어.} \(p\)와 \(q\)의 gap을 각각 변수로 두고 정수
+이변수식 \(p(x)q(y)-N=0\)에서 두 번째 관계를 찾는다
+\cite{coron}.
+\observed{양쪽 bound가 각각 456비트인 모델에서 1,024개 후보와
+\(k=1\ldots4\)를 444.0초에 검사했지만 factor가 없었다.
+\(k=5\)부터는 후보 하나에 수분이 필요했다.}
+낮은 \(k\)는 너무 약하고 broad sweep에서 \(k\)를 높이는 비용은
+비현실적이라 finalist 교차 검사로만 남겼다.
+\evidence{작은 \(k\)의 no-factor는 선택한 basis가 근을 드러내지
+못했다는 뜻이며 무근 증명이 아니다.}
+
+\subsection{11. q-gap 단변수 oracle}
+
+\textbf{아이디어.} 일부 \(p\) 비트로 유도한 \(q\)의 연속 하위·상위
+prefix 사이를 하나의 변수로 두고 단변수 small-root oracle을 적용한다
+\cite{coppersmith,howgrave-graham,sage-small-roots}.
+\observed{여러 candidate에서 빠른 no-root가 나와 직접 탐색과 후속 SAT
+clause oracle로 사용했지만, 사후에 복원된 \(q\)를 대조하면
+\(q^2<N\)인데 Sage 호출은 \(\beta=0.5\)를 사용했다.}
+API의 divisor 조건 \(b\ge N^\beta\)가 실제 작은 소인수 \(q\)에
+충분하지 않아 no-root를 안전한 결론으로 해석할 수 없었다.
+\evidence{기록된 q-gap no-root는 모두 heuristic이며 hard branch
+배제에 쓰지 않았다.}
+
+\subsection{12. q-gap SAT learned clause}
+
+\textbf{아이디어.} SAT가 partial assignment를 만들고 q-gap oracle이
+모든 completion을 부정하면 외부 loop가 no-good clause를 추가한다.
+SAT와 격자를 결합한 인수분해 연구와 관련된다 \cite{ajani-bright}.
+\observed{completion 전수검사와 clause 최소화를 구현해 ledger를
+늘렸지만, 앞 절의 q-gap oracle 자체가 \(\beta=0.5\) 조건을 만족하지
+않았다. ledger가 커질수록 다음 모델 선택 비용도 증가했다.}
+oracle의 음성 판정이 sound하지 않으므로 completion을 모두 검사해도
+clause가 hard 증거가 되지 못했고, 정답 방향을 주는 목적 함수도 없었다.
+\evidence{이 실행의 q-gap clause는 heuristic only다.}
+
+\subsection{13. low600 \texorpdfstring{\(p\)}{p}-Coppersmith clause}
+
+\textbf{아이디어.} 하위 600비트를 고정해
+\(p=p_0+2^{600}x\), \(0\le x<2^{424}\)인 단변수 문제를 만들고,
+검증된 no-root cube를 SAT clause로 바꾼다
+\cite{coppersmith,howgrave-graham,ajani-bright,sage-small-roots}.
+\observed{Sage backend에서 effective bound 470.04비트, 실제 상한
+424비트, margin 46.04비트였다. 16/16 completion으로 142-literal
+clause를, 256/256 completion과 273회 oracle 호출 및 약 451초로
+138-literal clause를 얻었다. 후속 cumulative 실행은 첫 cube row도
+쓰기 전에 약 5.5시간 정체되어 중단됐다.}
+큰 소인수 \(p\)는 \(p^2>N\)이라 \(\beta=0.5\) 조건을 만족해 얻은
+두 clause 자체는 sound했지만, 한 건의 비용에 비해 닫히는 146비트 cube
+공간이 너무 작아 전체 탐색을 진전시키지 못했다.
+\evidence{backend, bound, margin 및 모든 completion을 통과한 두
+clause의 범위 안에서만 hard 배제다. 불완전한 후속 로그는 증거로 쓰지
+않았다.}
+
+\subsection{14. SAT ranker와 다양성 샘플링}
+
+\textbf{아이디어.} deep-prefix/부분곱 점수, guarded cycle, projection
+novelty와 compacted ledger로 다음 SAT 모델의 순서와 다양성을 개선한다.
+다양한 SAT 해 생성 연구는 동기를 제공한다 \cite{nadel}.
+\observed{9,579개 clause와 1,319,382 literals를 읽은 ranker는 후보당
+250ms에서 UNKNOWN만 냈고, 4,096-pair Z3 ranker도 약 6분 동안
+CPU-bound여서 중단했다. projection novelty는 중복 모양을 줄였지만
+factor 확률과의 상관은 확인되지 않았다.}
+``아직 보지 않은 후보''는 만들었지만 ``정답에 가까운 후보''라는 신호를
+제공하지 못해 최종 공격의 후보 선택기로 채택하지 않았다.
+\evidence{순위와 다양성은 확률적 heuristic이며 어떤 branch도
+배제하지 않는다.}
+
+\subsection{15. Jochemsz--May low-lift}
+
+\textbf{아이디어.} monomial별 bound를 반영한 다변수 shift를 감축해
+12항 2차 다항식의 공통 작은 근을 찾는다
+\cite{jochemsz-may,crypto-attacks}.
+\observed{\(Wbits=1591\)에서 \(m=1,2\) 및 확장 설정
+\texttt{ext\_u2}, \texttt{ext\_b}가 crypto-attacks의 기본 resultant
+root extraction에서 \texttt{IndexError}로 끝났다. 확장 설정은 각각
+57.5초와 85.8초를 썼다.}
+이는 격자가 근을 갖지 않는다는 결과가 아니라 구현·추출 경로가 후보를
+내지 못한 오류다. planted 회귀 테스트로 추출을 먼저 검증하지 못했으므로
+진단 경로로만 남겼다.
+\evidence{구현 오류는 no-root나 branch 배제 증거가 아니다.}
+
+\section{최종 검증 항목}
+
+\begin{lstlisting}
+p * q == N
+(p & MASK) == P_AND_MASK
+pow(m, 65537, N) == ct
+m.hex() ==
+  464c41477b64317274795f6231745f6c33346b5f633070703372736d3174685f
+  6d333374735f73747234743367797d
+\end{lstlisting}
+
+\section{참고문헌}
+
+\begin{thebibliography}{99}
+
+\bibitem{rsa}
+R. Rivest, A. Shamir, and L. Adleman,
+\emph{A Method for Obtaining Digital Signatures and Public-Key Cryptosystems},
+Communications of the ACM, 1978.
+\url{https://people.csail.mit.edu/rivest/pubs/RSA78.pdf}
+
+\bibitem{coppersmith}
+D. Coppersmith,
+\emph{Small solutions to polynomial equations, and low exponent RSA vulnerabilities},
+Journal of Cryptology, 1997.
+\url{https://research.ibm.com/publications/small-solutions-to-polynomial-equations-and-low-exponent-rsa-vulnerabilities}
+
+\bibitem{howgrave-graham}
+N. Howgrave-Graham,
+\emph{Finding Small Roots of Univariate Modular Equations Revisited},
+Cryptography and Coding, LNCS 1355, 1997.
+\url{https://doi.org/10.1007/BFb0024458}
+
+\bibitem{herrmann-may}
+M. Herrmann and A. May,
+\emph{Solving Linear Equations Modulo Divisors: On Factoring Given Any Bits},
+ASIACRYPT 2008.
+\url{https://www.iacr.org/archive/asiacrypt2008/53500412/53500412.pdf}
+
+\bibitem{coron}
+J.-S. Coron,
+\emph{Finding Small Roots of Bivariate Integer Polynomial Equations Revisited},
+EUROCRYPT 2004.
+\url{https://iacr.org/archive/eurocrypt2004/30270487/bivariate.pdf}
+
+\bibitem{jochemsz-may}
+E. Jochemsz and A. May,
+\emph{A Strategy for Finding Roots of Multivariate Polynomials with New
+Applications in Attacking RSA Variants}, ASIACRYPT 2006.
+\url{https://www.iacr.org/archive/asiacrypt2006/42840270/42840270.pdf}
+
+\bibitem{z3}
+L. de Moura and N. Bj{\o}rner,
+\emph{Z3: An Efficient SMT Solver}, TACAS 2008.
+\url{https://doi.org/10.1007/978-3-540-78800-3_24}
+
+\bibitem{cp-sat}
+L. Perron, F. Didier, and S. Gay,
+\emph{The CP-SAT-LP Solver}, CP 2023.
+\url{https://doi.org/10.4230/LIPIcs.CP.2023.3}
+
+\bibitem{heninger-shacham}
+N. Heninger and H. Shacham,
+\emph{Reconstructing RSA Private Keys from Random Key Bits}, CRYPTO 2009.
+\url{https://hovav.net/ucsd/papers/hs09.html}
+
+\bibitem{ajani-bright}
+Y. Ajani and C. Bright,
+\emph{SAT and Lattice Reduction for Integer Factorization}, ISSAC 2024.
+\url{https://doi.org/10.1145/3666000.3669712}
+
+\bibitem{nadel}
+A. Nadel,
+\emph{Generating Diverse Solutions in SAT}, SAT 2011.
+\url{https://doi.org/10.1007/978-3-642-21581-0_23}
+
+\bibitem{ryan}
+K. Ryan,
+\emph{Solving Multivariate Coppersmith Problems with Known Moduli},
+EUROCRYPT 2025.
+\url{https://eprint.iacr.org/2024/1577.pdf}
+
+\bibitem{ryan-artifact}
+K. Ryan,
+\emph{EUROCRYPT 2025 cuso Artifact}.
+\url{https://artifacts.iacr.org/eurocrypt/2025/a13/readme.html}
+
+\bibitem{crypto-attacks}
+jvdsn,
+\emph{crypto-attacks: Python implementations of attacks on cryptographic
+constructions}.
+\url{https://github.com/jvdsn/crypto-attacks}
+
+\bibitem{sage-small-roots}
+SageMath,
+\emph{small\_roots API documentation}.
+\url{https://doc.sagemath.org/html/en/reference/polynomial_rings/sage/rings/polynomial/polynomial_modn_dense_ntl.html}
+
+\bibitem{rfc8017}
+K. Moriarty et al.,
+\emph{PKCS \#1: RSA Cryptography Specifications Version 2.2}, RFC 8017.
+\url{https://www.rfc-editor.org/rfc/rfc8017.html}
+
+\bibitem{flatter}
+K. Ryan,
+\emph{FLATTER: Fast Lattice Reduction}.
+\url{https://github.com/keeganryan/flatter}
+
+\bibitem{flint}
+FLINT project,
+\emph{nmod\_poly documentation}.
+\url{https://flintlib.org/doc/nmod_poly.html}
+
+\end{thebibliography}
+
+\end{document}

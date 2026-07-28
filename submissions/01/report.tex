@@ -9,14 +9,20 @@
 \usepackage{hyperref}
 \usepackage{listings}
 
-\setmainfont{Noto Sans CJK KR}
+\setmainfont{Noto Sans CJK KR}[AutoFakeSlant=0.2]
 \setsansfont{Noto Sans CJK KR}
 \setmonofont{D2Coding}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{5pt}
 \setlist{nosep,leftmargin=6mm}
 \pagestyle{plain}
-\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  pdftitle={1번 암호분석: Caesar/Vigenère 복원과 학습 분류기},
+  pdfauthor={암호분석경진대회 제출 보고서}
+}
 \lstset{
   basicstyle=\ttfamily\small,
   frame=single,
@@ -250,6 +256,8 @@ Python 3.10 이상 표준 라이브러리만 필요하다.
 \begin{lstlisting}
 python3 classifier.py --problem-zip 1_암호분석.zip
 python3 classifier.py --problem-zip 1_암호분석.zip --full-caesar-table
+python3 classifier.py --problem-zip 1_암호분석.zip \
+  --dump-caesar-dir /tmp/problem01-caesar
 \end{lstlisting}
 
 실행은 다음을 출력하고 검증한다.
@@ -260,6 +268,36 @@ python3 classifier.py --problem-zip 1_암호분석.zip --full-caesar-table
   \item 네 표본의 확률, shift, 평문
 \end{itemize}
 
+두 번째 명령은 26개 key 각각의 복호문과 A--Z 빈도, 카이제곱 값을
+표준 출력에 모두 싣는다. 세 번째 명령은 같은 26개 복호문과 빈도 TSV를
+개별 파일로 저장한다. 따라서 본문의 요약 순위표뿐 아니라 원문 3-가가
+요구한 모든 key별 결과를 제출 코드에서 그대로 재생성할 수 있다.
+
 마지막 \texttt{self-checks: PASS}가 모든 수치와 답을 검증한다.
+
+\section{참고 자료}
+
+\begin{itemize}
+  \item William F. Friedman,
+    \href{https://www.nsa.gov/Portals/75/documents/news-features/declassified-documents/friedman-documents/publications/FOLDER_233/41761039080018.pdf}
+    {\emph{The Index of Coincidence and Its Applications in Cryptanalysis}}:
+    단일·다중 알파벳 암호의 빈도와 IC 판정 근거.
+  \item Friedrich W. Kasiski,
+    \href{https://books.google.de/books?id=fB5dAAAAcAAJ}
+    {\emph{Die Geheimschriften und die Dechiffrir-Kunst}}:
+    반복 문자열 간격의 공약수로 key 길이를 추정하는 절차.
+  \item Karl Pearson,
+    \href{https://doi.org/10.1080/14786440009463897}
+    {\emph{On the Criterion that a Given System of Deviations from the
+    Probable \ldots}}: 관측 빈도와 영어 기대빈도의 카이제곱 비교.
+  \item Claude E. Shannon,
+    \href{https://doi.org/10.1002/j.1538-7305.1948.tb01338.x}
+    {\emph{A Mathematical Theory of Communication}}:
+    분류기의 문자분포 entropy feature.
+  \item D. R. Cox,
+    \href{https://doi.org/10.1111/j.2517-6161.1958.tb00292.x}
+    {\emph{The Regression Analysis of Binary Sequences}}:
+    binary logistic regression 모델의 배경.
+\end{itemize}
 
 \end{document}
