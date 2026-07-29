@@ -25,3 +25,10 @@ venv/
 .DS_Store
 *.swp
 *~
+
+# Latex Auxillary Files
+*.aux
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.xdv
