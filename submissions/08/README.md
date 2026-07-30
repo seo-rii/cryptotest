@@ -5,6 +5,9 @@
 - [`master_key.txt`](master_key.txt): 복원한 16바이트 마스터 키의 32자리 hex
 - [`report.pdf`](report.pdf): 누출 기반 키 복원 과정과 전체 검증을 정리한 제출 보고서
 - [`report.tex`](report.tex): PDF를 다시 만들 수 있는 LaTeX 원본
+- [`investigate_aes_leak.py`](investigate_aes_leak.py),
+  [`solve_aes_key.py`](solve_aes_key.py): 실행 코드
+- [`8_블록암호.zip`](8_블록암호.zip): 원본 문제 ZIP
 
 복원 결과:
 
@@ -20,12 +23,14 @@ join의 범위도 구분했다.
 
 ## 재현
 
-저장소 루트에서 Python 3.10 이상으로 실행한다. 외부 패키지는 필요하지
-않으며 solver가 원본 문제 ZIP에서 데이터와 leak를 직접 읽는다.
+이 폴더 안에서 Python 3.10 이상으로 실행한다. 외부 패키지는 필요하지
+않으며 solver가 동봉된 `8_블록암호.zip`에서 데이터와 leak를 직접
+읽는다.
 
 ```bash
-python3 solutions/investigate_08_aes_leak.py
-python3 solutions/solve_08_aes_key.py
+cd submissions/08
+python3 investigate_aes_leak.py
+python3 solve_aes_key.py
 ```
 
 정상 실행의 마지막 출력은 다음과 같다.
