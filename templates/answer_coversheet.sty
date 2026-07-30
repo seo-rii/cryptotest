@@ -1,0 +1,60 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{answer_coversheet}[2026/07/30 2026 cryptanalysis contest answer cover sheet]
+
+% Recreates the official 2026_암호분석경진대회-답안양식.hwp look: a
+% "2026 암호분석경진대회" / "N번 문제" header (single rule under the first
+% row, double rule under the second, matching the HWP's own
+% borderfill-4/5/6 cell borders) and a page border, drawn as a background
+% layer on every page. Deliberately does NOT wrap body content in any
+% width-changing environment (an earlier mdframed-based version looped
+% forever once a wide table met its narrowed frame width) so it never
+% interacts with a document's existing tables, margins, or line widths.
+
+\RequirePackage{geometry}
+\RequirePackage{eso-pic}
+\RequirePackage{tikz}
+\RequirePackage{fontspec}
+
+% Reserve room at the top of every page for the header below, and enough
+% bottom clearance to stay clear of the border (19.3mm inset), without
+% touching left/right margins (existing wide tables are sized against those).
+\geometry{top=30mm, bottom=22mm}
+
+\newcommand{\ProblemNumber}{}
+\newcommand{\SetProblemNumber}[1]{\renewcommand{\ProblemNumber}{#1}}
+
+% Match the font every other submission already uses for its body text
+% (the HWP's real font, 함초롬바탕/Hancom HCR Batang, is a proprietary font
+% not available via apt/pip here). Override with \renewcommand when the
+% document's main font already has no Hangul coverage (see submissions/02).
+\IfFontExistsTF{Noto Sans CJK KR}{%
+  \newfontfamily\AnswerCoverFont{Noto Sans CJK KR}[AutoFakeSlant=0.2]%
+}{%
+  \newcommand{\AnswerCoverFont}{}%
+}
+
+% Box/row measurements below are taken directly from the HWP's own layout
+% (via hwp5html): HeaderPageFooter margin-top 10mm + page padding-top 5mm =
+% 15mm top inset; margin-bottom 5mm + padding-bottom 5mm = 10mm, plus the
+% content cell's own extra spacing brings it to ~19.3mm; table margin-left
+% 1mm inside a 10mm side margin = 11mm; each header row is 6.15mm tall.
+% The title/problem-number header (and its rules) is drawn on page 1 only;
+% the outer border repeats on every page.
+\AddToShipoutPictureBG{%
+  \AnswerCoverFont
+  \begin{tikzpicture}[overlay]
+    \coordinate (TL) at ([xshift=11mm]current page.north west);
+    \coordinate (TR) at ([xshift=-11mm]current page.north east);
+    \coordinate (BR) at ([xshift=-11mm]current page.south east);
+    \draw[line width=0.6pt] ([yshift=-15mm]TL) rectangle ([yshift=19.3mm]BR);
+    \ifnum\value{page}=1
+      \draw[line width=0.6pt] ([yshift=-21.15mm]TL) -- ([yshift=-21.15mm]TR);
+      \draw[line width=0.4pt] ([yshift=-27.1mm]TL) -- ([yshift=-27.1mm]TR);
+      \draw[line width=0.4pt] ([yshift=-27.5mm]TL) -- ([yshift=-27.5mm]TR);
+      \node[anchor=north] at ([yshift=-15.5mm]current page.north) {2026 암호분석경진대회};
+      \node[anchor=north] at ([yshift=-21.65mm]current page.north) {\ProblemNumber 번 문제};
+    \fi
+  \end{tikzpicture}%
+}
+
+\endinput

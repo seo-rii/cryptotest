@@ -8,6 +8,10 @@
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{listings}
+\lstset{
+    basicstyle=\ttfamily,
+    literate={_}{{\_}}1 % 언더바 캐릭터를 에러 없는 이스케이프 문자로 강제 치환
+}
 
 \setmainfont{Noto Sans CJK KR}[AutoFakeSlant=0.2]
 \setsansfont{Noto Sans CJK KR}
@@ -19,9 +23,7 @@
 \hypersetup{
   colorlinks=true,
   linkcolor=blue,
-  urlcolor=blue,
-  pdftitle={1번 암호분석: Caesar/Vigenère 복원과 학습 분류기},
-  pdfauthor={암호분석경진대회 제출 보고서}
+  urlcolor=blue
 }
 \lstset{
   basicstyle=\ttfamily\small,
@@ -31,14 +33,17 @@
   keepspaces=true
 }
 
-\title{1번 암호분석\\Caesar/Vigenère 복원과 학습 분류기}
-\author{암호분석경진대회 제출 보고서}
+\input{../../templates/answer_coversheet.sty}
+\SetProblemNumber{1}
+
+\title{암호분석}
+\author{Caesar/Vigenère 복원과 학습 분류기}
 \date{2026년 7월}
 
 \begin{document}
 \maketitle
 
-\section*{제출 답 요약}
+\section*{결과 요약}
 
 \begin{center}
 \begin{tabularx}{\textwidth}{lX}
