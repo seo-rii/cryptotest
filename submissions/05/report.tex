@@ -1,0 +1,125 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=18mm]{geometry}
+\usepackage{fontspec}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  columns=fullflexible,
+  breaklines=true,
+  keepspaces=true
+}
+
+\setmainfont{Noto Sans CJK KR}[AutoFakeSlant=0.2]
+\setsansfont{Noto Sans CJK KR}
+\setmonofont{D2Coding}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlist{nosep,leftmargin=6mm}
+\renewcommand{\arraystretch}{1.2}
+\pagestyle{plain}
+
+\input{../../templates/answer_coversheet.sty}
+\SetProblemNumber{5}
+
+\title{동형암호}
+\author{비밀 다항식 및 고정 보고문 복원}
+\date{2026년 7월}
+
+\begin{document}
+\maketitle
+
+\section*{결과 요약}
+
+복구된 고정 보고문(State)의 평문은 다음과 같다.
+\begin{center}
+\fbox{\texttt{BGV DAILY STATUS CORE-A LINK OK TEMP NORMAL POWER STABLE}}
+\end{center}
+
+비밀 다항식 $s$ 및 패딩을 제외한 상태 보고문(State)의 계수는 각각 \texttt{02\_secret\_s.txt}, \texttt{03\_state.txt}에 $x^0$부터 차수 \\
+오름차순으로 기록하였으며, 최종 복원된 날짜는 \texttt{20260410} 및 \texttt{20260411}이고 실제 NUL 패딩의 길이는 0바이트이다.
+
+\section{공약수 취약점과 노이즈 제거}
+
+textbook-BGV 암호문은 환 $R_q=\mathbb Z_q[x]/(x^{64}+1)$ 상에서 다음 식을 만족한다.
+\[
+  c_1=c_0s+te+m\pmod q
+\]
+두 연속된 날짜의 암호문을 감산(차분)하면 다음 관계식을 얻는다.
+\[
+  \Delta c_1=\Delta c_0s+t\Delta e+\Delta m\pmod q
+\]
+주어진 모듈러스 매개변수에는 다음과 같은 결정적인 대수적 결함이 존재한다.
+\[
+  \boxed{\gcd(q,t)=257}
+\]
+공약수인 257은 $q$와 $t$를 모두 나누므로, 양변을 유한체 $\mathbb F_{257}$ 상으로 축소(reduction)하면 오류 항 $t\Delta e$ 및 modulo-$q$ 관계식이 소거되어 노이즈가 완벽히 배제된다.
+\[
+  \boxed{\Delta c_1=\Delta c_0s+\Delta m\pmod {257}}
+\]
+
+\section{날짜 차분 전수조사와 삼원 비밀 다항식 (Ternary Secret) 복원}
+
+두 날짜 평문의 상태 보고문(State) 및 중간 NUL 패딩 구조가 동일하므로, 메시지 차분 다항식 $\Delta m$의 앞 56개 계수는 0이며 마지막 8개 계수만이 날짜 문자열(\texttt{YYYYMMDD})의 일자 변동에 따른 차분값이다.
+
+대상 연도의 범위를 제한하지 않기 위해 네 자리 그레고리력 연도 \texttt{0001..9999}에서 발생 가능한 모든 날짜 변동 패턴을 탐색 대상에 포함하였다. 날짜 전이는 동일 월 내에서의 전환(\texttt{01} $\to$ \texttt{02} 등)과 월말에서 익월 1일로 넘어가는 전환으로 분류된다. 이를 모두 생성한 뒤 중복을 제거하면, modulo-257 상에서 서로 다른 날짜 차분 패턴은 최종적으로 11개로 축소된다.
+
+각 패턴에 대해 $\Delta c_0$와의 \emph{negacyclic} convolution 행렬 $A\in\mathbb F_{257}^{64\times64}$를 정의하고, $As\equiv\Delta c_1-\Delta m\pmod{257}$ 선형계를 구성한 뒤 가우스 소거법(Gaussian Elimination)을 통해 해를 구하였다. 고유 해의 유일성을 입증하기 위해, \\
+최초의 삼원(ternary) 해 발견 시 탐색을 중단하지 않고 전체 affine 해공간(257개 후보)을 전수 조사하였다.
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+검증량 & 결과 \\
+\midrule
+서로 다른 다음 날 delta 패턴 수 & 11 \\
+정답 선형계 rank / nullity & 63 / 1 \\
+정답 affine space 전수조사 수 & 257개 \\
+모든 계수가 $\{-1,0,1\}$인 대수 후보 수 & 1개 \\
+날짜·State·noise 검증 통과 수 & 1개 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{후보 다항식의 유일성 및 원본 암호문 검증}
+
+수집한 모든 ternary 후보를 두 원본 ciphertext에 역적용하여 다음 대수적 및 논리적 조건을 동시에 검증하였다.
+
+\begin{itemize}
+  \item 복원된 날짜가 8자리 ASCII 형식의 유효한 그레고리력 날짜이며, 두 날짜가 정확히 하루 차이이다.
+  \item 두 \texttt{State || 00...00} prefix가 동일하고, 우측 NUL 패딩을 제거한 상태 보고문 문자열이 출력 가능한 ASCII 문자로 구성된다.
+  \item 두 날 모두 $c_1=c_0s+te+m\pmod q$를 만족하며, 복원된 에러 다항식 $e$의 계수 분포가 BGV 파라미터 한계 내인 $1 \sim 4$ 범위에 존재한다.
+\end{itemize}
+
+최종 복원된 날짜는 \texttt{20260410} 및 \texttt{20260411}이며, 실제 NUL 패딩 길이는 0바이트이다. 비밀 다항식 $s$ 및 패딩을 제외한 상태 보고문(State)의 계수는 각각 \texttt{02\_secret\_s.txt}, \texttt{03\_state.txt}에 $x^0$부터 차수 오름차순으로 기록하였다.
+
+\section{재현 및 코드 검증}
+
+제출 패키지에 포함된 검증용 스크립트인 \texttt{solve\_bgv.py}는 다음 명령어로 실행 가능하며, 실행 시 두 제출 \\
+ 다항식 파일(\texttt{02\_secret\_s.txt}, \texttt{03\_state.txt})과의 일치 여부 및 원 암호문의 무결성을 검증하고 자가 진단(Self-Check PASS)을 수행한다.
+
+\begin{lstlisting}
+python3 solve_bgv.py
+\end{lstlisting}
+
+\section{참고 자료}
+
+\begin{itemize}
+  \item Brakerski et al.,
+    \href{https://eprint.iacr.org/2011/277}
+    {\emph{Fully Homomorphic Encryption without Bootstrapping}}: Leveled FHE 및 RLWE 기반 BGV 동형암호의 노이즈 관리 기법 연구.
+  \item HomomorphicEncryption.org,
+    \href{https://homomorphicencryption.org/standard/}
+    {\emph{Homomorphic Encryption Standard}}: 평문/암호문 모듈러스, 다항식 환 구조 및 에러 표기법 표준 정의.
+  \item Lyubashevsky et al.,
+    \href{https://eprint.iacr.org/2012/230}
+    {\emph{On Ideal Lattices and Learning with Errors over Rings}}: Ring-LWE 문제의 오류 분포 및 이상 격자(Ideal Lattice) 구조 분석.
+\end{itemize}
+
+\end{document}

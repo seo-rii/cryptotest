@@ -1,0 +1,600 @@
+{
+  "assembly_audits": {
+    "current": {
+      "binary_sha256": "508c1ba3c379792d93f78c56829d605548fcf49971b7f187747f854c80de3b1c",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 0,
+        "bswap": 0,
+        "rotate": 0,
+        "xor": 0
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "86c3330762547729d81566a3c0bdc1d7bd062e974f4eb95c49778f076befb776",
+      "loop_bytes": 579,
+      "loop_instructions": 122,
+      "loop_start": "0x1540",
+      "loop_start_mod_16": 0,
+      "loop_start_mod_32": 0,
+      "loop_start_mod_64": 0,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "jne": 1,
+        "sub": 1,
+        "vpaddq": 20,
+        "vpor": 20,
+        "vpshufb": 20,
+        "vpsllvq": 20,
+        "vpsrlvq": 20,
+        "vpxor": 20
+      },
+      "mode": "avx2-inline-lanewise",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 6600
+    },
+    "inline_asm": {
+      "binary_sha256": "9f3c1d9ae40ee67ae2d69c64d03876e6240f02ee8032095c50078c13606d58a4",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 0,
+        "bswap": 0,
+        "rotate": 0,
+        "xor": 0
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "5edd0e2fe95c3f0baebfb0907d3e67982ce08d0f8f1f58c47ebe13ff843c2ca4",
+      "loop_bytes": 569,
+      "loop_instructions": 122,
+      "loop_start": "0x1530",
+      "loop_start_mod_16": 0,
+      "loop_start_mod_32": 16,
+      "loop_start_mod_64": 48,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "jne": 1,
+        "sub": 1,
+        "vpaddq": 20,
+        "vpor": 20,
+        "vpshufb": 20,
+        "vpsllvq": 20,
+        "vpsrlvq": 20,
+        "vpxor": 20
+      },
+      "mode": "avx2-inline-lanewise",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "0ada8ea58890adea7e23cdf2226754737ee9e7a05a2f9b238d25d1bad9577af1",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 6577
+    },
+    "phase": {
+      "binary_sha256": "d946bc1a732df2c1d957b0d789f9bbf5a34654bc28f538aa8009509ad771efdd",
+      "calls": 0,
+      "core_counts": {
+        "add_or_lea": 4,
+        "bswap": 4,
+        "rotate": 4,
+        "xor": 4
+      },
+      "errors": [],
+      "legacy_addressed_loop_sha256": "87c56e06d458b163b6a865e98918288bcd1c20eeaa160061b7a1545363cb1abc",
+      "loop_bytes": 1253,
+      "loop_instructions": 257,
+      "loop_start": "0x1a75",
+      "loop_start_mod_16": 5,
+      "loop_start_mod_32": 21,
+      "loop_start_mod_64": 53,
+      "memory_operands_excluding_lea": 0,
+      "mnemonics": {
+        "add": 4,
+        "bswap": 4,
+        "jne": 1,
+        "movabs": 1,
+        "rorx": 4,
+        "sub": 1,
+        "vmovq": 5,
+        "vpaddq": 38,
+        "vpextrq": 2,
+        "vpinsrq": 2,
+        "vpor": 38,
+        "vpshufb": 38,
+        "vpsllq": 38,
+        "vpsrlq": 38,
+        "vpunpcklqdq": 1,
+        "vpxor": 38,
+        "xor": 4
+      },
+      "mode": "report-only",
+      "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+      "normalized_loop_sha256": "dd15d9499d05d6ee0bc95c4128fd93402a1a448adbdf1e60e0685c39c2e652e0",
+      "push_pop": 0,
+      "status": "PASS",
+      "text_bytes": 14435
+    }
+  },
+  "baseline": "current",
+  "benchmark": "challenge_contest_shaped",
+  "campaign_id": null,
+  "candidate_verification": {
+    "current": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_link_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "verifier_only_flag_overrides": [],
+      "verifier_translation_unit_cflags": [
+        "-O3",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Werror"
+      ]
+    },
+    "inline_asm": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_link_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "verifier_only_flag_overrides": [],
+      "verifier_translation_unit_cflags": [
+        "-O3",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Werror"
+      ]
+    },
+    "phase": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_link_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-mavx2",
+        "-mbmi2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "verifier_only_flag_overrides": [],
+      "verifier_translation_unit_cflags": [
+        "-O3",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Werror"
+      ]
+    }
+  },
+  "comparisons": {
+    "inline_asm": {
+      "paired_bootstrap_ci95_high": 1.0023961453095913,
+      "paired_bootstrap_ci95_low": 0.9979573810312464,
+      "paired_mad": 0.002806673096463097,
+      "paired_median": 1.0001921370220244,
+      "paired_p05": 0.9867472820745267,
+      "paired_p95": 1.0120982154445675,
+      "ratio_of_medians": 0.9990466057783982
+    },
+    "phase": {
+      "paired_bootstrap_ci95_high": 0.7635898927769927,
+      "paired_bootstrap_ci95_low": 0.7510714434319478,
+      "paired_mad": 0.008050446726238947,
+      "paired_median": 0.7560670528967317,
+      "paired_p05": 0.7460662006901785,
+      "paired_p95": 0.781552922512276,
+      "ratio_of_medians": 0.7545500083486392
+    }
+  },
+  "config": {
+    "bootstrap_resamples": 5000,
+    "candidate_random_differential": true,
+    "candidate_random_differential_cases": 100000,
+    "iterations": 3000000,
+    "official_iterations": 1000000,
+    "oracle_selftest_random_cases": 100000,
+    "order": "balanced-cyclic-reversed",
+    "random_differential_cases": 100000,
+    "samples_per_case": 32,
+    "warmups": 6
+  },
+  "environment": {
+    "affinity": [
+      3
+    ],
+    "compiler": "gcc (Debian 12.2.0-14+deb12u1) 12.2.0",
+    "cpu": "AMD EPYC 7B12",
+    "flags": [
+      "-O3",
+      "-Wall",
+      "-Wextra"
+    ],
+    "host": "Linux-6.1.0-51-cloud-amd64-x86_64-with-glibc2.36",
+    "inner_timer": "clock()",
+    "objdump": "GNU objdump (GNU Binutils for Debian) 2.40",
+    "outer_timer": "time.perf_counter_ns",
+    "size_tool": "GNU size (GNU Binutils for Debian) 2.40"
+  },
+  "internal_ns_per_20round": {
+    "current": [
+      36.012,
+      36.101,
+      35.96,
+      36.49,
+      36.742,
+      36.844,
+      36.614,
+      35.942,
+      35.839999999999996,
+      36.009,
+      35.937,
+      35.905,
+      36.153999999999996,
+      36.106,
+      36.379000000000005,
+      36.144999999999996,
+      36.398,
+      36.732,
+      36.747,
+      36.682,
+      36.15,
+      36.005,
+      35.937,
+      36.22,
+      36.104,
+      36.266,
+      36.481,
+      36.024,
+      36.229,
+      36.172000000000004,
+      36.446,
+      35.91
+    ],
+    "inline_asm": [
+      36.007,
+      36.169,
+      36.121,
+      36.424,
+      36.204,
+      36.539,
+      36.734,
+      35.964000000000006,
+      35.961,
+      35.915,
+      35.845,
+      35.888000000000005,
+      36.228,
+      36.134,
+      36.285,
+      36.077,
+      36.557,
+      36.637,
+      36.553000000000004,
+      36.672999999999995,
+      36.05,
+      36.228,
+      36.318999999999996,
+      36.327,
+      36.854,
+      36.878,
+      35.988,
+      35.943999999999996,
+      36.087,
+      36.275,
+      36.057,
+      35.966
+    ],
+    "phase": [
+      48.193,
+      48.065999999999995,
+      48.169,
+      48.524,
+      47.902,
+      46.486,
+      47.93300000000001,
+      48.141000000000005,
+      47.646,
+      47.638,
+      47.922,
+      48.163,
+      48.237,
+      48.156,
+      47.593,
+      47.833,
+      47.085,
+      47.063,
+      48.124,
+      47.704,
+      46.177,
+      48.152,
+      48.377,
+      47.847,
+      46.424,
+      47.268,
+      47.779,
+      47.525,
+      47.957,
+      47.830999999999996,
+      48.146,
+      48.051
+    ]
+  },
+  "measurement_protocol": {
+    "files": {
+      "autotune_driver": {
+        "path": "submissions/02/src/optimization/autotune_255h.py",
+        "sha256": "36ba5ce6d130aa117c621844cd8c1f8bcb4c96e4518580d25afa688d3b976d09"
+      },
+      "benchmark_driver": {
+        "path": "submissions/02/src/benchmark_permutation.py",
+        "sha256": "4262926ecd8e4fcfabcc7c4e74a4c87bbc0450f995b31d4a60137f888bd59d42"
+      },
+      "candidate_verifier": {
+        "path": "submissions/02/src/optimization/verify_contest_candidate.c",
+        "sha256": "8245f1baf23fe82e1a1b22dc7c25e5e1fd5b102ca833f26d4c88342088c80b35"
+      },
+      "loop_audit": {
+        "path": "submissions/02/src/loop_audit.py",
+        "sha256": "e73d27abfbb7eea9ee84e0216baaf7f39f128db0cffdcb79b469656f9c185e23"
+      },
+      "objdump_executable": {
+        "path": "/usr/bin/x86_64-linux-gnu-objdump",
+        "sha256": "19717049e8ecd98cfbb17fd9eb25e9fd896ecec2fc4af6b931f3dd0bc4e903de"
+      },
+      "problem_archive": {
+        "path": "problems/2_\uc554\ud638\uad6c\ud604.zip",
+        "sha256": "d0c3158adda8ba258becfc0e347267c0f2f0112738ec732be6dcb5477342e88e"
+      },
+      "reference_oracle": {
+        "path": "submissions/02/src/solve_permutation.c",
+        "sha256": "fb6b5128f6777bdb5c9c940541d7052a317b596775d7ec0d7820d0610cb9aa42"
+      },
+      "size_executable": {
+        "path": "/usr/bin/x86_64-linux-gnu-size",
+        "sha256": "d2dc6eb962bfc841403cc8b72191bfd829b50d8796b611689e92cfb051cf10ee"
+      }
+    },
+    "fingerprint_sha256": "9ac895a6b1de464070fb1590b0e7152075a7467585625a6b1679422e67030bf6",
+    "python": {
+      "executable": "/usr/bin/python3.11",
+      "executable_sha256": "6d972cf21be56fe3c947ab6ba257ff8d08c342dd2714442986791bd9a6dfabfe",
+      "implementation": "CPython",
+      "version": "3.11.2"
+    },
+    "schema_version": 1
+  },
+  "outer_wall_seconds": {
+    "current": [
+      0.111442435,
+      0.111665096,
+      0.111347058,
+      0.112843875,
+      0.113714503,
+      0.114348104,
+      0.112994557,
+      0.111359992,
+      0.110926263,
+      0.111368023,
+      0.111043385,
+      0.110959135,
+      0.111897854,
+      0.111580787,
+      0.112459914,
+      0.111887298,
+      0.112728447,
+      0.113994905,
+      0.113591227,
+      0.114180747,
+      0.11176409,
+      0.111332953,
+      0.111112253,
+      0.111892743,
+      0.111527095,
+      0.111969925,
+      0.112416765,
+      0.111392868,
+      0.111881386,
+      0.1116958,
+      0.112514858,
+      0.110995483
+    ],
+    "inline_asm": [
+      0.111470066,
+      0.111958124,
+      0.111739107,
+      0.112952135,
+      0.112168848,
+      0.115466783,
+      0.114401395,
+      0.111075871,
+      0.111325732,
+      0.111188852,
+      0.110808015,
+      0.110943455,
+      0.111995143,
+      0.111786656,
+      0.111854466,
+      0.111530879,
+      0.112899625,
+      0.113513375,
+      0.112903589,
+      0.113633928,
+      0.111532993,
+      0.112054143,
+      0.112361851,
+      0.112430242,
+      0.118610635,
+      0.114406491,
+      0.111243667,
+      0.110856088,
+      0.111427818,
+      0.111928459,
+      0.11126984,
+      0.11101438
+    ],
+    "phase": [
+      0.147924502,
+      0.147588012,
+      0.147846164,
+      0.148908282,
+      0.147278677,
+      0.143205195,
+      0.147266858,
+      0.14778796,
+      0.146310443,
+      0.146303094,
+      0.147071385,
+      0.147935564,
+      0.148155556,
+      0.147751567,
+      0.146232779,
+      0.147075348,
+      0.144625126,
+      0.144885024,
+      0.147560652,
+      0.147540393,
+      0.142444521,
+      0.147660436,
+      0.148478214,
+      0.14660121,
+      0.145477181,
+      0.145702361,
+      0.146360053,
+      0.145750375,
+      0.146946593,
+      0.146540416,
+      0.147609245,
+      0.147707566
+    ]
+  },
+  "schema_version": 4,
+  "sources": {
+    "current": {
+      "case_cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "path": "submissions/02/src/optimization/contest_simd_avx2_lanewise.c",
+      "rewritten_sha256": "c122e17ed0e06279273877e26fd33b2460a398486a723cb56bfc82c3feff1f4f",
+      "sha256": "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751",
+      "source_context_cflags": [
+        "-iquote",
+        "/home/seorii/dev/hancomac/cryptotest/solutions/02_optimization"
+      ]
+    },
+    "inline_asm": {
+      "case_cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "path": "submissions/02/src/optimization/contest_simd_avx2_inline_asm.c",
+      "rewritten_sha256": "6e29d7a87fc2a4cea5bc3de49f7ca32f08fffb20bc3c3755d6a4a27514ab6e55",
+      "sha256": "778187b61a0a769cb012e5205edb5782df2c25418681651cb76d05739198307c",
+      "source_context_cflags": [
+        "-iquote",
+        "/home/seorii/dev/hancomac/cryptotest/solutions/02_optimization"
+      ]
+    },
+    "phase": {
+      "case_cflags": [
+        "-mavx2",
+        "-mbmi2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "path": "submissions/02/src/optimization/contest_simd_avx2_phase_staggered.c",
+      "rewritten_sha256": "22fe36ef57f8a64dad5e587ce263baf4ec0a893a99d4f03ca0c032b3ba0f2c82",
+      "sha256": "1824843868e3747634fd5eb8f39f08ce0b79588da8ca0f19fcaee810c2b12983",
+      "source_context_cflags": [
+        "-iquote",
+        "/home/seorii/dev/hancomac/cryptotest/solutions/02_optimization"
+      ]
+    }
+  },
+  "summaries": {
+    "current": {
+      "bootstrap_median_ci95_high_ns": 36.355999999999995,
+      "bootstrap_median_ci95_low_ns": 36.0565,
+      "mad_ns": 0.21250000000000213,
+      "mad_percent": 0.5877959725603068,
+      "max_ns": 36.844,
+      "median_ns": 36.152,
+      "min_ns": 35.839999999999996,
+      "outliers_beyond_3mad": 1,
+      "p05_ns": 35.90775,
+      "p25_ns": 36.007999999999996,
+      "p75_ns": 36.45475,
+      "p95_ns": 36.74425
+    },
+    "inline_asm": {
+      "bootstrap_median_ci95_high_ns": 36.30199999999999,
+      "bootstrap_median_ci95_low_ns": 36.0635,
+      "mad_ns": 0.2094999999999949,
+      "mad_percent": 0.5789451867408977,
+      "max_ns": 36.878,
+      "median_ns": 36.186499999999995,
+      "min_ns": 35.845,
+      "outliers_beyond_3mad": 2,
+      "p05_ns": 35.90285,
+      "p25_ns": 36.002250000000004,
+      "p75_ns": 36.45275,
+      "p95_ns": 36.788
+    },
+    "phase": {
+      "bootstrap_median_ci95_high_ns": 48.096000000000004,
+      "bootstrap_median_ci95_low_ns": 47.712500000000006,
+      "mad_ns": 0.24749999999999872,
+      "mad_percent": 0.5165720487560501,
+      "max_ns": 48.524,
+      "median_ns": 47.912,
+      "min_ns": 46.177,
+      "outliers_beyond_3mad": 5,
+      "p05_ns": 46.458099999999995,
+      "p25_ns": 47.62675,
+      "p75_ns": 48.1475,
+      "p95_ns": 48.3
+    }
+  },
+  "verification_harness": {
+    "path": "submissions/02/src/optimization/verify_contest_candidate.c",
+    "sha256": "8245f1baf23fe82e1a1b22dc7c25e5e1fd5b102ca833f26d4c88342088c80b35"
+  }
+}

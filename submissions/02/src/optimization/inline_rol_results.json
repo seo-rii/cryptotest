@@ -1,0 +1,208 @@
+{
+  "baseline": "bmi2",
+  "benchmark": "challenge_contest_shaped",
+  "candidate_verification": {
+    "bmi2": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_only_flag_overrides": []
+    },
+    "portable": {
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "verifier_only_flag_overrides": []
+    }
+  },
+  "comparisons": {
+    "portable": {
+      "paired_bootstrap_ci95_high": 1.0022176258609292,
+      "paired_bootstrap_ci95_low": 0.9584594648341692,
+      "paired_mad": 0.03719897945845119,
+      "paired_median": 0.985268792180591,
+      "paired_p05": 0.8962275922305871,
+      "paired_p95": 1.0518523466025471,
+      "ratio_of_medians": 0.983716693236165
+    }
+  },
+  "config": {
+    "bootstrap_resamples": 5000,
+    "candidate_random_differential": true,
+    "iterations": 3000000,
+    "official_iterations": 1000000,
+    "order": "balanced-cyclic-reversed",
+    "random_differential_cases": 100000,
+    "samples_per_case": 21,
+    "warmups": 3
+  },
+  "environment": {
+    "affinity": [
+      4
+    ],
+    "compiler": "gcc (Debian 12.2.0-14+deb12u1) 12.2.0",
+    "cpu": "AMD EPYC 7B12",
+    "flags": [
+      "-O3",
+      "-Wall",
+      "-Wextra"
+    ],
+    "host": "Linux-6.1.0-51-cloud-amd64-x86_64-with-glibc2.36",
+    "inner_timer": "clock()",
+    "outer_timer": "time.perf_counter_ns"
+  },
+  "internal_ns_per_20round": {
+    "bmi2": [
+      42.927,
+      44.704,
+      41.208,
+      43.096000000000004,
+      45.541,
+      42.285000000000004,
+      41.327000000000005,
+      42.436,
+      44.416,
+      43.386,
+      45.812,
+      43.376999999999995,
+      45.580000000000005,
+      47.245000000000005,
+      46.364000000000004,
+      47.001,
+      43.195,
+      42.336999999999996,
+      39.662000000000006,
+      42.303,
+      42.067
+    ],
+    "portable": [
+      43.565,
+      43.507999999999996,
+      43.385,
+      48.086,
+      43.91,
+      43.491,
+      44.476,
+      45.166,
+      43.44,
+      43.467999999999996,
+      43.827999999999996,
+      45.257,
+      41.137,
+      44.916,
+      47.327,
+      46.897,
+      44.224,
+      42.97,
+      45.57,
+      45.538000000000004,
+      42.608
+    ]
+  },
+  "outer_wall_seconds": {
+    "bmi2": [
+      0.386947768,
+      0.452798654,
+      0.319216776,
+      0.320130812,
+      0.377870778,
+      0.453361481,
+      0.404274136,
+      0.40272087,
+      0.429865401,
+      0.496563644,
+      0.638132325,
+      0.543468041,
+      0.617369238,
+      0.352656057,
+      0.540591733,
+      0.406345026,
+      0.368508976,
+      0.430377566,
+      0.331676871,
+      0.383032429,
+      0.237693488
+    ],
+    "portable": [
+      0.354641363,
+      0.354612064,
+      0.353385489,
+      0.359123798,
+      0.351673713,
+      0.452780127,
+      0.168806989,
+      0.411805613,
+      0.422240445,
+      0.459229252,
+      0.459285825,
+      0.562637903,
+      0.541382784,
+      0.463991243,
+      0.320100891,
+      0.400352319,
+      0.45244614,
+      0.438422504,
+      0.38748035,
+      0.408551413,
+      0.189144134
+    ]
+  },
+  "schema_version": 3,
+  "sources": {
+    "bmi2": {
+      "case_cflags": [
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "path": "submissions/02/contest.c",
+      "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+    },
+    "portable": {
+      "case_cflags": [
+        "-finline-limit=2000"
+      ],
+      "path": "submissions/02/src/optimization/contest_inline_unrolled.c",
+      "sha256": "ff1e080f2cdee30e87b9cd8d8c3f97df8088095babf127cc8d6d48145c995f21"
+    }
+  },
+  "summaries": {
+    "bmi2": {
+      "bootstrap_median_ci95_high_ns": 44.704,
+      "bootstrap_median_ci95_low_ns": 42.336999999999996,
+      "mad_ns": 1.2209999999999965,
+      "mad_percent": 2.8267160550989616,
+      "max_ns": 47.245000000000005,
+      "median_ns": 43.195,
+      "min_ns": 39.662000000000006,
+      "outliers_beyond_3mad": 2,
+      "p05_ns": 41.208,
+      "p25_ns": 42.303,
+      "p75_ns": 45.541,
+      "p95_ns": 47.001
+    },
+    "portable": {
+      "bootstrap_median_ci95_high_ns": 45.166,
+      "bootstrap_median_ci95_low_ns": 43.491,
+      "mad_ns": 0.9399999999999977,
+      "mad_percent": 2.1407424276930036,
+      "max_ns": 48.086,
+      "median_ns": 43.91,
+      "min_ns": 41.137,
+      "outliers_beyond_3mad": 3,
+      "p05_ns": 42.608,
+      "p25_ns": 43.467999999999996,
+      "p75_ns": 45.257,
+      "p95_ns": 47.327
+    }
+  }
+}

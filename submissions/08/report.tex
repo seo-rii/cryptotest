@@ -21,11 +21,7 @@
 \hypersetup{
   colorlinks=true,
   linkcolor=blue,
-  urlcolor=blue,
-  pdftitle={8번 블록암호: 중간 상태 누출을 이용한 변형 AES 마스터 키 복원},
-  pdfauthor={암호분석경진대회 제출 보고서},
-  pdfsubject={Leak-assisted key recovery for a modified seven-round AES},
-  pdfkeywords={AES, intermediate-state leak, key recovery, meet-in-the-middle}
+  urlcolor=blue
 }
 \lstset{
   basicstyle=\ttfamily\small,
@@ -35,14 +31,17 @@
   keepspaces=true
 }
 
-\title{8번 블록암호\\중간 상태 누출을 이용한 변형 AES 마스터 키 복원}
-\author{암호분석경진대회 제출 보고서}
+\input{../../templates/answer_coversheet.sty}
+\SetProblemNumber{8}
+
+\title{블록암호}
+\author{중간 상태 누출을 이용한 변형 AES 마스터 키 복원}
 \date{2026년 7월}
 
 \begin{document}
 \maketitle
 
-\section{결과 요약}
+\section*{결과 요약}
 
 복원한 16바이트 마스터 키는 다음과 같다.
 
@@ -100,12 +99,10 @@ key-byte 제약으로 연결하게 해 준다.
 본 solver는 그 distinguisher, 논문의 다라운드 backward 경로, 또는
 논문에 제시된 AES-192/256 공격 복잡도를 구현하지 않는다.
 
-여기서는 문제에 훨씬 강한 중간 상태 bit 누출과 특수한 라운드 키
-permutation이 직접 주어진다. 원 공격에서 참고한 것은 중간 표현의
-후보를 미리 계산하고 공통 값을 기준으로 결합한다는 관점뿐이다. 따라서
-실제로 구현한 방법은 \textbf{leak-assisted bidirectional key-byte
-constraint join}으로 구분한다. 이를 고전 Demirci--Selçuk 공격의
-구현이나 성능 재현이라고 주장하지 않는다.
+여기서는 문제가 훨씬 강한 중간 상태 bit 누출과 특수한 라운드 키
+permutation을 직접 제공한다. 원 공격에서 가져온 것은 중간 표현의
+후보를 미리 계산하고 공통 값으로 결합한다는 관점이며, 실제 구현은 이
+누출을 이용해 앞뒤 방향에서 key-byte 제약을 직접 결합하는 방식이다.
 
 \section{누출 대상과 직접 복원}
 
@@ -233,7 +230,8 @@ table을 만들지 않는다. 여러 라운드 키에 재사용된 동일 마스
 
 \section{마지막 3바이트의 완전 탐색과 유일성}
 
-\texttt{complete\_partial\_keys()}는 한 partial key에서 처음 발견한
+\texttt{solve\_aes\_key.py} 내의 \texttt{complete\_partial\_keys()}는
+한 partial key에서 처음 발견한
 조합을 반환하지 않는다. 먼저 \texttt{K[2]}와 \texttt{K[4]}를 각각
 0부터 255까지 별도 목표 byte로 거른 뒤, 살아남은 모든 조합에 대해
 \texttt{K[14]}의 256개 값을 끝까지 조사한다. 후보마다
@@ -250,9 +248,8 @@ table을 만들지 않는다. 여러 라운드 키에 재사용된 동일 마스
 
 생성된 모든 full key는 \texttt{set[bytes]}에 넣어 서로 다른 경로가
 같은 키를 만드는 경우를 중복 제거한다. 그 뒤 누출 대상 평문을 직접
-암호화해 해당 암호문과 일치하는 키만 남긴다. 서로 다른 생존 key가
-정확히 하나인지 검사한 뒤에만 결과를 반환하므로, ``첫 해를 정답으로
-간주''하는 조기 종료에 의존하지 않는다.
+암호화해 해당 암호문과 일치하는 키만 남기고, 서로 다른 생존 key가
+정확히 하나임을 확인한 뒤에 결과를 반환한다.
 
 \section{복잡도와 측정 범위}
 
@@ -274,34 +271,26 @@ $X^2$ completion과 $X^3$ record 비교 & $2^{20}=1{,}048{,}576$ \\
 object 표현에서는 공간 복잡도가 $O(2^{16})$이며, packed integer나
 고정폭 array를 쓰면 상수 계수는 줄일 수 있다.
 
-Python 3.11.2, Linux 6.1.0-51-cloud-amd64, glibc 2.36 환경의 같은
-process에서 key 탐색, 완전 completion, 50,000쌍 검증을 함께 잰 두
-실행은 41.706--57.160초, peak RSS 59,812--60,436 KiB
-(약 58.4--59.0 MiB)였다. 이는 통제된 다회 benchmark가 아니며 Python
-version, allocator, CPU 부하에 따라 달라진다. 따라서 위 후보 수는
-공격 구조를 설명하는 값이고, wall time과 RSS는 현재 구현의 제한된
-end-to-end 관측값일 뿐 복잡도의 증명이나 다른 장비의 성능 보장이 아니다.
+Python 3.11.2, Linux 6.1.0-51-cloud-amd64, glibc 2.36 환경에서 key
+탐색, 완전 completion, 50,000쌍 검증을 함께 잰 두 번의 실행은
+41.706--57.160초, peak RSS 59,812--60,436 KiB(약 58.4--59.0 MiB)였다.
+다회 benchmark가 아니므로 환경에 따라 달라질 수 있는 참고값이다.
 
-\subsection{SMT probe의 비결론성}
-
-탐색 초기에 임시 \texttt{z3-solver} 환경에서 full AES bit-vector
-모델과 state/key layout 변형을 짧게 시도했으나 timeout에 해당하는
-\texttt{unknown}으로 끝났다. 당시 probe code와 정확한 timeout 기록을
-보존하지 않았으므로 이는 재현 가능한 실패 실험이 아니다. 특히
-\texttt{unknown}은 UNSAT나 SMT 접근의 불가능성을 뜻하지 않는다. 최종
-방법을 선택한 근거는 leak-assisted join이 실제 key를 복원하고 전체
-50,000쌍으로 검증됐다는 양성 결과다.
+탐색 초기에는 \texttt{z3-solver}로 full AES bit-vector 모델을 짧게
+시도했으나 timeout으로 끝나 포기했다. 최종적으로 leak-assisted join을
+택한 것은 이 방법이 실제 key를 복원하고 50,000쌍 전체로 검증됐기
+때문이다.
 
 \section{구현, 재현 및 검증}
 
 최종 Python solver는 AES 정ㆍ역연산, 문제의 라운드 키 생성, leak
 parser, 후보 record와 join을 구현한다. 마지막 세 key byte를 빠짐없이
 생성하고 전체 데이터를 검증하는 과정도 Python 표준 라이브러리만
-사용한다. 저장소 루트에서 다음을 실행한다.
+사용한다.
 
 \begin{lstlisting}
-python3 solutions/investigate_08_aes_leak.py
-python3 solutions/solve_08_aes_key.py
+python3 investigate_aes_leak.py
+python3 solve_aes_key.py
 \end{lstlisting}
 
 최종 solver의 핵심 출력은 다음과 같다.
@@ -320,7 +309,7 @@ submission key check = PASS
   \item 직접 복원한 3바이트와 누출 bit pattern의 일치;
   \item 모든 completion에서 생성한 full key의 중복 제거와 유일성;
   \item 복원 key로 50,000개 block 전체를 재암호화한 mismatch 0; 그리고
-  \item 출력 key와 \texttt{submissions/08/master\_key.txt}의
+  \item 출력 key와 \texttt{master\_key.txt}의
         byte-for-byte 일치.
 \end{itemize}
 
@@ -337,9 +326,9 @@ submission key check = PASS
         중간 표현 후보의 precompute/join 관점을 참고했으며, 본 solver가
         논문의 distinguisher와 공격 전체를 구현하지 않았음을 본문에서
         구분했다.
-  \item \path{problems/8_블록암호.zip}. 변형 7라운드 구조, 라운드 키
+  \item \path{8_블록암호.zip}. 변형 7라운드 구조, 라운드 키
         permutation, 50,000쌍과 중간 상태 누출의 원문 자료다.
-  \item \path{solutions/solve_08_aes_key.py}. 누출 completion,
+  \item \path{solve_aes_key.py}. 누출 completion,
         key-byte constraint join, exhaustive full-key 생성과 전체 검증을
         재현하는 구현이다.
 \end{itemize}

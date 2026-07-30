@@ -1,0 +1,4256 @@
+{
+  "alignment_classes": [
+    {
+      "loop_bytes": 549,
+      "members": [
+        "align_all_64",
+        "align_functions_64",
+        "align_functions_loops_64",
+        "align_loops_128",
+        "align_loops_16",
+        "align_loops_32",
+        "align_loops_64",
+        "align_loops_64_15",
+        "align_loops_64_31",
+        "align_loops_64_63",
+        "align_loops_8",
+        "baseline",
+        "function_sections",
+        "function_sections_gc",
+        "function_sections_sort_alignment",
+        "function_sections_sort_name",
+        "ira_priority",
+        "no_relax",
+        "no_schedule_insns2",
+        "no_tree_vectorize",
+        "noseparate_code"
+      ],
+      "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+      "representative": "baseline",
+      "spanned_64_byte_lines": 9,
+      "start_mod_64": 0
+    },
+    {
+      "loop_bytes": 549,
+      "members": [
+        "tune_alderlake",
+        "tune_gracemont",
+        "tune_meteorlake"
+      ],
+      "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+      "representative": "tune_alderlake",
+      "spanned_64_byte_lines": 9,
+      "start_mod_64": 8
+    },
+    {
+      "loop_bytes": 549,
+      "members": [
+        "no_peephole2"
+      ],
+      "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+      "representative": "no_peephole2",
+      "spanned_64_byte_lines": 9,
+      "start_mod_64": 16
+    },
+    {
+      "loop_bytes": 549,
+      "members": [
+        "branch_boundary_32",
+        "no_tree_slp_vectorize"
+      ],
+      "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+      "representative": "branch_boundary_32",
+      "spanned_64_byte_lines": 10,
+      "start_mod_64": 48
+    },
+    {
+      "loop_bytes": 549,
+      "members": [
+        "align_loops_1",
+        "no_align_loops"
+      ],
+      "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+      "representative": "align_loops_1",
+      "spanned_64_byte_lines": 10,
+      "start_mod_64": 57
+    },
+    {
+      "loop_bytes": 548,
+      "members": [
+        "incdec_only",
+        "tune_graniterapids"
+      ],
+      "normalized_sha256": "313dcc820be6159d23989db6dc37615ea104bd1f9430911d18229ef1241015d7",
+      "representative": "incdec_only",
+      "spanned_64_byte_lines": 9,
+      "start_mod_64": 0
+    },
+    {
+      "loop_bytes": 550,
+      "members": [
+        "rename_registers"
+      ],
+      "normalized_sha256": "37280e0767a7f29580e831af9da0b834ca9c350cb80ac5f47d79ec0e678fa592",
+      "representative": "rename_registers",
+      "spanned_64_byte_lines": 9,
+      "start_mod_64": 0
+    },
+    {
+      "loop_bytes": 549,
+      "members": [
+        "lto"
+      ],
+      "normalized_sha256": "6c8b4a7f8626c7fd3f592a0622aa6bab4ad7ddb97d9d1d5fe726e97180adac9f",
+      "representative": "lto",
+      "spanned_64_byte_lines": 10,
+      "start_mod_64": 40
+    },
+    {
+      "loop_bytes": 549,
+      "members": [
+        "ira_one"
+      ],
+      "normalized_sha256": "acd26958fadae0b29eac6f32bafce006ee3e15536847d62e003c5a1d90cebd81",
+      "representative": "ira_one",
+      "spanned_64_byte_lines": 9,
+      "start_mod_64": 0
+    }
+  ],
+  "cases": {
+    "align_all_64": {
+      "build": {
+        "binary_sha256": "d314d054e7b74065137b3a739a66c7810163f641eb40cbd9ad8f3824cdc894dd",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-falign-functions=64",
+        "-falign-jumps=64",
+        "-falign-labels=64",
+        "-falign-loops=64"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-falign-functions=64",
+        "-falign-jumps=64",
+        "-falign-labels=64",
+        "-falign-loops=64"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "combined_alignment",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "d314d054e7b74065137b3a739a66c7810163f641eb40cbd9ad8f3824cdc894dd",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "9e11b7bbc0fa326ba94f2d98ac5eb8f0b38f764d3479f485a04caf867825dce3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401700",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 7254
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "align_functions_64": {
+      "build": {
+        "binary_sha256": "fd762ae034ddddd05b20038b9cd88582be24d2a729576ed621e17380f07bd956",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-falign-functions=64"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-falign-functions=64"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "combined_alignment",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "fd762ae034ddddd05b20038b9cd88582be24d2a729576ed621e17380f07bd956",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6290
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "align_functions_loops_64": {
+      "build": {
+        "binary_sha256": "a19305f5ecc274b130b80b3ffbff10da3ea9ebafb13018b9468e0e15d2199f66",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-falign-functions=64",
+        "-falign-loops=64"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-falign-functions=64",
+        "-falign-loops=64"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "combined_alignment",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "a19305f5ecc274b130b80b3ffbff10da3ea9ebafb13018b9468e0e15d2199f66",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6290
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "align_loops_1": {
+      "build": {
+        "binary_sha256": "4ccea955187d0834f83b55bac8d4986d79aea0c21740b1de6a73f8ede09d71c5",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-falign-loops=1"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-falign-loops=1"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "loop_alignment",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "4ccea955187d0834f83b55bac8d4986d79aea0c21740b1de6a73f8ede09d71c5",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "a30f6c4d58bf3193804b3ecc89942389326f392b35c6d476a155f8a66c29ca9a",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x4014f9",
+        "start_mod_16": 9,
+        "start_mod_32": 25,
+        "start_mod_64": 57,
+        "text_bytes": 6178
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "align_loops_128": {
+      "build": {
+        "binary_sha256": "731a78329a66506101cc3e407247c66a8ba13bfb24d3d18be0fe0b45c058b707",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-falign-loops=128"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-falign-loops=128"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "loop_alignment",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "731a78329a66506101cc3e407247c66a8ba13bfb24d3d18be0fe0b45c058b707",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "b8bc8c5a400e7f7d9d985d952b16caba197fb5a56195fd933a1926a7db8c3f84",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401580",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6422
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "align_loops_16": {
+      "build": {
+        "binary_sha256": "1fa5e307479aa62405c03ba9426255b7cf6d29d1a95946cb842ab16023710b9c",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-falign-loops=16"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-falign-loops=16"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "loop_alignment",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "1fa5e307479aa62405c03ba9426255b7cf6d29d1a95946cb842ab16023710b9c",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6210
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "align_loops_32": {
+      "build": {
+        "binary_sha256": "031f8b5442e8db2cd795f4d9518fa9566164c2b6f9bb35e41ba8151a2419ed33",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-falign-loops=32"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-falign-loops=32"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "loop_alignment",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "031f8b5442e8db2cd795f4d9518fa9566164c2b6f9bb35e41ba8151a2419ed33",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6230
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "align_loops_64": {
+      "build": {
+        "binary_sha256": "aa40456928e61b33810afee12cf5258e913c4bf648d2a2bff7a34bec71893e57",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-falign-loops=64"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-falign-loops=64"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "loop_alignment",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "aa40456928e61b33810afee12cf5258e913c4bf648d2a2bff7a34bec71893e57",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6230
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "align_loops_64_15": {
+      "build": {
+        "binary_sha256": "fa82599301a5898bec77fbf294366ea1d8fc7e8a3659c8c3648dbaf61de91608",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-falign-loops=64:15"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-falign-loops=64:15"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "loop_alignment",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "fa82599301a5898bec77fbf294366ea1d8fc7e8a3659c8c3648dbaf61de91608",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6210
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "align_loops_64_31": {
+      "build": {
+        "binary_sha256": "aa40456928e61b33810afee12cf5258e913c4bf648d2a2bff7a34bec71893e57",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-falign-loops=64:31"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-falign-loops=64:31"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "loop_alignment",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "aa40456928e61b33810afee12cf5258e913c4bf648d2a2bff7a34bec71893e57",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6230
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "align_loops_64_63": {
+      "build": {
+        "binary_sha256": "aa40456928e61b33810afee12cf5258e913c4bf648d2a2bff7a34bec71893e57",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-falign-loops=64:63"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-falign-loops=64:63"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "loop_alignment",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "aa40456928e61b33810afee12cf5258e913c4bf648d2a2bff7a34bec71893e57",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6230
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "align_loops_8": {
+      "build": {
+        "binary_sha256": "027dd5b03e11cc4064ede147725eab16a633b6422c70e9b7b8f9317ba4882bef",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-falign-loops=8"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-falign-loops=8"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "loop_alignment",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "027dd5b03e11cc4064ede147725eab16a633b6422c70e9b7b8f9317ba4882bef",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6210
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "baseline": {
+      "build": {
+        "binary_sha256": "1fa5e307479aa62405c03ba9426255b7cf6d29d1a95946cb842ab16023710b9c",
+        "status": "PASS"
+      },
+      "cflags": [],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "reference",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "1fa5e307479aa62405c03ba9426255b7cf6d29d1a95946cb842ab16023710b9c",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6210
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": true
+    },
+    "branch_boundary_32": {
+      "build": {
+        "binary_sha256": "be8dbd5a1407944058e802bc696121c5c0717233968a71334f96a15f21c3ac7c",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-Wa,-mbranches-within-32B-boundaries"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-Wa,-mbranches-within-32B-boundaries"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "assembler_layout",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "be8dbd5a1407944058e802bc696121c5c0717233968a71334f96a15f21c3ac7c",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "c1dbee00f6481dc0997106552374b74265525262fba8fe11aa7fcbfe5baedb22",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401530",
+        "start_mod_16": 0,
+        "start_mod_32": 16,
+        "start_mod_64": 48,
+        "text_bytes": 6290
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "function_sections": {
+      "build": {
+        "binary_sha256": "45a42b84fdef3f1819e4d40ea6c5ab62b0402e5eaa36ef727715f78a962a3435",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-ffunction-sections",
+        "-fdata-sections"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-ffunction-sections",
+        "-fdata-sections"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "link_layout",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "45a42b84fdef3f1819e4d40ea6c5ab62b0402e5eaa36ef727715f78a962a3435",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6210
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "function_sections_gc": {
+      "build": {
+        "binary_sha256": "e6c95c00bd9269958496aa75352a23e104e49658eb1c511b5656e398c30faca7",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-ffunction-sections",
+        "-fdata-sections"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-ffunction-sections",
+        "-fdata-sections"
+      ],
+      "effective_ldflags": [
+        "-Wl,--gc-sections"
+      ],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "link_layout",
+      "ldflags": [
+        "-Wl,--gc-sections"
+      ],
+      "loop": {
+        "binary_sha256": "e6c95c00bd9269958496aa75352a23e104e49658eb1c511b5656e398c30faca7",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 5670
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "function_sections_sort_alignment": {
+      "build": {
+        "binary_sha256": "cdb87c5364332c0276f8796b3111f51527db4fc056c3ce110207baaa764a978a",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-ffunction-sections"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-ffunction-sections"
+      ],
+      "effective_ldflags": [
+        "-Wl,--sort-section=alignment"
+      ],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "link_layout",
+      "ldflags": [
+        "-Wl,--sort-section=alignment"
+      ],
+      "loop": {
+        "binary_sha256": "cdb87c5364332c0276f8796b3111f51527db4fc056c3ce110207baaa764a978a",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6182
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "function_sections_sort_name": {
+      "build": {
+        "binary_sha256": "84cdb1fdd3d026b68fbb01d176eb87fe69ff619e9f7202c8b407b99e6b446cfd",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-ffunction-sections"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-ffunction-sections"
+      ],
+      "effective_ldflags": [
+        "-Wl,--sort-section=name"
+      ],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "link_layout",
+      "ldflags": [
+        "-Wl,--sort-section=name"
+      ],
+      "loop": {
+        "binary_sha256": "84cdb1fdd3d026b68fbb01d176eb87fe69ff619e9f7202c8b407b99e6b446cfd",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6212
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "incdec_only": {
+      "build": {
+        "binary_sha256": "f2360257c1591d5bf44aa8cdc607b1402127f3b7bd177de4af4ad67ec7fbab85",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-mtune-ctrl=use_incdec"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mtune-ctrl=use_incdec"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "dec": {
+            "2": 1
+          },
+          "jne": {
+            "6": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 548
+      },
+      "group": "developer_tune_control",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "f2360257c1591d5bf44aa8cdc607b1402127f3b7bd177de4af4ad67ec7fbab85",
+        "bytes": 548,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "86452f6a6e1dc4b98ac7c47cff5361df993716db51a51f4192198bb9aee01306",
+        "mnemonics": {
+          "dec": 1,
+          "jne": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "313dcc820be6159d23989db6dc37615ea104bd1f9430911d18229ef1241015d7",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6194
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "ira_one": {
+      "build": {
+        "binary_sha256": "3df8dee9643df84cb9c2e64b205d4247ca4b7ae40ff801c3b9fca4b5afd2e8c8",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-fira-region=one"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fira-region=one"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "register_allocation",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "3df8dee9643df84cb9c2e64b205d4247ca4b7ae40ff801c3b9fca4b5afd2e8c8",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "82ab021595a994a35d293e92c34cfdc4307236434806f4f5134151b194046e63",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "acd26958fadae0b29eac6f32bafce006ee3e15536847d62e003c5a1d90cebd81",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6210
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "ira_priority": {
+      "build": {
+        "binary_sha256": "cace52dd627926dd6f35cc6f3f48c17c998c91015b9462dd400a2d62519e63d1",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-fira-algorithm=priority"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fira-algorithm=priority"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "register_allocation",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "cace52dd627926dd6f35cc6f3f48c17c998c91015b9462dd400a2d62519e63d1",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6242
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "lto": {
+      "build": {
+        "binary_sha256": "d1d23c1181e4137a689af466db4572d520cbab031f043aadb6cc9f1277537176",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-flto"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-flto"
+      ],
+      "effective_ldflags": [
+        "-flto"
+      ],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "whole_program",
+      "ldflags": [
+        "-flto"
+      ],
+      "loop": {
+        "binary_sha256": "d1d23c1181e4137a689af466db4572d520cbab031f043aadb6cc9f1277537176",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "f53d8d6a34c23051b551df8a5c2e87a4a24e7c8a9eb85960fd124174bf6137b1",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "6c8b4a7f8626c7fd3f592a0622aa6bab4ad7ddb97d9d1d5fe726e97180adac9f",
+        "push_pop": 0,
+        "start": "0x4017a8",
+        "start_mod_16": 8,
+        "start_mod_32": 8,
+        "start_mod_64": 40,
+        "text_bytes": 5291
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "no_align_loops": {
+      "build": {
+        "binary_sha256": "4ccea955187d0834f83b55bac8d4986d79aea0c21740b1de6a73f8ede09d71c5",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-fno-align-loops"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fno-align-loops"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "loop_alignment",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "4ccea955187d0834f83b55bac8d4986d79aea0c21740b1de6a73f8ede09d71c5",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "a30f6c4d58bf3193804b3ecc89942389326f392b35c6d476a155f8a66c29ca9a",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x4014f9",
+        "start_mod_16": 9,
+        "start_mod_32": 25,
+        "start_mod_64": 57,
+        "text_bytes": 6178
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "no_peephole2": {
+      "build": {
+        "binary_sha256": "6359604810e0eb14759146fab0ae13cc03c88141f9c1af2dface25c74b86b48b",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-fno-peephole2"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fno-peephole2"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "pass_control",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "6359604810e0eb14759146fab0ae13cc03c88141f9c1af2dface25c74b86b48b",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "5572e3e64bda67104fa5ce20cb43be8879042ba495a5be6bf819a5028e37db50",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401510",
+        "start_mod_16": 0,
+        "start_mod_32": 16,
+        "start_mod_64": 16,
+        "text_bytes": 6242
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "no_relax": {
+      "build": {
+        "binary_sha256": "434856a9a2c7bc836032b74c5a1ef28856876b32ccd13a9d374ae74116ffb761",
+        "status": "PASS"
+      },
+      "cflags": [],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "effective_ldflags": [
+        "-Wl,--no-relax"
+      ],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "link_layout",
+      "ldflags": [
+        "-Wl,--no-relax"
+      ],
+      "loop": {
+        "binary_sha256": "434856a9a2c7bc836032b74c5a1ef28856876b32ccd13a9d374ae74116ffb761",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6210
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "no_schedule_insns2": {
+      "build": {
+        "binary_sha256": "db6419f4bb85647b6f379a8335629be52693ad1dc288f4ddc28009b30d8c7d26",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-fno-schedule-insns2"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fno-schedule-insns2"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "scheduler",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "db6419f4bb85647b6f379a8335629be52693ad1dc288f4ddc28009b30d8c7d26",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6214
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "no_tree_slp_vectorize": {
+      "build": {
+        "binary_sha256": "9efb37ab973f209bedf150985f18a2beeae5800f21bd35a78bfe9e078e32bcd3",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-fno-tree-slp-vectorize"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fno-tree-slp-vectorize"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "pass_control",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "9efb37ab973f209bedf150985f18a2beeae5800f21bd35a78bfe9e078e32bcd3",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "710b0b421c5e1f064d44aac69b1811ee81d1ca11b9eca51d2c77ead782cef553",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401570",
+        "start_mod_16": 0,
+        "start_mod_32": 16,
+        "start_mod_64": 48,
+        "text_bytes": 6242
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "no_tree_vectorize": {
+      "build": {
+        "binary_sha256": "e2ddc280c4bdfe0eed4f23d0c17c6a2a7726b896fc3140d3f6de1e38e676711d",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-fno-tree-vectorize"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fno-tree-vectorize"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "pass_control",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "e2ddc280c4bdfe0eed4f23d0c17c6a2a7726b896fc3140d3f6de1e38e676711d",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "9264fa7bf9bc888be991fd6516dcb1ed8a87b035e544c6b324ad1125cd079a8a",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401580",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 5902
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "noseparate_code": {
+      "build": {
+        "binary_sha256": "4e285d3ed0da02c3f2af4cb9764669d529193b52e644bba680be0fd87a403668",
+        "status": "PASS"
+      },
+      "cflags": [],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "effective_ldflags": [
+        "-Wl,-z,noseparate-code"
+      ],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "link_layout",
+      "ldflags": [
+        "-Wl,-z,noseparate-code"
+      ],
+      "loop": {
+        "binary_sha256": "4e285d3ed0da02c3f2af4cb9764669d529193b52e644bba680be0fd87a403668",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "6291e10e89f867dab2ea8a316298bc9c28e8fb35b962c0bc4636ffad3eb54e3a",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x400bc0",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6210
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "rename_registers": {
+      "build": {
+        "binary_sha256": "ed25d092a0b81ba40bda87ca9b3b07614ab4e286254bb1c20c20015a6e58a49f",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-frename-registers"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-frename-registers"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "4": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 550
+      },
+      "group": "register_allocation",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "ed25d092a0b81ba40bda87ca9b3b07614ab4e286254bb1c20c20015a6e58a49f",
+        "bytes": 550,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "ac720c345f4416d0d9beb38e2a72c2730e8e7c445b17e195605b257d13a1684a",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "37280e0767a7f29580e831af9da0b834ca9c350cb80ac5f47d79ec0e678fa592",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6210
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "tune_alderlake": {
+      "build": {
+        "binary_sha256": "33d56be1ba980adf8ee91d0d8ed841ae6b87bfec62295902b4b6f3ddff4f667f",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-mtune=alderlake"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "target_tune",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "33d56be1ba980adf8ee91d0d8ed841ae6b87bfec62295902b4b6f3ddff4f667f",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "063222c113bc613a0c4eeb5c80354265609eb5f8763c340ba279f827895d7600",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401508",
+        "start_mod_16": 8,
+        "start_mod_32": 8,
+        "start_mod_64": 8,
+        "text_bytes": 6214
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "tune_gracemont": {
+      "build": {
+        "binary_sha256": "33d56be1ba980adf8ee91d0d8ed841ae6b87bfec62295902b4b6f3ddff4f667f",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-mtune=gracemont"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mtune=gracemont"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "target_tune",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "33d56be1ba980adf8ee91d0d8ed841ae6b87bfec62295902b4b6f3ddff4f667f",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "063222c113bc613a0c4eeb5c80354265609eb5f8763c340ba279f827895d7600",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401508",
+        "start_mod_16": 8,
+        "start_mod_32": 8,
+        "start_mod_64": 8,
+        "text_bytes": 6214
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "tune_graniterapids": {
+      "build": {
+        "binary_sha256": "7f7bf3fc9a52bfa88ecedfd38feb469e7d51af21ff40afba612c8bb239b292fd",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-mtune=graniterapids"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mtune=graniterapids"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "dec": {
+            "2": 1
+          },
+          "jne": {
+            "6": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 548
+      },
+      "group": "target_tune",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "7f7bf3fc9a52bfa88ecedfd38feb469e7d51af21ff40afba612c8bb239b292fd",
+        "bytes": 548,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "86452f6a6e1dc4b98ac7c47cff5361df993716db51a51f4192198bb9aee01306",
+        "mnemonics": {
+          "dec": 1,
+          "jne": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "313dcc820be6159d23989db6dc37615ea104bd1f9430911d18229ef1241015d7",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6190
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    },
+    "tune_meteorlake": {
+      "build": {
+        "binary_sha256": "33d56be1ba980adf8ee91d0d8ed841ae6b87bfec62295902b4b6f3ddff4f667f",
+        "status": "PASS"
+      },
+      "cflags": [
+        "-mtune=meteorlake"
+      ],
+      "effective_cflags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mtune=meteorlake"
+      ],
+      "effective_ldflags": [],
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "group": "target_tune",
+      "ldflags": [],
+      "loop": {
+        "binary_sha256": "33d56be1ba980adf8ee91d0d8ed841ae6b87bfec62295902b4b6f3ddff4f667f",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "063222c113bc613a0c4eeb5c80354265609eb5f8763c340ba279f827895d7600",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401508",
+        "start_mod_16": 8,
+        "start_mod_32": 8,
+        "start_mod_64": 8,
+        "text_bytes": 6214
+      },
+      "official_vectors": {
+        "marker_lines": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ],
+        "markers": {
+          "20-round testvector verification: OK": true,
+          "one-round testvector verification: OK (1000 pairs checked)": true
+        },
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "random_differential": {
+        "cases": 100000,
+        "random_state_and_constants": true,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      },
+      "reference": false
+    }
+  },
+  "counts": {
+    "audit_pass": 34,
+    "build_pass": 34,
+    "cases": 34,
+    "official_vectors_pass": 34,
+    "random_differential_pass": 34,
+    "stream_alignment_classes": 9,
+    "unique_mca_signatures": 1,
+    "unique_normalized_streams": 5
+  },
+  "decision": {
+    "commutative_encoding": {
+      "exact_gcc13_loop": {
+        "bytes": 549,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "start_mod_64": 0
+      },
+      "reason": "The low changing value occupies ModRM r/m while high scratch/constants use VEX.vvvv; all 20 VPOR encodings shrink by one byte without changing instruction count, hot memory, correctness, or proxy scheduling.",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_inline_asm.c",
+      "source_sha256": "c6f43f26dcf1bb0cd83d51dd52495e264c6b8303c0b06e89cb84b1cae62d45dc",
+      "status": "retain"
+    },
+    "incdec_548": {
+      "case": "incdec_only",
+      "equivalent_tune_case": "tune_graniterapids",
+      "reason": "The sole byte reduction is the supplied harness outer counter changing from three-byte SUB to two-byte DEC; it needs independent P/E/LP-E timing before promotion.",
+      "status": "target-only"
+    },
+    "layout": {
+      "alignment_class_count": 9,
+      "default_start_mod_64": 0,
+      "reason": "Identical normalized streams at different offsets have front-end effects that llvm-mca does not model.",
+      "status": "default-retained-pending-target-timing"
+    },
+    "mca": {
+      "caveat": "Alder Lake and Zen 2 are static proxies and cannot select a Core Ultra 7 255H P/E/LP-E winner.",
+      "unique_signatures": 1
+    },
+    "promotion_limit": "Correctness and exact code shape are established; actual 255H core-type timing remains required for submission choice."
+  },
+  "encoding_lower_bound": {
+    "caveat": "This is an encoding bound for the retained dataflow, not a proof that no different algorithm can use fewer instructions.",
+    "default_loop_control_bytes": {
+      "jne_rel32": 6,
+      "sub_eax_1": 3,
+      "total": 9
+    },
+    "default_total_bytes": 549,
+    "incdec_loop_control_bytes": {
+      "dec_eax": 2,
+      "jne_rel32": 6,
+      "total": 8
+    },
+    "incdec_total_bytes": 548,
+    "observed_default_case": "baseline",
+    "observed_incdec_cases": [
+      "incdec_only",
+      "tune_graniterapids"
+    ],
+    "per_round_bytes": {
+      "total": 27,
+      "vpaddq": 4,
+      "vpor": 4,
+      "vpshufb": 5,
+      "vpsllvq": 5,
+      "vpsrlvq": 5,
+      "vpxor": 4
+    },
+    "round_body_bytes": 540,
+    "rounds": 20,
+    "scope": "current six-instruction AVX2 round dataflow with a 32-bit loop counter and rel32 backedge"
+  },
+  "experiment": "challenge_avx2_commutative_encoding_and_layout",
+  "inputs": {
+    "container": {
+      "image": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "local_image_id": "sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "manifest_digest_sha256": "1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "network": "none",
+      "repository_mount": "read-only"
+    },
+    "driver": {
+      "path": "submissions/02/src/optimization/screen_avx2_commutative_layout.py",
+      "sha256": "f623826758bfb88f25be4a9c72ea15653879178194642bd8d36e07b39e75ebc2"
+    },
+    "extracted_vectors": {
+      "code/testvector.txt": {
+        "archive_member": "code/testvector.txt",
+        "bytes": 153893,
+        "extracted_name": "testvector.txt",
+        "sha256": "4852415779f00d2a9020bc13690ece3ec2febf42af4b29a9f03185c1f63d2801"
+      },
+      "code/testvector_20round.txt": {
+        "archive_member": "code/testvector_20round.txt",
+        "bytes": 149,
+        "extracted_name": "testvector_20round.txt",
+        "sha256": "5625484c45ac7e2fb3ee865fb5078477522c2231f3abca0707133261916b4488"
+      }
+    },
+    "files": {
+      "problems/2_\uc554\ud638\uad6c\ud604.zip": {
+        "actual_sha256": "d0c3158adda8ba258becfc0e347267c0f2f0112738ec732be6dcb5477342e88e",
+        "expected_sha256": "d0c3158adda8ba258becfc0e347267c0f2f0112738ec732be6dcb5477342e88e"
+      },
+      "submissions/02/src/optimization/contest_simd_avx2_inline_asm.c": {
+        "actual_sha256": "c6f43f26dcf1bb0cd83d51dd52495e264c6b8303c0b06e89cb84b1cae62d45dc",
+        "expected_sha256": "c6f43f26dcf1bb0cd83d51dd52495e264c6b8303c0b06e89cb84b1cae62d45dc"
+      },
+      "submissions/02/src/optimization/verify_contest_candidate.c": {
+        "actual_sha256": "8245f1baf23fe82e1a1b22dc7c25e5e1fd5b102ca833f26d4c88342088c80b35",
+        "expected_sha256": "8245f1baf23fe82e1a1b22dc7c25e5e1fd5b102ca833f26d4c88342088c80b35"
+      },
+      "submissions/02/src/loop_audit.py": {
+        "actual_sha256": "7d14dca7b8d4d4d9dbae96a0a5e49a06b488458293ce927018296cde0216952c",
+        "expected_sha256": "7d14dca7b8d4d4d9dbae96a0a5e49a06b488458293ce927018296cde0216952c"
+      }
+    },
+    "host_tools": {
+      "llvm_mca": {
+        "path": "/usr/bin/llvm-mca-16",
+        "sha256": "e7f38b12a3c228c8b0bcea0bf63cc56939286adf9ae5397a43d408322e3c6fbf",
+        "version": "Debian LLVM version 16.0.6"
+      },
+      "objdump": {
+        "path": "/usr/bin/x86_64-linux-gnu-objdump",
+        "sha256": "19717049e8ecd98cfbb17fd9eb25e9fd896ecec2fc4af6b931f3dd0bc4e903de",
+        "version": "GNU objdump (GNU Binutils for Debian) 2.40"
+      },
+      "size": {
+        "path": "/usr/bin/x86_64-linux-gnu-size",
+        "sha256": "d2dc6eb962bfc841403cc8b72191bfd829b50d8796b611689e92cfb051cf10ee",
+        "version": "GNU size (GNU Binutils for Debian) 2.40"
+      }
+    }
+  },
+  "primary_documentation": [
+    {
+      "title": "GCC 13.3 x86 options",
+      "url": "https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/x86-Options.html",
+      "used_for": "-mtune, -mtune-ctrl, AVX2, and assembler policy"
+    },
+    {
+      "title": "GCC 13.3 optimization options",
+      "url": "https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/Optimize-Options.html",
+      "used_for": "alignment, scheduling, IRA, LTO, and vector pass flags"
+    },
+    {
+      "title": "LLVM llvm-mca command guide",
+      "url": "https://llvm.org/docs/CommandGuide/llvm-mca.html",
+      "used_for": "static scheduling proxies and their limitations"
+    }
+  ],
+  "protocol": {
+    "audit_mode": "avx2-inline-lanewise",
+    "case_count": 34,
+    "common_flags": [
+      "-O3",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-mavx2",
+      "-DCH2_SIMD_INLINE",
+      "-finline-limit=2000"
+    ],
+    "compiler_image": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+    "complete_binary_clock_delimited_loop_audit": true,
+    "determinism": "no timestamps or raw timing stdout; --check regenerates and compares canonical JSON bytes",
+    "expected_compiler": "gcc (GCC) 13.3.0",
+    "llvm_mca": {
+      "distinct_normalized_streams_only": true,
+      "interpretation": "static scheduling proxy, not target timing",
+      "iterations": 100,
+      "models": {
+        "alderlake_p_core_proxy": "alderlake",
+        "znver2_cross_architecture_proxy": "znver2"
+      }
+    },
+    "official_vectors": {
+      "one_round_pairs": 1000,
+      "per_case": true,
+      "twenty_round_cases": 1
+    },
+    "random_differential": {
+      "cases": 100000,
+      "per_case": true,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3"
+    },
+    "supplied_default_command": [
+      "gcc",
+      "-O3",
+      "-Wall",
+      "-Wextra",
+      "contest.c",
+      "-o",
+      "contest"
+    ]
+  },
+  "schema_version": 1,
+  "scope": {
+    "host_timing": false,
+    "question": "Does placing the low changing value in ModRM r/m for commutative AVX2 operations shorten the exact GCC 13.3 timed loop, and how stable is that stream across bounded backend and linked-layout controls?",
+    "target": "Intel Core Ultra 7 255H",
+    "target_timing": false
+  },
+  "streams": {
+    "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b": {
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.3,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 122.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 122.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "1fa5e307479aa62405c03ba9426255b7cf6d29d1a95946cb842ab16023710b9c",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "e445deacc3899a5465d7720783446a12abbd10108e93c636ef88ad028d0e6ae3",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6210
+      },
+      "loop_artifact_sha256": "ae85e5b3d92ff3e61ee58b2d4b90b5a2d59b150bbb67a4cd3765fe66ab18be1a",
+      "members": [
+        "align_all_64",
+        "align_functions_64",
+        "align_functions_loops_64",
+        "align_loops_1",
+        "align_loops_128",
+        "align_loops_16",
+        "align_loops_32",
+        "align_loops_64",
+        "align_loops_64_15",
+        "align_loops_64_31",
+        "align_loops_64_63",
+        "align_loops_8",
+        "baseline",
+        "branch_boundary_32",
+        "function_sections",
+        "function_sections_gc",
+        "function_sections_sort_alignment",
+        "function_sections_sort_name",
+        "ira_priority",
+        "no_align_loops",
+        "no_peephole2",
+        "no_relax",
+        "no_schedule_insns2",
+        "no_tree_slp_vectorize",
+        "no_tree_vectorize",
+        "noseparate_code",
+        "tune_alderlake",
+        "tune_gracemont",
+        "tune_meteorlake"
+      ],
+      "representative": "baseline"
+    },
+    "313dcc820be6159d23989db6dc37615ea104bd1f9430911d18229ef1241015d7": {
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "dec": {
+            "2": 1
+          },
+          "jne": {
+            "6": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 548
+      },
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.3,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 122.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 122.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "f2360257c1591d5bf44aa8cdc607b1402127f3b7bd177de4af4ad67ec7fbab85",
+        "bytes": 548,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "86452f6a6e1dc4b98ac7c47cff5361df993716db51a51f4192198bb9aee01306",
+        "mnemonics": {
+          "dec": 1,
+          "jne": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "313dcc820be6159d23989db6dc37615ea104bd1f9430911d18229ef1241015d7",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6194
+      },
+      "loop_artifact_sha256": "3d9aaa4cc0e41b02c71bcb59c86bc9cb0567b9c234c508d68bd70d97ee716bc2",
+      "members": [
+        "incdec_only",
+        "tune_graniterapids"
+      ],
+      "representative": "incdec_only"
+    },
+    "37280e0767a7f29580e831af9da0b834ca9c350cb80ac5f47d79ec0e678fa592": {
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "4": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 550
+      },
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.3,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 122.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 122.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "ed25d092a0b81ba40bda87ca9b3b07614ab4e286254bb1c20c20015a6e58a49f",
+        "bytes": 550,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "ac720c345f4416d0d9beb38e2a72c2730e8e7c445b17e195605b257d13a1684a",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "37280e0767a7f29580e831af9da0b834ca9c350cb80ac5f47d79ec0e678fa592",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6210
+      },
+      "loop_artifact_sha256": "908b3a00a94d32d0f509ebbde9fbc8abd34b06955f2bfabfede30d7743f9efb0",
+      "members": [
+        "rename_registers"
+      ],
+      "representative": "rename_registers"
+    },
+    "6c8b4a7f8626c7fd3f592a0622aa6bab4ad7ddb97d9d1d5fe726e97180adac9f": {
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.3,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 122.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 122.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "d1d23c1181e4137a689af466db4572d520cbab031f043aadb6cc9f1277537176",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "f53d8d6a34c23051b551df8a5c2e87a4a24e7c8a9eb85960fd124174bf6137b1",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "6c8b4a7f8626c7fd3f592a0622aa6bab4ad7ddb97d9d1d5fe726e97180adac9f",
+        "push_pop": 0,
+        "start": "0x4017a8",
+        "start_mod_16": 8,
+        "start_mod_32": 8,
+        "start_mod_64": 40,
+        "text_bytes": 5291
+      },
+      "loop_artifact_sha256": "f863b798a4d7366c92e099b0102060b1e7c35a176fb307e53abab549d0934873",
+      "members": [
+        "lto"
+      ],
+      "representative": "lto"
+    },
+    "acd26958fadae0b29eac6f32bafce006ee3e15536847d62e003c5a1d90cebd81": {
+      "encoding": {
+        "by_mnemonic_and_bytes": {
+          "jne": {
+            "6": 1
+          },
+          "sub": {
+            "3": 1
+          },
+          "vpaddq": {
+            "4": 20
+          },
+          "vpor": {
+            "4": 20
+          },
+          "vpshufb": {
+            "5": 20
+          },
+          "vpsllvq": {
+            "5": 20
+          },
+          "vpsrlvq": {
+            "5": 20
+          },
+          "vpxor": {
+            "4": 20
+          }
+        },
+        "instruction_bytes_total": 549
+      },
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.3,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 122.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 122.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "3df8dee9643df84cb9c2e64b205d4247ca4b7ae40ff801c3b9fca4b5afd2e8c8",
+        "bytes": 549,
+        "calls": 0,
+        "hot_memory_operands_excluding_lea": 0,
+        "instructions": 122,
+        "legacy_addressed_sha256": "82ab021595a994a35d293e92c34cfdc4307236434806f4f5134151b194046e63",
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+        "normalized_sha256": "acd26958fadae0b29eac6f32bafce006ee3e15536847d62e003c5a1d90cebd81",
+        "push_pop": 0,
+        "start": "0x401500",
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6210
+      },
+      "loop_artifact_sha256": "f2cceeecc0fce8d85b8abe399ef7a40142e384804a2e0a47441abbecb48845bf",
+      "members": [
+        "ira_one"
+      ],
+      "representative": "ira_one"
+    }
+  },
+  "supplied_default": {
+    "binary_sha256": "94f1d73c37ba76057dd69eaa5617e5c926e39cb904ad01bdfa73c819b0df065c",
+    "build_status": "PASS",
+    "flags": [
+      "-O3",
+      "-Wall",
+      "-Wextra"
+    ],
+    "official_vectors": {
+      "marker_lines": [
+        "one-round testvector verification: OK (1000 pairs checked)",
+        "20-round testvector verification: OK"
+      ],
+      "markers": {
+        "20-round testvector verification: OK": true,
+        "one-round testvector verification: OK (1000 pairs checked)": true
+      },
+      "returncode": 0,
+      "status": "PASS"
+    }
+  },
+  "toolchain": {
+    "binutils": "GNU objdump (GNU Binutils for Debian) 2.40",
+    "compiler": "gcc (GCC) 13.3.0",
+    "container": {
+      "image": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "local_image_id": "sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "manifest_digest_sha256": "1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "network": "none",
+      "repository_mount": "read-only"
+    }
+  }
+}

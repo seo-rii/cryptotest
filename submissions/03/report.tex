@@ -15,11 +15,7 @@
 \hypersetup{
   colorlinks=true,
   linkcolor=blue,
-  urlcolor=blue,
-  pdftitle={3번 네트워크보안: TLS 1.2 AES-GCM Nonce 재사용을 이용한 Record 위조},
-  pdfauthor={암호분석경진대회 제출 보고서},
-  pdfsubject={TLS 1.2 AES-GCM nonce reuse and GHASH forgery},
-  pdfkeywords={TLS 1.2, AES-GCM, nonce reuse, GHASH, forgery}
+  urlcolor=blue
 }
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{5pt}
@@ -32,14 +28,17 @@
   keepspaces=true
 }
 
-\title{3번 네트워크보안\\TLS 1.2 AES-GCM Nonce 재사용을 이용한 Record 위조}
-\author{암호분석경진대회 제출 보고서}
-\date{2026년 7월 28일}
+\input{../../templates/answer_coversheet.sty}
+\SetProblemNumber{3}
+
+\title{네트워크보안}
+\author{TLS 1.2 AES-GCM Nonce 재사용을 이용한 Record 위조}
+\date{2026년 7월}
 
 \begin{document}
 \maketitle
 
-\section{결과 요약}
+\section*{결과 요약}
 
 제공된 \texttt{tls\_live.pcap}의 서버 방향 TLS 1.2 통신은
 \texttt{TLS\_ECDHE\_RSA\_WITH\_AES\_128\_GCM\_SHA256}을 사용한다.
@@ -49,13 +48,11 @@
 \texttt{amt=0100}을 \texttt{amt=0500}으로 바꾸고, tag 차분에서
 GHASH subkey를 복원해 유효한 새 tag를 계산했다.
 
-최종 제출 record는 77바이트이다. 아래 네 줄을 개행 없이 연결한 값을 제출한다.
+최종 제출 record는 77바이트이다. 아래 두 줄을 개행 없이 연결한 값을 제출한다.
 
 \begin{lstlisting}
-17030300489c269a9f29810ab0
-a99141d1d84c3df6bfdcdb7dec7cf30462db203fbc36a29772edbf159643b468
-f1f1e520e7341daee867a49665542cd9
-f01f5a9c906b73ba3e13bbfea0e98a18
+17030300489c269a9f29810ab0a99141d1d84c3df6bfdcdb7dec7cf30462db203fbc3
+6a29772edbf159643b468f1f1e520e7341daee867a49665542cd9f01f5a9c906b73ba3e13bbfea0e98a18
 \end{lstlisting}
 
 \section{PCAP 분석과 취약점 식별}
@@ -119,11 +116,10 @@ TLS AEAD additional data는 다음 13바이트다.
 = 00000000000000031703030030
 \end{lstlisting}
 
-AAD의 \texttt{0030}은 48바이트 평문 길이이다. record header의
-\texttt{0048}은 explicit nonce 8바이트, ciphertext 48바이트, tag
-16바이트를 합한 72바이트 wire fragment 길이이므로 서로 다르다.
-GCM에는 CBC식 TLS padding이나 별도 HMAC이 없다. GHASH 계산 과정의
-zero padding만 존재하며 wire에는 전송되지 않는다.
+AAD의 \texttt{0030}은 48바이트 평문 길이이고, record header의
+\texttt{0048}은 explicit nonce(8)+ciphertext(48)+tag(16)=72바이트
+wire fragment 길이이므로 서로 다르다. (GCM은 CBC와 달리 별도 padding이나
+HMAC 없이 GHASH 내부에서만 zero padding을 쓴다.)
 
 \section{GHASH Authentication Subkey 복원}
 
@@ -176,10 +172,9 @@ solver는
 \]
 
 로 $\mathbb F_{2^{128}}$ 안의 선형 인수만 분리한 뒤 근을 나눈다.
-NIST GCM은 field element를 MSB-first로 표현하고 구현의 일반 다항식
-연산은 bit 0을 상수항 계수로 사용하므로, 표현 경계에서 128비트
-bit reverse를 적용했다. 구체적으로 NIST 표현의 왼쪽 bit가 $x^0$의
-계수이므로 다음 경계 대응을 사용한다.
+NIST GCM은 field element를 MSB-first로 표현하지만 다항식 연산은 bit 0을
+상수항 계수로 쓰므로, 표현 경계에서 128비트 bit reverse를 적용해 다음
+대응을 사용한다.
 
 \begin{lstlisting}
 NIST 0x80000000000000000000000000000000 <-> polynomial integer 1
@@ -215,17 +210,15 @@ H        = 112332a84132bc0c5c23a61037723683
 E_K(J0)  = 1e023d8461003896981f1441c5feab90
 \end{lstlisting}
 
-$H$는 AES session key가 아니라 GCM authentication subkey이다. 하지만
-재사용 nonce의 $H$와 $S$를 모두 얻었으므로 그 nonce에 대한 새
-ciphertext와 tag를 만들 수 있다.
+재사용 nonce에서 GCM authentication subkey $H$와 $S$를 모두 얻었으므로,
+그 nonce에 대한 새 ciphertext와 tag를 만들 수 있다.
 
 \section{평문 및 Tag 위조}
 
 \subsection{Ciphertext 변경}
 
-원래 평문은 문제 본문에 직접 주어진 known plaintext이며, pcap을
-별도로 복호화해 얻은 값이 아니다. 두 평문은 모두 48바이트이고
-0-based offset 32의 한 바이트만 다르다.
+원래 평문은 문제 본문에 주어진 known plaintext다. 두 평문은 모두
+48바이트이고 0-based offset 32의 한 바이트만 다르다.
 
 \begin{lstlisting}
 old: action=set_salary&uid=0007&amt=0100&month=202603
@@ -289,17 +282,17 @@ $5+72=77$바이트, 즉 개행을 제외한 hex 154문자다.
 
 \section{구현과 재현 검증}
 
-구현 파일은 \texttt{solve\_03\_tls\_gcm\_nonce\_reuse.py}다. Python 표준
+구현 파일은 \texttt{solve\_tls\_gcm\_nonce\_reuse.py}다. Python 표준
 라이브러리만 사용하며 pcap magic/endian/link type과 packet 길이를 검사하고,
 TCP segment를 sequence number로 재조립하며, TLS record 경계를
 검증한다. GF($2^{128}$) 곱셈, 역원, 다항식 GCD와 인수분해도 직접
 구현했다. 인수분해 난수 seed는 3으로 고정하고 최종 후보는 세 tag
 방정식으로 결정론적으로 검증한다.
 
-저장소 루트에서 다음을 실행한다.
+이 제출 폴더의 \texttt{src} 디렉터리 안에서 다음을 실행한다.
 
 \begin{lstlisting}
-python3 solutions/solve_03_tls_gcm_nonce_reuse.py
+python3 solve_tls_gcm_nonce_reuse.py
 \end{lstlisting}
 
 코드는 다음 조건을 모두 assertion으로 검사한다.
@@ -310,7 +303,7 @@ python3 solutions/solve_03_tls_gcm_nonce_reuse.py
   \item 새 ciphertext가 재사용 keystream 아래 목표 평문으로 복원됨;
   \item $T_{\rm new}\oplus\operatorname{GHASH}_H(A,C_{\rm new})=S$;
   \item fragment/record 길이와 최종 예상 hex; 그리고
-  \item 생성값과 \texttt{submissions/03/forged\_record.txt}의 일치.
+  \item 생성값과 \texttt{forged\_record.txt}의 일치.
 \end{itemize}
 
 \section{참고 자료}
