@@ -1,0 +1,552 @@
+{
+  "schema_version": 1,
+  "description": "Contest-shaped challenge 2 builds for Intel Core Ultra 7 255H confirmation",
+  "baseline": "inline_2000",
+  "common_cflags": [
+    "-Werror"
+  ],
+  "candidates": [
+    {
+      "name": "official_o3",
+      "source": "submissions/02/contest.c",
+      "cflags": [],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": false,
+      "role": "compatibility-control",
+      "expected_audit": {
+        "mode": "default-call-allowed"
+      }
+    },
+    {
+      "name": "inline_700",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=700"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "minimum-observed-inline-threshold",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "inline_2000",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "incumbent-score-build",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "inline_alderlake",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "reproducible-gcc13-hybrid-tune",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "inline_ira_priority",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-fira-algorithm=priority"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "register-allocation-control",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "inline_alderlake_ira",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-255h-scheduling-candidate",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "inline_alderlake_ira_selective2",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority",
+        "-fselective-scheduling2"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-selective-scheduler-candidate",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "inline_alderlake_ira_no_sched2",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority",
+        "-fno-schedule-insns2"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-postreload-scheduler-control",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "order_2103",
+      "source": "submissions/02/src/optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-source-schedule-generic-candidate",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "order_2103_alderlake",
+      "source": "submissions/02/src/optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-source-schedule-alder-candidate",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "order_2103_alderlake_ira",
+      "source": "submissions/02/src/optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-source-schedule-alder-ira-control",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "order_2103_alderlake_ira_selective2",
+      "source": "submissions/02/src/optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority",
+        "-fselective-scheduling2"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-source-and-selective-scheduler-candidate",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "order_2103_alderlake_ira_no_sched2",
+      "source": "submissions/02/src/optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority",
+        "-fno-schedule-insns2"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "gcc13-source-and-postreload-scheduler-candidate",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "order_2103_pair_loop",
+      "source": "submissions/02/src/optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-DP2_PAIR_BLOCK=1"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "compact-pair-loop-frontend-candidate",
+      "expected_audit": {
+        "mode": "bmi2-inline-pair-loop"
+      }
+    },
+    {
+      "name": "order_2103_pair_unroll2",
+      "source": "submissions/02/src/optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-DP2_PAIR_BLOCK=2"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "two-pair-block-frontend-candidate",
+      "expected_audit": {
+        "mode": "bmi2-inline-pair-unroll2"
+      }
+    },
+    {
+      "name": "order_2103_pair_unroll5",
+      "source": "submissions/02/src/optimization/contest_source_order_2103.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-DP2_PAIR_BLOCK=5"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "five-pair-block-frontend-candidate",
+      "expected_audit": {
+        "mode": "bmi2-inline-pair-unroll5"
+      }
+    },
+    {
+      "name": "avx2_lanewise",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-two-round-avx2-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_generic_mod0_no_tree_vectorize",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fno-tree-vectorize"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-generic-stream-gcc13-mod64-0-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_generic_mod24_no_loop_vectorize",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fno-tree-loop-vectorize"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-generic-stream-gcc13-mod64-24-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_generic_mod40_prefer128",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mprefer-vector-width=128"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-generic-stream-gcc13-mod64-40-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_generic_mod48_no_slp_vectorize",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fno-tree-slp-vectorize"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-generic-stream-gcc13-mod64-48-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_alder_mod16",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-alder-stream-gcc13-mod64-16-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_alder_mod8_no_vzeroupper",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-mno-vzeroupper"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-alder-stream-gcc13-mod64-8-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_alder_mod48_prefer128",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-mprefer-vector-width=128"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-alder-stream-gcc13-mod64-48-layout",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_ira_region_one",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_lanewise.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-fira-region=one"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-compact-register-allocation-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_inline_asm",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_inline_asm.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-single-scratch-inline-assembly-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_inline_asm_incdec",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_inline_asm.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000",
+        "-mtune-ctrl=use_incdec"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-548-byte-counter-encoding-diagnostic",
+      "expected_audit": {
+        "mode": "avx2-inline-lanewise"
+      }
+    },
+    {
+      "name": "avx2_pair_block2",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_pair_block2.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-two-pairs-by-five-compact-frontend-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-pair-block2"
+      }
+    },
+    {
+      "name": "avx2_pair_block2_counted",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_pair_block3_tail1.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-DCH2_TENTH_BLOCK2",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-two-pairs-by-five-counted-frontend-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-pair-block2-counted"
+      }
+    },
+    {
+      "name": "avx2_pair_block3_tail1",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_pair_block3_tail1.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-three-pairs-by-three-plus-one-compact-frontend-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-pair-block3-tail1"
+      }
+    },
+    {
+      "name": "avx2_pair_block5_counted",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_pair_block3_tail1.c",
+      "cflags": [
+        "-mavx2",
+        "-DCH2_SIMD_INLINE",
+        "-DCH2_TENTH_BLOCK5",
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": true,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "four-lane-avx2-five-pairs-by-two-counted-frontend-candidate",
+      "expected_audit": {
+        "mode": "avx2-inline-pair-block5-counted"
+      }
+    },
+    {
+      "name": "inline_native",
+      "source": "submissions/02/contest.c",
+      "cflags": [
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=native"
+      ],
+      "submission_eligible": false,
+      "edit_scope_reviewed": true,
+      "target_only": true,
+      "role": "diagnostic-nonreproducible-native-tune",
+      "expected_audit": {
+        "mode": "full-inline-320"
+      }
+    },
+    {
+      "name": "portable_rol",
+      "source": "submissions/02/src/optimization/contest_inline_unrolled.c",
+      "cflags": [
+        "-finline-limit=2000"
+      ],
+      "submission_eligible": false,
+      "edit_scope_reviewed": false,
+      "target_only": true,
+      "role": "frontend-size-control",
+      "expected_audit": {
+        "mode": "portable-inline-320"
+      }
+    }
+  ]
+}

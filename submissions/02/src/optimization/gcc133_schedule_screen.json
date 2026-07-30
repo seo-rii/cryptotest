@@ -1,0 +1,2287 @@
+{
+  "all_checks_passed": true,
+  "base_flags": [
+    "-O3",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-mbmi2",
+    "-finline-limit=2000"
+  ],
+  "binutils": "GNU ld (GNU Binutils for Debian) 2.40",
+  "checks": {
+    "attempted_34_candidates": true,
+    "compiled_32_candidates": true,
+    "compiled_candidates_have_complete_hashes_and_metrics": true,
+    "compiler_is_exact_gcc_13_3_0": true,
+    "container_and_host_source_hashes_match": true,
+    "exactly_8_unique_hot_loops": true,
+    "failed_candidates_have_no_binary_or_loop_metrics": true,
+    "llvm_mca_is_version_16": true,
+    "only_expected_options_failed": true,
+    "pinned_image_digest_is_expected": true,
+    "reference_hashes_and_alderlake_cycles_are_expected": true,
+    "source_hash_is_expected": true,
+    "unique_hot_loop_hashes_are_expected": true
+  },
+  "compiler": "gcc (GCC) 13.3.0",
+  "container": {
+    "image": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+    "local_image_id": "sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+    "network": "none",
+    "pinned_manifest_digest_sha256": "1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+    "repository_mount": "read-only"
+  },
+  "experiment": "challenge_exact_gcc133_schedule_screen",
+  "llvm_mca": {
+    "executable": "llvm-mca-16",
+    "iterations": 100,
+    "models": [
+      "alderlake",
+      "raptorlake",
+      "meteorlake",
+      "tremont"
+    ],
+    "version": "Debian LLVM version 16.0.6"
+  },
+  "notes": [
+    "llvm-mca is a static scheduling model, not a target-CPU timing result.",
+    "The two compile failures are retained because they close rejected flag hypotheses.",
+    "Loop hashes cover the exact GCC assembly region supplied to llvm-mca."
+  ],
+  "reference_variants": [
+    "generic",
+    "alderlake",
+    "alder_ira_priority"
+  ],
+  "schema_version": 1,
+  "source": {
+    "path": "submissions/02/contest.c",
+    "sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71"
+  },
+  "summary": {
+    "attempted": 34,
+    "compile_failed": 2,
+    "compiled": 32,
+    "unique_hot_loops": 8
+  },
+  "unique_streams": {
+    "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f": {
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "members": [
+        "alder_align32",
+        "alder_align64",
+        "alder_gcse_reload",
+        "alder_ira_all",
+        "alder_ira_hoist",
+        "alder_no_ira_hoist",
+        "alder_no_partition",
+        "alder_no_peephole2",
+        "alder_no_reorder",
+        "alder_no_sched_interblock",
+        "alder_no_sched_spec",
+        "alder_pressure",
+        "alder_pressure1",
+        "alder_pressure2",
+        "alder_sel_pipe",
+        "alder_sel_sched",
+        "alder_stall0",
+        "alder_stall1",
+        "alder_stall2",
+        "alder_stalldep1",
+        "alder_stalldep2",
+        "alder_superblocks",
+        "alder_traces",
+        "alder_web",
+        "alderlake"
+      ],
+      "representative": "alder_align32"
+    },
+    "23d63ff2ff7e52cebf6b27750a718f0d5d35883f9c1c41f0dcb2a8c76ba1a3cc": {
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 125.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12506,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 125.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12506,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 125.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12506,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105,
+          "total_instructions": 32200
+        }
+      },
+      "members": [
+        "generic"
+      ],
+      "representative": "generic"
+    },
+    "660a3b0eefae2dcee09b1edc29ea5a79787adbcbee1e5cb8157e530cd8665951": {
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "members": [
+        "alder_ira_one"
+      ],
+      "representative": "alder_ira_one"
+    },
+    "760d83e5e9cba5c27337ca74abf38b486cf1d06dc787e3ccebded20fac500a31": {
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104,
+          "total_instructions": 32200
+        }
+      },
+      "members": [
+        "alder_ira_priority"
+      ],
+      "representative": "alder_ira_priority"
+    },
+    "942ba40fb65a4258f1fd84f82c0d00d30741ae34f36cc8a02fbc19836f753357": {
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 125.79,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12579,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 125.79,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12579,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 125.79,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12579,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.11,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16111,
+          "total_instructions": 32200
+        }
+      },
+      "members": [
+        "alder_sel_sched2"
+      ],
+      "representative": "alder_sel_sched2"
+    },
+    "c2dbc254fb7fd3acf87077b8431ddd3b7f1ecc08c497cc31d257cd91cb65ca40": {
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 124.59,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12459,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 124.59,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12459,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 124.59,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12459,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.1,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16110,
+          "total_instructions": 32200
+        }
+      },
+      "members": [
+        "alder_no_sched2"
+      ],
+      "representative": "alder_no_sched2"
+    },
+    "d32200298093e8be76aabac31324b6066dd94e15851e501d81a66d67cca7ec63": {
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 90.0,
+          "cycles_per_iteration": 127.11,
+          "instructions_per_iteration": 326.0,
+          "iterations": 100,
+          "total_cycles": 12711,
+          "total_instructions": 32600
+        },
+        "meteorlake": {
+          "block_rthroughput": 90.0,
+          "cycles_per_iteration": 127.11,
+          "instructions_per_iteration": 326.0,
+          "iterations": 100,
+          "total_cycles": 12711,
+          "total_instructions": 32600
+        },
+        "raptorlake": {
+          "block_rthroughput": 90.0,
+          "cycles_per_iteration": 127.11,
+          "instructions_per_iteration": 326.0,
+          "iterations": 100,
+          "total_cycles": 12711,
+          "total_instructions": 32600
+        },
+        "tremont": {
+          "block_rthroughput": 163.0,
+          "cycles_per_iteration": 163.05,
+          "instructions_per_iteration": 326.0,
+          "iterations": 100,
+          "total_cycles": 16305,
+          "total_instructions": 32600
+        }
+      },
+      "members": [
+        "alder_sched1"
+      ],
+      "representative": "alder_sched1"
+    },
+    "f1a854d4bae22442f8eed9ca35a6ea4fb6922d52c7495e1c202563440364c8cf": {
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.08,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12308,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.08,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12308,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.08,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12308,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16106,
+          "total_instructions": 32200
+        }
+      },
+      "members": [
+        "alder_rename"
+      ],
+      "representative": "alder_rename"
+    }
+  },
+  "variants": {
+    "alder_align32": {
+      "assembly_sha256": "49cc3b595951b57c4e59d17061a346c576d24845d9f6b0baef3236226f82642d",
+      "binary_sha256": "0743bd6f2695010bd7beaae007358c58b2080895724982563458e92cc6b7f1bc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-falign-loops=32"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-falign-loops=32"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_align64": {
+      "assembly_sha256": "f3293f80f715e1cf65fdb0f52c1297b435aa2d4591c7c1516f59445bca077722",
+      "binary_sha256": "fe173661e3bf37f7b635cd65554f9142d95e8bc4b41d1900c1939ec92e5ceae5",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-falign-loops=64"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-falign-loops=64"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_gcse_reload": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fgcse-after-reload"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fgcse-after-reload"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_ira_all": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-region=all"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fira-region=all"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_ira_hoist": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-hoist-pressure"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fira-hoist-pressure"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_ira_one": {
+      "assembly_sha256": "64e6d7fe66d9db4a8dfd42635102e9e47dc2c4a708b4ac33172098e27742feb5",
+      "binary_sha256": "757ded646e6f9532a0cf74b88eb90c993efc045368b4c43154a7b4376f28832c",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-region=one"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fira-region=one"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "660a3b0eefae2dcee09b1edc29ea5a79787adbcbee1e5cb8157e530cd8665951",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_ira_priority": {
+      "assembly_sha256": "3272c5ae63e5270aba354915ce3b8110a5299632677da43d6ea5c88d2c97c3bf",
+      "binary_sha256": "35adefa3154778f36bb8a0b93630c7bac90bd348550ffb4ab868cf59e30597af",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fira-algorithm=priority"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 80.5,
+          "cycles_per_iteration": 121.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12106,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.04,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16104,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "760d83e5e9cba5c27337ca74abf38b486cf1d06dc787e3ccebded20fac500a31",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_no_ira_hoist": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fno-ira-hoist-pressure"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fno-ira-hoist-pressure"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_no_partition": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fno-reorder-blocks-and-partition"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fno-reorder-blocks-and-partition"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_no_peephole2": {
+      "assembly_sha256": "17ee1600a6a1653a544608f3788df3323e42bfe2c6e91b42a4352b99accb1de1",
+      "binary_sha256": "51b237d2c18746130e4dd9446a84b8824ac622d19ad72cc22ee0e6dc00ec0f51",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fno-peephole2"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fno-peephole2"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_no_reorder": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fno-reorder-blocks"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fno-reorder-blocks"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_no_sched2": {
+      "assembly_sha256": "b9174ee1d5031c750049d3d3c3557384960dd1d6f00e27c26196304556312fe2",
+      "binary_sha256": "196861b7b84497db12763b38cf8cd629675d456dc7de4f1d71c4f96e26179d9a",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fno-schedule-insns2"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fno-schedule-insns2"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 124.59,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12459,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 124.59,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12459,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 124.59,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12459,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.1,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16110,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "c2dbc254fb7fd3acf87077b8431ddd3b7f1ecc08c497cc31d257cd91cb65ca40",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_no_sched_interblock": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fno-sched-interblock"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fno-sched-interblock"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_no_sched_spec": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fno-sched-spec"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fno-sched-spec"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_pressure": {
+      "assembly_sha256": "55fbb457ed6738d4028bdf84f8d0536f45e49f216ec365c2830242b73b9266e0",
+      "binary_sha256": "c7c5d845e66bce79d3bd9f802879e810aeb98e4711bf6e912f487508fa03003e",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fsched-pressure"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fsched-pressure"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_pressure1": {
+      "assembly_sha256": "55fbb457ed6738d4028bdf84f8d0536f45e49f216ec365c2830242b73b9266e0",
+      "binary_sha256": "c7c5d845e66bce79d3bd9f802879e810aeb98e4711bf6e912f487508fa03003e",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fsched-pressure",
+        "--param=sched-pressure-algorithm=1"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fsched-pressure",
+        "--param=sched-pressure-algorithm=1"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_pressure2": {
+      "assembly_sha256": "55fbb457ed6738d4028bdf84f8d0536f45e49f216ec365c2830242b73b9266e0",
+      "binary_sha256": "c7c5d845e66bce79d3bd9f802879e810aeb98e4711bf6e912f487508fa03003e",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fsched-pressure",
+        "--param=sched-pressure-algorithm=2"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fsched-pressure",
+        "--param=sched-pressure-algorithm=2"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_pressure_model": {
+      "assembly_sha256": null,
+      "binary_sha256": null,
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fsched-pressure-algorithm=model"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fsched-pressure-algorithm=model"
+      ],
+      "llvm_mca": null,
+      "loop_instruction_lines": null,
+      "loop_text_sha256": null,
+      "returncode": 1,
+      "status": "COMPILE_FAIL",
+      "stderr": "gcc: error: unrecognized command-line option \u2018-fsched-pressure-algorithm=model\u2019"
+    },
+    "alder_pressure_weighted": {
+      "assembly_sha256": null,
+      "binary_sha256": null,
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fsched-pressure-algorithm=weighted"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fsched-pressure-algorithm=weighted"
+      ],
+      "llvm_mca": null,
+      "loop_instruction_lines": null,
+      "loop_text_sha256": null,
+      "returncode": 1,
+      "status": "COMPILE_FAIL",
+      "stderr": "gcc: error: unrecognized command-line option \u2018-fsched-pressure-algorithm=weighted\u2019"
+    },
+    "alder_rename": {
+      "assembly_sha256": "59c1662bc9c79102687bc9e27577e026365e600ed384ffe4ec6b78091587acbb",
+      "binary_sha256": "babed02f360b0068d0abae7407ba97d4c8b13cb8177c078afc1e46a495588932",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-frename-registers"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-frename-registers"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.08,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12308,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.08,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12308,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.08,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12308,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16106,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "f1a854d4bae22442f8eed9ca35a6ea4fb6922d52c7495e1c202563440364c8cf",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_sched1": {
+      "assembly_sha256": "b27688c6e9f9f583a4593f3025e628947d69927eefcbec7a819d22710db24903",
+      "binary_sha256": "cdfbc2143c9f55fea641b5a6ac72e5cfe5614af81ab489d4cf4ce43b7612dc70",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fschedule-insns"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fschedule-insns"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 90.0,
+          "cycles_per_iteration": 127.11,
+          "instructions_per_iteration": 326.0,
+          "iterations": 100,
+          "total_cycles": 12711,
+          "total_instructions": 32600
+        },
+        "meteorlake": {
+          "block_rthroughput": 90.0,
+          "cycles_per_iteration": 127.11,
+          "instructions_per_iteration": 326.0,
+          "iterations": 100,
+          "total_cycles": 12711,
+          "total_instructions": 32600
+        },
+        "raptorlake": {
+          "block_rthroughput": 90.0,
+          "cycles_per_iteration": 127.11,
+          "instructions_per_iteration": 326.0,
+          "iterations": 100,
+          "total_cycles": 12711,
+          "total_instructions": 32600
+        },
+        "tremont": {
+          "block_rthroughput": 163.0,
+          "cycles_per_iteration": 163.05,
+          "instructions_per_iteration": 326.0,
+          "iterations": 100,
+          "total_cycles": 16305,
+          "total_instructions": 32600
+        }
+      },
+      "loop_instruction_lines": 326,
+      "loop_text_sha256": "d32200298093e8be76aabac31324b6066dd94e15851e501d81a66d67cca7ec63",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_sel_pipe": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fselective-scheduling",
+        "-fsel-sched-pipelining"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fselective-scheduling",
+        "-fsel-sched-pipelining"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_sel_sched": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fselective-scheduling"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fselective-scheduling"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_sel_sched2": {
+      "assembly_sha256": "caaedd855c045c6ce4c89869e79ec18fa00abb406251beecbb025617bc16a80b",
+      "binary_sha256": "47c24f30ad4ff9dfe6d05b669c3f4cd2567c1472edd1d90a9eeabc77a19453b3",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fselective-scheduling2"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fselective-scheduling2"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 125.79,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12579,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 125.79,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12579,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 125.79,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12579,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.11,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16111,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "942ba40fb65a4258f1fd84f82c0d00d30741ae34f36cc8a02fbc19836f753357",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_stall0": {
+      "assembly_sha256": "4e24d3fc9722305b067a52ca1c24918ea501510f0ec5b38ffb0d7d3480579c10",
+      "binary_sha256": "1a96a486869be66aa624209954f8c8a113827c06ee56f48af26af21a51a9e1dd",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fsched-stalled-insns=0"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fsched-stalled-insns=0"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_stall1": {
+      "assembly_sha256": "07b306b399e330185b3146b4be77b689fc5361b29f1319b8a57a946457079c97",
+      "binary_sha256": "3dd9b298b407bdae98cc2d0841d304be6c0c78c0fdad32cdfead37cbe9e6453c",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fsched-stalled-insns=1"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fsched-stalled-insns=1"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_stall2": {
+      "assembly_sha256": "1badccbbba3eacdbe09f6b67dbff75fc09bc356ba20a47d6542794e32168c2fe",
+      "binary_sha256": "d0426987df7e9790bcdf41eea434718a3b9ad7f7928e2de03db884df6ed8ce3a",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fsched-stalled-insns=2"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fsched-stalled-insns=2"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_stalldep1": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fsched-stalled-insns-dep=1"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fsched-stalled-insns-dep=1"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_stalldep2": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fsched-stalled-insns-dep=2"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fsched-stalled-insns-dep=2"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_superblocks": {
+      "assembly_sha256": "41b7797da334270d5a3b68f5886c0b34d996b6a365b057da0d0a39b102cb201b",
+      "binary_sha256": "ec3113661a6953de6be6c2e109068669965c6fc7794c227db716edf80b007b56",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fsched2-use-superblocks"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fsched2-use-superblocks"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_traces": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fsched2-use-traces"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fsched2-use-traces"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alder_web": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake",
+        "-fweb"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake",
+        "-fweb"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "alderlake": {
+      "assembly_sha256": "529516b74ddf3391ac3ddbaae34ab67bda86c34232ff0a77db8397a3bec74917",
+      "binary_sha256": "caf4e5a5d66cc3fa00a36e17c34e710ef7c580e39825bd65fe539b7493fec9dc",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000",
+        "-mtune=alderlake"
+      ],
+      "extra_flags": [
+        "-mtune=alderlake"
+      ],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 123.62,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12362,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.07,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16107,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "1d678d4d7b1f8cb5382d43dfc7a1b81670490710f3b638f69ae0dedeba06a00f",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    },
+    "generic": {
+      "assembly_sha256": "6d6f32ff16be74005597c530dce180bf6b070ee4197697c57ad274755e0d0f87",
+      "binary_sha256": "df7da5f1f98311bfcf4472f6eab2077586fd264966aa6952b306fedbb6572f2e",
+      "effective_flags": [
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-mbmi2",
+        "-finline-limit=2000"
+      ],
+      "extra_flags": [],
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 125.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12506,
+          "total_instructions": 32200
+        },
+        "meteorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 125.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12506,
+          "total_instructions": 32200
+        },
+        "raptorlake": {
+          "block_rthroughput": 86.0,
+          "cycles_per_iteration": 125.06,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 12506,
+          "total_instructions": 32200
+        },
+        "tremont": {
+          "block_rthroughput": 161.0,
+          "cycles_per_iteration": 161.05,
+          "instructions_per_iteration": 322.0,
+          "iterations": 100,
+          "total_cycles": 16105,
+          "total_instructions": 32200
+        }
+      },
+      "loop_instruction_lines": 322,
+      "loop_text_sha256": "23d63ff2ff7e52cebf6b27750a718f0d5d35883f9c1c41f0dcb2a8c76ba1a3cc",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": ""
+    }
+  }
+}

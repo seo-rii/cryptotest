@@ -2,7 +2,7 @@
 set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-archive="$script_dir/../../problems/2_암호구현.zip"
+archive="$script_dir/2_암호구현.zip"
 
 if [[ ! -f "$archive" ]]; then
     printf 'missing official archive: %s\n' "$archive" >&2

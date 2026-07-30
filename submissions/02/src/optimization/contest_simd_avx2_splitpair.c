@@ -1,3 +1,4 @@
+#include <immintrin.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -84,7 +85,7 @@ static inline uint64_t bswap64_portable(uint64_t x) {
 #endif
 }
 
-#if defined(__GNUC__) && !defined(__clang__) && defined(__BMI2__)
+#if defined(__GNUC__) && !defined(__clang__) && (defined(__BMI2__) || defined(CH2_SIMD_INLINE))
 #define PERMUTE20_ATTRIBUTE                                                   \
     __attribute__((always_inline, optimize("no-tree-vectorize"))) inline
 #elif defined(__GNUC__) && !defined(__clang__)
@@ -107,56 +108,101 @@ static inline uint64_t transform_word(uint64_t value,
 }
 
 /*
- * Reversing the four words twice restores their original positions.  Grouping
- * rounds in pairs therefore exposes four independent scalar dependency chains.
+ * Pair words (0,3) and (1,2), exactly following the word-reversal orbits.
+ * Reversed constants and rotations are then lane swaps within each XMM group,
+ * avoiding cross-group dependencies while retaining two independent chains.
  */
-#define APPLY_TWO_ROUNDS()                                                    \
+static inline __m128i keep_in_xmm_register(__m128i value) {
+    __asm__("" : "+x"(value));
+    return value;
+}
+
+static inline __m128i rotl64_lanes_xmm_avx2(__m128i value,
+                                            __m128i left,
+                                            __m128i right) {
+    return _mm_or_si128(_mm_sllv_epi64(value, left),
+                        _mm_srlv_epi64(value, right));
+}
+
+#define SWAP_U64_LANES(value)                                                 \
+    _mm_shuffle_epi32((value), _MM_SHUFFLE(1, 0, 3, 2))
+
+#define APPLY_TWO_ROUNDS_SPLIT_PAIR()                                        \
     do {                                                                      \
-        x0 = transform_word(transform_word(x0, 43U, k0, a3),                 \
-                            14U, k3, a0);                                     \
-        x1 = transform_word(transform_word(x1, 7U, k1, a2),                  \
-                            29U, k2, a1);                                     \
-        x2 = transform_word(transform_word(x2, 29U, k2, a1),                 \
-                            7U, k1, a2);                                      \
-        x3 = transform_word(transform_word(x3, 14U, k3, a0),                 \
-                            43U, k0, a3);                                     \
+        outer = rotl64_lanes_xmm_avx2(outer, left_outer, right_outer);        \
+        inner = rotl64_lanes_xmm_avx2(inner, left_inner, right_inner);        \
+        outer = _mm_xor_si128(outer, xor_outer);                              \
+        inner = _mm_xor_si128(inner, xor_inner);                              \
+        outer = _mm_shuffle_epi8(outer, byte_swap);                           \
+        inner = _mm_shuffle_epi8(inner, byte_swap);                           \
+        outer = _mm_add_epi64(outer, add_outer_reverse);                      \
+        inner = _mm_add_epi64(inner, add_inner_reverse);                      \
+        outer = rotl64_lanes_xmm_avx2(outer, left_outer_reverse,              \
+                                       right_outer_reverse);                   \
+        inner = rotl64_lanes_xmm_avx2(inner, left_inner_reverse,              \
+                                       right_inner_reverse);                   \
+        outer = _mm_xor_si128(outer, xor_outer_reverse);                      \
+        inner = _mm_xor_si128(inner, xor_inner_reverse);                      \
+        outer = _mm_shuffle_epi8(outer, byte_swap);                           \
+        inner = _mm_shuffle_epi8(inner, byte_swap);                           \
+        outer = _mm_add_epi64(outer, add_outer);                              \
+        inner = _mm_add_epi64(inner, add_inner);                              \
     } while (0)
 
 PERMUTE20_ATTRIBUTE static void permute_20rounds_unrolled(
     state256_t *restrict state,
     const uint64_t constants1[restrict 4],
     const uint64_t constants2[restrict 4]) {
-    uint64_t x0 = state->w[0];
-    uint64_t x1 = state->w[1];
-    uint64_t x2 = state->w[2];
-    uint64_t x3 = state->w[3];
-    const uint64_t a0 = constants1[0];
-    const uint64_t a1 = constants1[1];
-    const uint64_t a2 = constants1[2];
-    const uint64_t a3 = constants1[3];
-    const uint64_t k0 = constants2[0];
-    const uint64_t k1 = constants2[1];
-    const uint64_t k2 = constants2[2];
-    const uint64_t k3 = constants2[3];
+    __m128i outer = _mm_set_epi64x((long long)state->w[3],
+                                    (long long)state->w[0]);
+    __m128i inner = _mm_set_epi64x((long long)state->w[2],
+                                    (long long)state->w[1]);
+    __m128i add_outer = _mm_set_epi64x((long long)constants1[3],
+                                       (long long)constants1[0]);
+    __m128i add_inner = _mm_set_epi64x((long long)constants1[2],
+                                       (long long)constants1[1]);
+    __m128i xor_outer = _mm_set_epi64x((long long)constants2[3],
+                                       (long long)constants2[0]);
+    __m128i xor_inner = _mm_set_epi64x((long long)constants2[2],
+                                       (long long)constants2[1]);
+    const __m128i add_outer_reverse = SWAP_U64_LANES(add_outer);
+    const __m128i add_inner_reverse = SWAP_U64_LANES(add_inner);
+    const __m128i xor_outer_reverse = SWAP_U64_LANES(xor_outer);
+    const __m128i xor_inner_reverse = SWAP_U64_LANES(xor_inner);
+    const __m128i left_outer = _mm_set_epi64x(14, 43);
+    const __m128i right_outer = _mm_set_epi64x(50, 21);
+    const __m128i left_inner = _mm_set_epi64x(29, 7);
+    const __m128i right_inner = _mm_set_epi64x(35, 57);
+    const __m128i left_outer_reverse = SWAP_U64_LANES(left_outer);
+    const __m128i right_outer_reverse = SWAP_U64_LANES(right_outer);
+    const __m128i left_inner_reverse = SWAP_U64_LANES(left_inner);
+    const __m128i right_inner_reverse = SWAP_U64_LANES(right_inner);
+    const __m128i byte_swap = _mm_setr_epi8(
+        7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8);
+    add_outer = keep_in_xmm_register(add_outer);
+    add_inner = keep_in_xmm_register(add_inner);
+    xor_outer = keep_in_xmm_register(xor_outer);
+    xor_inner = keep_in_xmm_register(xor_inner);
 
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
-    APPLY_TWO_ROUNDS();
+    APPLY_TWO_ROUNDS_SPLIT_PAIR();
+    APPLY_TWO_ROUNDS_SPLIT_PAIR();
+    APPLY_TWO_ROUNDS_SPLIT_PAIR();
+    APPLY_TWO_ROUNDS_SPLIT_PAIR();
+    APPLY_TWO_ROUNDS_SPLIT_PAIR();
+    APPLY_TWO_ROUNDS_SPLIT_PAIR();
+    APPLY_TWO_ROUNDS_SPLIT_PAIR();
+    APPLY_TWO_ROUNDS_SPLIT_PAIR();
+    APPLY_TWO_ROUNDS_SPLIT_PAIR();
+    APPLY_TWO_ROUNDS_SPLIT_PAIR();
 
-    state->w[0] = x0;
-    state->w[1] = x1;
-    state->w[2] = x2;
-    state->w[3] = x3;
+    state->w[0] = (uint64_t)_mm_cvtsi128_si64(outer);
+    state->w[3] = (uint64_t)_mm_extract_epi64(outer, 1);
+    state->w[1] = (uint64_t)_mm_cvtsi128_si64(inner);
+    state->w[2] = (uint64_t)_mm_extract_epi64(inner, 1);
 }
 
-#undef APPLY_TWO_ROUNDS
+#undef APPLY_TWO_ROUNDS_SPLIT_PAIR
+#undef SWAP_U64_LANES
 #undef PERMUTE20_ATTRIBUTE
 
 /* -------------------------------------------------

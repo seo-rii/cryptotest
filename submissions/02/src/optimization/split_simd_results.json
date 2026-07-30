@@ -1,0 +1,911 @@
+{
+  "all_required_checks_passed": true,
+  "checks": {
+    "exact_timed_loop_audits_passed": true,
+    "official_vectors_passed": true,
+    "optional_host_protocol_ran": false,
+    "optional_host_random_state_and_constants_100k_passed": null,
+    "pinned_gcc_is_exact_13_3_0": true,
+    "pinned_random_state_and_constants_100k_passed": true
+  },
+  "comparison_summary": {
+    "current_y_mm": {
+      "bytes": 579,
+      "instructions": 122,
+      "llvm_mca": {
+        "alderlake": {
+          "block_rthroughput": 20.3,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "total_cycles": 10003,
+          "uops_per_iteration": 122.0
+        },
+        "znver2": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "total_cycles": 18003,
+          "uops_per_iteration": 122.0
+        }
+      },
+      "memory_operands": 0
+    },
+    "split_designs": {
+      "splitpair": {
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 50.0,
+            "cycles_per_iteration": 234.96,
+            "instructions_per_iteration": 248.0,
+            "iterations": 100,
+            "total_cycles": 23496,
+            "uops_per_iteration": 300.0
+          },
+          "znver2": {
+            "block_rthroughput": 160.0,
+            "cycles_per_iteration": 304.13,
+            "instructions_per_iteration": 248.0,
+            "iterations": 100,
+            "total_cycles": 30413,
+            "uops_per_iteration": 248.0
+          }
+        },
+        "pinned_gcc13_timed_loop": {
+          "bytes": 1383,
+          "instructions": 248,
+          "memory_operands": 50,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 40,
+            "vpextrq": 2,
+            "vpinsrq": 2,
+            "vpor": 40,
+            "vpshufb": 40,
+            "vpsllvq": 40,
+            "vpsrlvq": 40,
+            "vpxor": 40
+          }
+        },
+        "static_cycles_relative_to_current": {
+          "alderlake": 2.34889533140058,
+          "znver2": 1.6893295561850803
+        }
+      },
+      "splitrecompute": {
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 53.3,
+            "cycles_per_iteration": 191.03,
+            "instructions_per_iteration": 288.0,
+            "iterations": 100,
+            "total_cycles": 19103,
+            "uops_per_iteration": 320.0
+          },
+          "znver2": {
+            "block_rthroughput": 160.0,
+            "cycles_per_iteration": 245.05,
+            "instructions_per_iteration": 288.0,
+            "iterations": 100,
+            "total_cycles": 24505,
+            "uops_per_iteration": 288.0
+          }
+        },
+        "pinned_gcc13_timed_loop": {
+          "bytes": 1509,
+          "instructions": 288,
+          "memory_operands": 30,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 40,
+            "vpextrq": 2,
+            "vpinsrq": 2,
+            "vpor": 40,
+            "vpshufb": 40,
+            "vpshufd": 40,
+            "vpsllvq": 40,
+            "vpsrlvq": 40,
+            "vpxor": 40
+          }
+        },
+        "static_cycles_relative_to_current": {
+          "alderlake": 1.9097270818754373,
+          "znver2": 1.361162028550797
+        }
+      },
+      "splitserial": {
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 47.3,
+            "cycles_per_iteration": 178.52,
+            "instructions_per_iteration": 250.0,
+            "iterations": 100,
+            "total_cycles": 17852,
+            "uops_per_iteration": 284.0
+          },
+          "znver2": {
+            "block_rthroughput": 160.0,
+            "cycles_per_iteration": 374.53,
+            "instructions_per_iteration": 250.0,
+            "iterations": 100,
+            "total_cycles": 37453,
+            "uops_per_iteration": 250.0
+          }
+        },
+        "pinned_gcc13_timed_loop": {
+          "bytes": 1303,
+          "instructions": 250,
+          "memory_operands": 30,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovq": 4,
+            "vpaddq": 40,
+            "vpextrq": 2,
+            "vpinsrq": 2,
+            "vpor": 40,
+            "vpshufb": 40,
+            "vpsllvq": 40,
+            "vpsrlvq": 40,
+            "vpxor": 40
+          }
+        },
+        "static_cycles_relative_to_current": {
+          "alderlake": 1.7846646006198141,
+          "znver2": 2.0803754929733933
+        }
+      },
+      "splitxmm": {
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 48.7,
+            "cycles_per_iteration": 223.29,
+            "instructions_per_iteration": 242.0,
+            "iterations": 100,
+            "total_cycles": 22329,
+            "uops_per_iteration": 292.0
+          },
+          "znver2": {
+            "block_rthroughput": 160.0,
+            "cycles_per_iteration": 295.07,
+            "instructions_per_iteration": 242.0,
+            "iterations": 100,
+            "total_cycles": 29507,
+            "uops_per_iteration": 242.0
+          }
+        },
+        "pinned_gcc13_timed_loop": {
+          "bytes": 1349,
+          "instructions": 242,
+          "memory_operands": 50,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 40,
+            "vpor": 40,
+            "vpshufb": 40,
+            "vpsllvq": 40,
+            "vpsrlvq": 40,
+            "vpxor": 40
+          }
+        },
+        "static_cycles_relative_to_current": {
+          "alderlake": 2.23223033090073,
+          "znver2": 1.6390046103427207
+        }
+      }
+    }
+  },
+  "designs": {
+    "splitpair": "word-reversal orbits (0,3) and (1,2); all reversed constants and rotations are in-group lane swaps",
+    "splitrecompute": "two parallel reversal-orbit groups, recomputing reversed dynamic constants with four VPSHUFD instructions per pair",
+    "splitserial": "the same word-reversal orbit packing, but complete one XMM chain before starting the other to reduce live ranges",
+    "splitxmm": "contiguous word groups (0,1) and (2,3); reversed constants cross from the other XMM group"
+  },
+  "host_measurement": null,
+  "host_preflight": {
+    "active_benchmark_processes": [],
+    "topology": {
+      "allowed_affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "core_id": 0,
+      "cpu": 0,
+      "physical_package_id": 0,
+      "thread_siblings_list": "0,4"
+    }
+  },
+  "host_timing_decision": "skipped by the staged screen: every split design has at least 1.361x the current YMM LLVM-MCA cycle estimate, at least 242 instructions, and at least 30 timed-loop memory operands; no split candidate qualified for a performance campaign",
+  "integration_status": {
+    "autotune_manifest_registered": false,
+    "candidate_found": false,
+    "classification": "exploration-only negative results",
+    "source_retention_reason": "four small contest-shaped sources isolate contiguous packing, reversal-orbit packing, serialized live ranges, and explicit shuffle-for-spill tradeoffs; together they make the negative result reproducible without generated binary assets"
+  },
+  "official_vector_smoke": {
+    "avx2_current": {
+      "one_round_pairs": 1000,
+      "qualification": "the harness timing line was ignored; this single execution is correctness evidence, not a timing campaign",
+      "status": "PASS",
+      "twenty_round_cases": 1,
+      "validated_stdout_markers": [
+        "one-round testvector verification: OK (1000 pairs checked)",
+        "20-round testvector verification: OK"
+      ]
+    },
+    "scalar": {
+      "one_round_pairs": 1000,
+      "qualification": "the harness timing line was ignored; this single execution is correctness evidence, not a timing campaign",
+      "status": "PASS",
+      "twenty_round_cases": 1,
+      "validated_stdout_markers": [
+        "one-round testvector verification: OK (1000 pairs checked)",
+        "20-round testvector verification: OK"
+      ]
+    },
+    "splitpair": {
+      "one_round_pairs": 1000,
+      "qualification": "the harness timing line was ignored; this single execution is correctness evidence, not a timing campaign",
+      "status": "PASS",
+      "twenty_round_cases": 1,
+      "validated_stdout_markers": [
+        "one-round testvector verification: OK (1000 pairs checked)",
+        "20-round testvector verification: OK"
+      ]
+    },
+    "splitrecompute": {
+      "one_round_pairs": 1000,
+      "qualification": "the harness timing line was ignored; this single execution is correctness evidence, not a timing campaign",
+      "status": "PASS",
+      "twenty_round_cases": 1,
+      "validated_stdout_markers": [
+        "one-round testvector verification: OK (1000 pairs checked)",
+        "20-round testvector verification: OK"
+      ]
+    },
+    "splitserial": {
+      "one_round_pairs": 1000,
+      "qualification": "the harness timing line was ignored; this single execution is correctness evidence, not a timing campaign",
+      "status": "PASS",
+      "twenty_round_cases": 1,
+      "validated_stdout_markers": [
+        "one-round testvector verification: OK (1000 pairs checked)",
+        "20-round testvector verification: OK"
+      ]
+    },
+    "splitxmm": {
+      "one_round_pairs": 1000,
+      "qualification": "the harness timing line was ignored; this single execution is correctness evidence, not a timing campaign",
+      "status": "PASS",
+      "twenty_round_cases": 1,
+      "validated_stdout_markers": [
+        "one-round testvector verification: OK (1000 pairs checked)",
+        "20-round testvector verification: OK"
+      ]
+    }
+  },
+  "pinned_static_screen": {
+    "binutils": "GNU ld (GNU Binutils for Debian) 2.40",
+    "cases": {
+      "avx2_current": {
+        "assembly_sha256": "417e83db6e9f61528c38c79c71b7635eefa7f5111f9357dc066f5de73b5a0dd4",
+        "binary_audit": {
+          "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 0,
+            "bswap": 0,
+            "rotate": 0,
+            "xor": 0
+          },
+          "errors": [],
+          "legacy_addressed_loop_sha256": "f6a1691f4ad9d9d58b10385f99853e857b152e3645b3e193046650a1966b1912",
+          "loop_bytes": 579,
+          "loop_instructions": 122,
+          "loop_start": "0x401508",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 8,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "mode": "avx2-inline-lanewise",
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_simd_operation_counts": {
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "status": "PASS",
+          "text_bytes": 6253
+        },
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "total_cycles": 10003,
+            "uops_per_iteration": 122.0
+          },
+          "znver2": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "total_cycles": 18003,
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop_text_sha256": "31d08206e92609b0e9861ed470f03f2730376b041b09a5601217bf90978815ba",
+        "source": "submissions/02/src/optimization/contest_simd_avx2_lanewise.c",
+        "source_sha256": "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751",
+        "verification": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "returncode": 0,
+          "round_counts": [
+            1,
+            20
+          ],
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+          "verifier_translation_unit_cflags": [
+            "-O3",
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror"
+          ]
+        }
+      },
+      "scalar": {
+        "assembly_sha256": "6d6f32ff16be74005597c530dce180bf6b070ee4197697c57ad274755e0d0f87",
+        "binary_audit": {
+          "binary_sha256": "df7da5f1f98311bfcf4472f6eab2077586fd264966aa6952b306fedbb6572f2e",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 80,
+            "bswap": 80,
+            "rotate": 80,
+            "xor": 80
+          },
+          "errors": [],
+          "legacy_addressed_loop_sha256": "cbbef56326fbc4437dff78afaf7eb3229d5cce8a9858a8628d04e194ca01f770",
+          "loop_bytes": 1216,
+          "loop_instructions": 322,
+          "loop_start": "0x401528",
+          "loop_start_mod_16": 8,
+          "loop_start_mod_32": 8,
+          "loop_start_mod_64": 40,
+          "memory_operands_excluding_lea": 0,
+          "mnemonics": {
+            "add": 74,
+            "bswap": 80,
+            "jne": 1,
+            "lea": 6,
+            "rorx": 80,
+            "sub": 1,
+            "xor": 80
+          },
+          "mode": "full-inline-320",
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "6b803105c59776a62b75848692307bbe611286ee1d1806d23c4577f974dc2683",
+          "push_pop": 0,
+          "selected_simd_operation_counts": {},
+          "status": "PASS",
+          "text_bytes": 7246
+        },
+        "binary_sha256": "df7da5f1f98311bfcf4472f6eab2077586fd264966aa6952b306fedbb6572f2e",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mbmi2",
+          "-finline-limit=2000"
+        ],
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 86.0,
+            "cycles_per_iteration": 125.06,
+            "instructions_per_iteration": 322.0,
+            "iterations": 100,
+            "total_cycles": 12506,
+            "uops_per_iteration": 402.0
+          },
+          "znver2": {
+            "block_rthroughput": 140.5,
+            "cycles_per_iteration": 140.55,
+            "instructions_per_iteration": 322.0,
+            "iterations": 100,
+            "total_cycles": 14055,
+            "uops_per_iteration": 322.0
+          }
+        },
+        "loop_text_sha256": "23d63ff2ff7e52cebf6b27750a718f0d5d35883f9c1c41f0dcb2a8c76ba1a3cc",
+        "source": "submissions/02/contest.c",
+        "source_sha256": "51f0366304cced28d5221ecdb0964dbd05dafe2a4071c4bf6ce1c7425d80fd71",
+        "verification": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "returncode": 0,
+          "round_counts": [
+            1,
+            20
+          ],
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+          "verifier_translation_unit_cflags": [
+            "-O3",
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror"
+          ]
+        }
+      },
+      "splitpair": {
+        "assembly_sha256": "adfa71b1a2c08ac3c2237333cde87dde5e89235bad734772be5010d92aab660e",
+        "binary_audit": {
+          "binary_sha256": "2a6bcbbd33f41fd4c80baae1e43826bc287fea37ea6fe2b334ece1351750d759",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 0,
+            "bswap": 0,
+            "rotate": 0,
+            "xor": 0
+          },
+          "errors": [],
+          "legacy_addressed_loop_sha256": "6aecfc6157387110b7532042233552bebf5cb05e0bb11781c776029a8adc8af4",
+          "loop_bytes": 1383,
+          "loop_instructions": 248,
+          "loop_start": "0x401550",
+          "loop_start_mod_16": 0,
+          "loop_start_mod_32": 16,
+          "loop_start_mod_64": 16,
+          "memory_operands_excluding_lea": 50,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 40,
+            "vpextrq": 2,
+            "vpinsrq": 2,
+            "vpor": 40,
+            "vpshufb": 40,
+            "vpsllvq": 40,
+            "vpsrlvq": 40,
+            "vpxor": 40
+          },
+          "mode": "report-only",
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "9f7fd861ac54ccb636142a823009bd1b3cc95591e7b0ea79ad6f2e872ab35ea6",
+          "push_pop": 0,
+          "selected_simd_operation_counts": {
+            "vpaddq": 40,
+            "vpor": 40,
+            "vpshufb": 40,
+            "vpsllvq": 40,
+            "vpsrlvq": 40,
+            "vpxor": 40
+          },
+          "status": "PASS",
+          "text_bytes": 8045
+        },
+        "binary_sha256": "2a6bcbbd33f41fd4c80baae1e43826bc287fea37ea6fe2b334ece1351750d759",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 50.0,
+            "cycles_per_iteration": 234.96,
+            "instructions_per_iteration": 248.0,
+            "iterations": 100,
+            "total_cycles": 23496,
+            "uops_per_iteration": 300.0
+          },
+          "znver2": {
+            "block_rthroughput": 160.0,
+            "cycles_per_iteration": 304.13,
+            "instructions_per_iteration": 248.0,
+            "iterations": 100,
+            "total_cycles": 30413,
+            "uops_per_iteration": 248.0
+          }
+        },
+        "loop_text_sha256": "4516202b4df0fadffd67ba506bc7c2baef88d4a45b15f09abee2f3be094bec42",
+        "source": "submissions/02/src/optimization/contest_simd_avx2_splitpair.c",
+        "source_sha256": "962529c07990fe74a0214bddf465b4befb111ea57bb7ab6c5769a09fb0f30ac1",
+        "verification": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "returncode": 0,
+          "round_counts": [
+            1,
+            20
+          ],
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+          "verifier_translation_unit_cflags": [
+            "-O3",
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror"
+          ]
+        }
+      },
+      "splitrecompute": {
+        "assembly_sha256": "b44adce1becdac0ee955807904f0143995de14f3787705ac7cfb4e9b247d624c",
+        "binary_audit": {
+          "binary_sha256": "cf4627a8d4c6dc3c6091a9418bbbd7e0f7c65f1b1cf70f18d125040310487ac6",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 0,
+            "bswap": 0,
+            "rotate": 0,
+            "xor": 0
+          },
+          "errors": [],
+          "legacy_addressed_loop_sha256": "5709014da854117012f4193c780809dadb619ab7c08f581838b274741e5b2192",
+          "loop_bytes": 1509,
+          "loop_instructions": 288,
+          "loop_start": "0x401540",
+          "loop_start_mod_16": 0,
+          "loop_start_mod_32": 0,
+          "loop_start_mod_64": 0,
+          "memory_operands_excluding_lea": 30,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovdqa": 2,
+            "vpaddq": 40,
+            "vpextrq": 2,
+            "vpinsrq": 2,
+            "vpor": 40,
+            "vpshufb": 40,
+            "vpshufd": 40,
+            "vpsllvq": 40,
+            "vpsrlvq": 40,
+            "vpxor": 40
+          },
+          "mode": "report-only",
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "438abd49c64161d14047815ee54f0a55c29549e73766ed1c0f63ed1bf260fc6b",
+          "push_pop": 0,
+          "selected_simd_operation_counts": {
+            "vpaddq": 40,
+            "vpor": 40,
+            "vpshufb": 40,
+            "vpsllvq": 40,
+            "vpsrlvq": 40,
+            "vpxor": 40
+          },
+          "status": "PASS",
+          "text_bytes": 8220
+        },
+        "binary_sha256": "cf4627a8d4c6dc3c6091a9418bbbd7e0f7c65f1b1cf70f18d125040310487ac6",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 53.3,
+            "cycles_per_iteration": 191.03,
+            "instructions_per_iteration": 288.0,
+            "iterations": 100,
+            "total_cycles": 19103,
+            "uops_per_iteration": 320.0
+          },
+          "znver2": {
+            "block_rthroughput": 160.0,
+            "cycles_per_iteration": 245.05,
+            "instructions_per_iteration": 288.0,
+            "iterations": 100,
+            "total_cycles": 24505,
+            "uops_per_iteration": 288.0
+          }
+        },
+        "loop_text_sha256": "874110a44603d1663f7bbd540d40d5cb8516502c729b39d0ebf0e09732652d07",
+        "source": "submissions/02/src/optimization/contest_simd_avx2_splitrecompute.c",
+        "source_sha256": "f264f0317d3bc7b7b42479396fc297810c6cb420bc0012dee4082a6c26407fd5",
+        "verification": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "returncode": 0,
+          "round_counts": [
+            1,
+            20
+          ],
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+          "verifier_translation_unit_cflags": [
+            "-O3",
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror"
+          ]
+        }
+      },
+      "splitserial": {
+        "assembly_sha256": "5372901d929897aaeafc37d088d68bee1e60bd003646c0839ef11d677b6e43ba",
+        "binary_audit": {
+          "binary_sha256": "f755292a82b2653227a804bcbc5307aef8c74753ce08819f642039253d3422d7",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 0,
+            "bswap": 0,
+            "rotate": 0,
+            "xor": 0
+          },
+          "errors": [],
+          "legacy_addressed_loop_sha256": "fd5ca9311e261d27f8e656e7032124faf0e142205872796cc5657132296edb50",
+          "loop_bytes": 1303,
+          "loop_instructions": 250,
+          "loop_start": "0x401550",
+          "loop_start_mod_16": 0,
+          "loop_start_mod_32": 16,
+          "loop_start_mod_64": 16,
+          "memory_operands_excluding_lea": 30,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vmovq": 4,
+            "vpaddq": 40,
+            "vpextrq": 2,
+            "vpinsrq": 2,
+            "vpor": 40,
+            "vpshufb": 40,
+            "vpsllvq": 40,
+            "vpsrlvq": 40,
+            "vpxor": 40
+          },
+          "mode": "report-only",
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "fd0c16334488136198dbb3afccb30466567c318a0e1f2fbdef6de78ed74f106f",
+          "push_pop": 0,
+          "selected_simd_operation_counts": {
+            "vpaddq": 40,
+            "vpor": 40,
+            "vpshufb": 40,
+            "vpsllvq": 40,
+            "vpsrlvq": 40,
+            "vpxor": 40
+          },
+          "status": "PASS",
+          "text_bytes": 7743
+        },
+        "binary_sha256": "f755292a82b2653227a804bcbc5307aef8c74753ce08819f642039253d3422d7",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 47.3,
+            "cycles_per_iteration": 178.52,
+            "instructions_per_iteration": 250.0,
+            "iterations": 100,
+            "total_cycles": 17852,
+            "uops_per_iteration": 284.0
+          },
+          "znver2": {
+            "block_rthroughput": 160.0,
+            "cycles_per_iteration": 374.53,
+            "instructions_per_iteration": 250.0,
+            "iterations": 100,
+            "total_cycles": 37453,
+            "uops_per_iteration": 250.0
+          }
+        },
+        "loop_text_sha256": "1034944d592bd3025ed9d09fc523975467721ed3d2f0b3b8516e203875a9eb10",
+        "source": "submissions/02/src/optimization/contest_simd_avx2_splitserial.c",
+        "source_sha256": "b04736b1219112a2f46176f8caa0ba7dc7921caca3d72be0f68d06738f3d75e9",
+        "verification": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "returncode": 0,
+          "round_counts": [
+            1,
+            20
+          ],
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+          "verifier_translation_unit_cflags": [
+            "-O3",
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror"
+          ]
+        }
+      },
+      "splitxmm": {
+        "assembly_sha256": "905c4af96b9ca5e839331d09d5cac1be9ef6a5871285fc764558bf51c8fdf537",
+        "binary_audit": {
+          "binary_sha256": "3816d77a95a8cb45e72e38180ed47b877d9c4785450a5368e629de9ecabf28ac",
+          "calls": 0,
+          "core_counts": {
+            "add_or_lea": 0,
+            "bswap": 0,
+            "rotate": 0,
+            "xor": 0
+          },
+          "errors": [],
+          "legacy_addressed_loop_sha256": "6e0a5adf89be08e3be8a9211c7a3783ec1826fa376f0bdcb3790d49c75bdbdcb",
+          "loop_bytes": 1349,
+          "loop_instructions": 242,
+          "loop_start": "0x401520",
+          "loop_start_mod_16": 0,
+          "loop_start_mod_32": 0,
+          "loop_start_mod_64": 32,
+          "memory_operands_excluding_lea": 50,
+          "mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 40,
+            "vpor": 40,
+            "vpshufb": 40,
+            "vpsllvq": 40,
+            "vpsrlvq": 40,
+            "vpxor": 40
+          },
+          "mode": "report-only",
+          "normalization": "branch-and-call-targets-as-relative-displacements-v1",
+          "normalized_loop_sha256": "aae697f9b8aee5a0f9d6a4af06878e4eb36baa8eb7efeabdd6982d3d9ca81f23",
+          "push_pop": 0,
+          "selected_simd_operation_counts": {
+            "vpaddq": 40,
+            "vpor": 40,
+            "vpshufb": 40,
+            "vpsllvq": 40,
+            "vpsrlvq": 40,
+            "vpxor": 40
+          },
+          "status": "PASS",
+          "text_bytes": 7876
+        },
+        "binary_sha256": "3816d77a95a8cb45e72e38180ed47b877d9c4785450a5368e629de9ecabf28ac",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "llvm_mca": {
+          "alderlake": {
+            "block_rthroughput": 48.7,
+            "cycles_per_iteration": 223.29,
+            "instructions_per_iteration": 242.0,
+            "iterations": 100,
+            "total_cycles": 22329,
+            "uops_per_iteration": 292.0
+          },
+          "znver2": {
+            "block_rthroughput": 160.0,
+            "cycles_per_iteration": 295.07,
+            "instructions_per_iteration": 242.0,
+            "iterations": 100,
+            "total_cycles": 29507,
+            "uops_per_iteration": 242.0
+          }
+        },
+        "loop_text_sha256": "1da58431d410d1a8ad7e41bab415cae9bb89c287d4e438e3991107e09335690d",
+        "source": "submissions/02/src/optimization/contest_simd_avx2_splitxmm.c",
+        "source_sha256": "688c5d1daf9cca52e3b33292ebd52fe23f4adc9f93ddf49a89059e1e2e65925b",
+        "verification": {
+          "random_cases": 100000,
+          "random_state_and_constants": true,
+          "returncode": 0,
+          "round_counts": [
+            1,
+            20
+          ],
+          "stderr": "",
+          "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+          "verifier_translation_unit_cflags": [
+            "-O3",
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror"
+          ]
+        }
+      }
+    },
+    "compiler": "gcc (GCC) 13.3.0",
+    "container": {
+      "image": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "local_image_id": "sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "network": "none",
+      "pinned_manifest_digest_sha256": "1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "repository_mount": "read-only"
+    },
+    "llvm_mca": {
+      "executable": "llvm-mca-16",
+      "models": [
+        "alderlake",
+        "znver2"
+      ],
+      "qualification": "static scheduler models only; neither model is Lion Cove or Skymont",
+      "version": "Debian LLVM version 16.0.6"
+    }
+  },
+  "rejected_designs": {
+    "scalarized_immediate_rotates": "not implemented: four distinct rotations would require lane extract/insert or compute-and-select sequences, increasing the instruction stream beyond AVX2 variable shifts",
+    "splitpair": "orbit packing removes cross-group setup dependencies, but does not remove any of the 240 core vector operations",
+    "splitrecompute": "explicitly trades four invariant spills for four in-register lane swaps per two-round pair; retain only if static cost wins",
+    "splitserial": "serializing groups may reduce spills but gives up the only instruction-level parallelism that could hide chain latency",
+    "splitxmm": "reject unless host timing overturns its duplicated instruction stream and static scheduler cost"
+  },
+  "reproduction": {
+    "host_campaign_not_recommended": "append --run-host only to override the static rejection; the script then enforces CPU 0, >=3000000 iterations, >=6 warmups, >=32 samples, and 100000 random differential cases",
+    "static_and_correctness": "python3 submissions/02/src/optimization/screen_split_simd.py --output submissions/02/src/optimization/split_simd_results.json"
+  },
+  "schema_version": 1,
+  "scope": "two 128-bit AVX2 dependency-chain layouts versus the existing four-lane YMM candidate; no actual 255H P/E/LP-E measurement"
+}

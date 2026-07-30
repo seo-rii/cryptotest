@@ -1,0 +1,109 @@
+{
+  "all_literal_forms_fail_sign_extended_imm32": true,
+  "all_pair_boundary_folds_rejected": true,
+  "all_single_instruction_folds_rejected": true,
+  "analysis": "challenge_constant_placement",
+  "conclusion": "Moving XOR before rotate or after BSWAP is exact but does not reduce the four-instruction transform for the supplied constants.",
+  "identities": {
+    "post_bswap": "B(R(x) xor K) = B(R(x)) xor B(K)",
+    "pre_rotate": "R(x) xor K = R(x xor R^-1(K))"
+  },
+  "identity_random_check": {
+    "cases": 100000,
+    "seed": "0x6a09e667f3bcc909",
+    "status": "PASS"
+  },
+  "schema_version": 1,
+  "transforms": [
+    {
+      "fits_x86_64_sign_extended_imm32": {
+        "add": false,
+        "add_after_top_fold": false,
+        "xor_after_bswap": false,
+        "xor_after_bswap_top_fold_residual": false,
+        "xor_before_bswap": false,
+        "xor_before_rotate": false
+      },
+      "one_instruction_xor_add_fold": false,
+      "pair_boundary_fold_after_pre_rotate": false,
+      "rotation": 43,
+      "source_word": 0,
+      "values": {
+        "add": "0x5d0f3a8e2c6b4197",
+        "add_after_top_fold": "0x5d0f3a8e2c6b4197",
+        "xor_after_bswap": "0x35801f6c4a2db9e7",
+        "xor_after_bswap_top_fold_residual": "0x35801f6c4a2db9e7",
+        "xor_before_bswap": "0xe7b92d4a6c1f8035",
+        "xor_before_rotate": "0xa94d83f006bcf725"
+      }
+    },
+    {
+      "fits_x86_64_sign_extended_imm32": {
+        "add": false,
+        "add_after_top_fold": false,
+        "xor_after_bswap": false,
+        "xor_after_bswap_top_fold_residual": false,
+        "xor_before_bswap": false,
+        "xor_before_rotate": false
+      },
+      "one_instruction_xor_add_fold": false,
+      "pair_boundary_fold_after_pre_rotate": false,
+      "rotation": 7,
+      "source_word": 1,
+      "values": {
+        "add": "0xa7e2d9c4b1f60853",
+        "add_after_top_fold": "0xa7e2d9c4b1f60853",
+        "xor_after_bswap": "0x74602b9d3e8c4f1a",
+        "xor_after_bswap_top_fold_residual": "0x74602b9d3e8c4f1a",
+        "xor_before_bswap": "0x1a4f8c3e9d2b6074",
+        "xor_before_rotate": "0xe8349f187d3a56c0"
+      }
+    },
+    {
+      "fits_x86_64_sign_extended_imm32": {
+        "add": false,
+        "add_after_top_fold": false,
+        "xor_after_bswap": false,
+        "xor_after_bswap_top_fold_residual": false,
+        "xor_before_bswap": false,
+        "xor_before_rotate": false
+      },
+      "one_instruction_xor_add_fold": false,
+      "pair_boundary_fold_after_pre_rotate": false,
+      "rotation": 29,
+      "source_word": 2,
+      "values": {
+        "add": "0x3c6e9a1d5b7f2840",
+        "add_after_top_fold": "0xbc6e9a1d5b7f2840",
+        "xor_after_bswap": "0xb794618d2e5af0c3",
+        "xor_after_bswap_top_fold_residual": "0x3794618d2e5af0c3",
+        "xor_before_bswap": "0xc3f05a2e8d6194b7",
+        "xor_before_rotate": "0x6b0ca5be1f82d174"
+      }
+    },
+    {
+      "fits_x86_64_sign_extended_imm32": {
+        "add": false,
+        "add_after_top_fold": false,
+        "xor_after_bswap": false,
+        "xor_after_bswap_top_fold_residual": false,
+        "xor_before_bswap": false,
+        "xor_before_rotate": false
+      },
+      "one_instruction_xor_add_fold": false,
+      "pair_boundary_fold_after_pre_rotate": false,
+      "rotation": 14,
+      "source_word": 3,
+      "values": {
+        "add": "0x8f4a2c1e9b7d3f61",
+        "add_after_top_fold": "0x0f4a2c1e9b7d3f61",
+        "xor_after_bswap": "0x85307c4f1a9d2e6b",
+        "xor_after_bswap_top_fold_residual": "0x05307c4f1a9d2e6b",
+        "xor_before_bswap": "0x6b2e9d1a4f7c3085",
+        "xor_before_rotate": "0xc215acba74693df0"
+      }
+    }
+  ],
+  "x86_64_immediate_rule": "64-bit integer XOR/ADD encodings accept a sign-extended imm32, not an arbitrary imm64",
+  "xor_add_fold_rule": "x xor C is an additive translation for every x only when C is 0 or 2^63"
+}

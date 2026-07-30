@@ -1,0 +1,4473 @@
+{
+  "alignment_class_representatives": [
+    "no_tree_vectorize",
+    "reference_generic",
+    "no_tree_loop_vectorize",
+    "prefer128_very_cheap",
+    "no_tree_slp_vectorize",
+    "alder_tune_no_emit_vzeroupper",
+    "reference_alderlake",
+    "alder_backend_128"
+  ],
+  "complete_loop_alignment_classes": [
+    {
+      "case_count": 2,
+      "cases": [
+        "no_tree_vectorize",
+        "vzeroupper_off"
+      ],
+      "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+      "representative": "no_tree_vectorize",
+      "start_mod_64": 0,
+      "stream_family": "generic"
+    },
+    {
+      "case_count": 30,
+      "cases": [
+        "move_max_128",
+        "move_max_256",
+        "move_max_512",
+        "move_store_max_128",
+        "move_store_max_256",
+        "move_store_max_512",
+        "prefer256_unlimited",
+        "prefer_width_256",
+        "prefer_width_512",
+        "prefer_width_none",
+        "reference_generic",
+        "simd_cost_cheap",
+        "simd_cost_dynamic",
+        "simd_cost_unlimited",
+        "split_both_off",
+        "split_both_on",
+        "split_load_off",
+        "split_load_on",
+        "split_store_off",
+        "split_store_on",
+        "sse2avx_off",
+        "sse2avx_on",
+        "store_max_128",
+        "store_max_256",
+        "store_max_512",
+        "vect_cost_cheap",
+        "vect_cost_dynamic",
+        "vect_cost_unlimited",
+        "vect_cost_very_cheap",
+        "vzeroupper_on"
+      ],
+      "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+      "representative": "reference_generic",
+      "start_mod_64": 8,
+      "stream_family": "generic"
+    },
+    {
+      "case_count": 1,
+      "cases": [
+        "no_tree_loop_vectorize"
+      ],
+      "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+      "representative": "no_tree_loop_vectorize",
+      "start_mod_64": 24,
+      "stream_family": "generic"
+    },
+    {
+      "case_count": 3,
+      "cases": [
+        "prefer128_very_cheap",
+        "prefer_avx128_alias",
+        "prefer_width_128"
+      ],
+      "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+      "representative": "prefer128_very_cheap",
+      "start_mod_64": 40,
+      "stream_family": "generic"
+    },
+    {
+      "case_count": 1,
+      "cases": [
+        "no_tree_slp_vectorize"
+      ],
+      "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+      "representative": "no_tree_slp_vectorize",
+      "start_mod_64": 48,
+      "stream_family": "generic"
+    },
+    {
+      "case_count": 2,
+      "cases": [
+        "alder_tune_no_emit_vzeroupper",
+        "alder_vzeroupper_off"
+      ],
+      "normalized_loop_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+      "representative": "alder_tune_no_emit_vzeroupper",
+      "start_mod_64": 8,
+      "stream_family": "alderlake"
+    },
+    {
+      "case_count": 23,
+      "cases": [
+        "alder_backend_256",
+        "alder_move_store_128",
+        "alder_move_store_256",
+        "alder_move_store_512",
+        "alder_prefer_width_256",
+        "alder_split_both_off",
+        "alder_split_both_on",
+        "alder_sse2avx_on",
+        "alder_tune_avx256_bundle",
+        "alder_tune_avx256_optimal",
+        "alder_tune_avx256_split_regs",
+        "alder_tune_move_m1_via_or",
+        "alder_tune_no_avx256_move_by_pieces",
+        "alder_tune_no_avx256_store_by_pieces",
+        "alder_tune_no_inter_unit_moves_from_vec",
+        "alder_tune_no_inter_unit_moves_to_vec",
+        "alder_tune_no_movx",
+        "alder_tune_no_partial_reg_dependency",
+        "alder_tune_no_sse_partial_reg_dependency",
+        "alder_tune_partial_bundle_off",
+        "alder_tune_partial_reg_stall",
+        "alder_tune_sse_split_regs",
+        "reference_alderlake"
+      ],
+      "normalized_loop_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+      "representative": "reference_alderlake",
+      "start_mod_64": 16,
+      "stream_family": "alderlake"
+    },
+    {
+      "case_count": 3,
+      "cases": [
+        "alder_backend_128",
+        "alder_prefer_width_128",
+        "alder_tune_avx128_optimal"
+      ],
+      "normalized_loop_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+      "representative": "alder_backend_128",
+      "start_mod_64": 48,
+      "stream_family": "alderlake"
+    }
+  ],
+  "decision": {
+    "alignment_only_followup": {
+      "class_count": 8,
+      "reason": "identical normalized streams begin at different mod-64 offsets; LLVM-MCA is alignment-insensitive, the earlier AMD explicit-alignment sweep found no significant winner, and the newly observed 24/40/48 offsets plus every 255H core type remain unmeasured",
+      "representatives": [
+        "no_tree_vectorize",
+        "reference_generic",
+        "no_tree_loop_vectorize",
+        "prefer128_very_cheap",
+        "no_tree_slp_vectorize",
+        "alder_tune_no_emit_vzeroupper",
+        "reference_alderlake",
+        "alder_backend_128"
+      ],
+      "status": "target-timing-required"
+    },
+    "all_nonreference_cases_equal_a_reference_stream": true,
+    "caveat": "llvm-mca results are scheduling proxies and do not model the unavailable 255H target end to end; two normalized instruction streams expand to eight stream/alignment classes whose frontend and code-cache effects require measurement",
+    "new_distinct_stream_representatives": [],
+    "promotion": "none",
+    "reference_alderlake_score": [
+      0.0,
+      0.0,
+      0.0,
+      122.0,
+      579.0,
+      100.03,
+      180.03
+    ],
+    "reference_equivalence_classes": {
+      "alderlake": {
+        "case_count": 28,
+        "normalized_loop_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8"
+      },
+      "generic": {
+        "case_count": 37,
+        "normalized_loop_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d"
+      }
+    },
+    "reference_generic_score": [
+      0.0,
+      0.0,
+      0.0,
+      122.0,
+      579.0,
+      100.03,
+      180.03
+    ],
+    "strict_static_improvements_over_generic_reference": []
+  },
+  "experiment": "challenge_gcc133_additional_avx_backend_flags",
+  "inputs": {
+    "files": {
+      "submissions/02/src/optimization/contest_simd_avx2_lanewise.c": "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751",
+      "submissions/02/src/optimization/verify_contest_candidate.c": "8245f1baf23fe82e1a1b22dc7c25e5e1fd5b102ca833f26d4c88342088c80b35",
+      "submissions/02/src/loop_audit.py": "e73d27abfbb7eea9ee84e0216baaf7f39f128db0cffdcb79b469656f9c185e23"
+    },
+    "host_tools": {
+      "llvm_mca": {
+        "path": "/usr/bin/llvm-mca-16",
+        "sha256": "e7f38b12a3c228c8b0bcea0bf63cc56939286adf9ae5397a43d408322e3c6fbf",
+        "version": "Debian LLVM version 16.0.6"
+      },
+      "objdump": {
+        "path": "/usr/bin/x86_64-linux-gnu-objdump",
+        "sha256": "19717049e8ecd98cfbb17fd9eb25e9fd896ecec2fc4af6b931f3dd0bc4e903de",
+        "version": "GNU objdump (GNU Binutils for Debian) 2.40"
+      },
+      "size": {
+        "path": "/usr/bin/x86_64-linux-gnu-size",
+        "sha256": "d2dc6eb962bfc841403cc8b72191bfd829b50d8796b611689e92cfb051cf10ee",
+        "version": "GNU size (GNU Binutils for Debian) 2.40"
+      }
+    }
+  },
+  "inventory": {
+    "duplicate_check": "PASS",
+    "exact_nonreference_flag_tuple_overlap_with_named_prior_screens": {},
+    "inventory_artifacts": {
+      "prior_255h_screen": {
+        "path": "submissions/02/src/optimization/255h_toolchain_screen.json",
+        "sha256_at_run": "8b211e07afa89aa07be9d4309315159ebe4b90bf60d6b36550903cee0ce755ca"
+      },
+      "prior_avx2_screen": {
+        "path": "submissions/02/src/optimization/avx2_codegen_screen.json",
+        "sha256_at_run": "addbc4e937f5fad6ea2bb22508476b7fc185db07eabde9e010549f072e7dd800"
+      },
+      "prior_scalar_layout_screen": {
+        "path": "submissions/02/src/optimization/gcc133_layout_screen.json",
+        "sha256_at_run": "33f4a7252feca0f6853a4dff5b7652865484d11cd16ef5e8b519ea3ab4e4fa9b"
+      }
+    },
+    "new_nonreference_case_count": 63,
+    "prior_255h_screen": {
+      "gcc_case_count": 47,
+      "path": "submissions/02/src/optimization/screen_255h_toolchains.py",
+      "source": "submissions/02/contest.c",
+      "unique_extra_flag_tuple_count": 46
+    },
+    "prior_avx2_screen": {
+      "gcc_case_count": 64,
+      "path": "submissions/02/src/optimization/screen_avx2_codegen.py",
+      "source": "submissions/02/src/optimization/contest_simd_avx2_lanewise.c",
+      "unique_extra_flag_tuple_count": 58
+    },
+    "prior_scalar_layout_screen": {
+      "path": "submissions/02/src/optimization/screen_gcc133_layout.py",
+      "same_flag_tuples_reused_on_new_avx2_source": {
+        "prefer_width_128": [
+          "prefer_vector_128"
+        ],
+        "prefer_width_256": [
+          "prefer_vector_256"
+        ]
+      },
+      "source": "submissions/02/contest.c"
+    },
+    "reference_cases_intentionally_repeated": [
+      "reference_generic",
+      "reference_alderlake"
+    ]
+  },
+  "pareto_representatives": [
+    "reference_generic"
+  ],
+  "primary_documentation": [
+    {
+      "title": "GCC 13.3 x86 options",
+      "url": "https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/x86-Options.html",
+      "used_for": "preferred vector width, AVX256 unaligned split, SSE-to-VEX, vzeroupper, move/store width, and developer tune controls"
+    },
+    {
+      "title": "GCC 13.3 optimization options",
+      "url": "https://gcc.gnu.org/onlinedocs/gcc-13.3.0/gcc/Optimize-Options.html",
+      "used_for": "vectorization and OpenMP SIMD cost-model semantics"
+    },
+    {
+      "title": "LLVM llvm-mca command guide",
+      "url": "https://llvm.org/docs/CommandGuide/llvm-mca.html",
+      "used_for": "static scheduling-model method and limitations"
+    }
+  ],
+  "protocol": {
+    "audit_mode": "avx2-inline-lanewise plus full variant report",
+    "common_flags": [
+      "-O3",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-mavx2",
+      "-DCH2_SIMD_INLINE",
+      "-finline-limit=2000"
+    ],
+    "complete_binary_loop_boundary": "last conditional backedge between the final two clock calls",
+    "dynamic_verification": "one representative per unique complete loop hash plus all Pareto representatives; 100000 random states and constants, round counts 1 and 20",
+    "llvm_mca_iterations": 100,
+    "llvm_mca_models": {
+      "alderlake_p_core_proxy": "alderlake",
+      "znver2_cross_architecture_proxy": "znver2"
+    },
+    "normalization": "branch-and-call-targets-as-relative-displacements-v1"
+  },
+  "schema_version": 1,
+  "scope": {
+    "compiler": "exact GCC 13.3.0 container",
+    "host_timing": "not performed",
+    "source": "submissions/02/src/optimization/contest_simd_avx2_lanewise.c",
+    "target": "Core Ultra 7 255H; unavailable on this host"
+  },
+  "screen": {
+    "cases": {
+      "alder_backend_128": {
+        "binary_sha256": "4724831e4cd7f626f5ee2c56c7e8ac685941003bb1ccd420ac4381e50081a36c",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mprefer-vector-width=128",
+          "-mmove-max=128",
+          "-mstore-max=128",
+          "-mavx256-split-unaligned-load",
+          "-mavx256-split-unaligned-store"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mprefer-vector-width=128",
+          "-mmove-max=128",
+          "-mstore-max=128",
+          "-mavx256-split-unaligned-load",
+          "-mavx256-split-unaligned-store"
+        ],
+        "group": "small_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 48
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_backend_256": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mprefer-vector-width=256",
+          "-mmove-max=256",
+          "-mstore-max=256",
+          "-mno-avx256-split-unaligned-load",
+          "-mno-avx256-split-unaligned-store"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mprefer-vector-width=256",
+          "-mmove-max=256",
+          "-mstore-max=256",
+          "-mno-avx256-split-unaligned-load",
+          "-mno-avx256-split-unaligned-store"
+        ],
+        "group": "small_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_move_store_128": {
+        "binary_sha256": "6e986c156ec068aed2baa2610ad34ef29d212d2e3fa3aab41b898e4ab96f1115",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mmove-max=128",
+          "-mstore-max=128"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mmove-max=128",
+          "-mstore-max=128"
+        ],
+        "group": "small_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_move_store_256": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mmove-max=256",
+          "-mstore-max=256"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mmove-max=256",
+          "-mstore-max=256"
+        ],
+        "group": "small_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_move_store_512": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mmove-max=512",
+          "-mstore-max=512"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mmove-max=512",
+          "-mstore-max=512"
+        ],
+        "group": "small_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_prefer_width_128": {
+        "binary_sha256": "39c362a406d20ce9e3cac792b2802317fa67904a0c522d4eca104d64af58f15f",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mprefer-vector-width=128"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mprefer-vector-width=128"
+        ],
+        "group": "small_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 48
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_prefer_width_256": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mprefer-vector-width=256"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mprefer-vector-width=256"
+        ],
+        "group": "small_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_split_both_off": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mno-avx256-split-unaligned-load",
+          "-mno-avx256-split-unaligned-store"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mno-avx256-split-unaligned-load",
+          "-mno-avx256-split-unaligned-store"
+        ],
+        "group": "small_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_split_both_on": {
+        "binary_sha256": "d99e448bfc97a05e4caf2a3fe3475462186b97bcbda31ec3051d58506af478c3",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mavx256-split-unaligned-load",
+          "-mavx256-split-unaligned-store"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mavx256-split-unaligned-load",
+          "-mavx256-split-unaligned-store"
+        ],
+        "group": "small_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_sse2avx_on": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-msse2avx"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-msse2avx"
+        ],
+        "group": "small_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_avx128_optimal": {
+        "binary_sha256": "39c362a406d20ce9e3cac792b2802317fa67904a0c522d4eca104d64af58f15f",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=avx128_optimal"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=avx128_optimal"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 48
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_avx256_bundle": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=avx256_optimal,avx256_split_regs,avx256_move_by_pieces,avx256_store_by_pieces"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=avx256_optimal,avx256_split_regs,avx256_move_by_pieces,avx256_store_by_pieces"
+        ],
+        "group": "alderlake_tune_control_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_avx256_optimal": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=avx256_optimal"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=avx256_optimal"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_avx256_split_regs": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=avx256_split_regs"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=avx256_split_regs"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_move_m1_via_or": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=move_m1_via_or"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=move_m1_via_or"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_no_avx256_move_by_pieces": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=^avx256_move_by_pieces"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=^avx256_move_by_pieces"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_no_avx256_store_by_pieces": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=^avx256_store_by_pieces"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=^avx256_store_by_pieces"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_no_emit_vzeroupper": {
+        "binary_sha256": "a0fa00dee1332e070dcf8c0a740316804230097281763eecb89f76d52dc6e9ed",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=^emit_vzeroupper"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=^emit_vzeroupper"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_no_inter_unit_moves_from_vec": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=^inter_unit_moves_from_vec"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=^inter_unit_moves_from_vec"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_no_inter_unit_moves_to_vec": {
+        "binary_sha256": "ceca9c325532a42f4ab1b012447752c775042fe19e75725fc785be4c42b68eb8",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=^inter_unit_moves_to_vec"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=^inter_unit_moves_to_vec"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_no_movx": {
+        "binary_sha256": "bbfff2b683db6cfb8a52bf1b914742c7cd267b131351ea1a6fe9062b199d0e23",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=^movx"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=^movx"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_no_partial_reg_dependency": {
+        "binary_sha256": "2c71f0b6ef2cb73bdb650f7c39e29475e405c1ff3c59c228801fca19db279150",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=^partial_reg_dependency"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=^partial_reg_dependency"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_no_sse_partial_reg_dependency": {
+        "binary_sha256": "f82cd323105d46ab8033348c84a08e9526ef2e3132c257df7adf915f5b0dbae2",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=^sse_partial_reg_dependency"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=^sse_partial_reg_dependency"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_partial_bundle_off": {
+        "binary_sha256": "206f8b5ce820aba5f0d6370c2f89013fcddfe05d6dd7d72558dfdb5f85ddf25b",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=^partial_reg_dependency,^sse_partial_reg_dependency,^sse_partial_reg_converts_dependency,^sse_partial_reg_fp_converts_dependency"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=^partial_reg_dependency,^sse_partial_reg_dependency,^sse_partial_reg_converts_dependency,^sse_partial_reg_fp_converts_dependency"
+        ],
+        "group": "alderlake_tune_control_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_partial_reg_stall": {
+        "binary_sha256": "2c71f0b6ef2cb73bdb650f7c39e29475e405c1ff3c59c228801fca19db279150",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=partial_reg_stall"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=partial_reg_stall"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_tune_sse_split_regs": {
+        "binary_sha256": "7392f0a3b21fd12c0b2a733fd65bf87e9d641b715a5309147245e123cea9a950",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mtune-ctrl=sse_split_regs"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mtune-ctrl=sse_split_regs"
+        ],
+        "group": "alderlake_tune_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "alder_vzeroupper_off": {
+        "binary_sha256": "a0fa00dee1332e070dcf8c0a740316804230097281763eecb89f76d52dc6e9ed",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake",
+          "-mno-vzeroupper"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake",
+          "-mno-vzeroupper"
+        ],
+        "group": "small_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": false,
+        "status": "PASS"
+      },
+      "move_max_128": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mmove-max=128"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mmove-max=128"
+        ],
+        "group": "move_store_width",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "move_max_256": {
+        "binary_sha256": "df96a3bcd3033cef456c7247ee7a2c1eac9ba52c0a4e3130855e1093e1905b6e",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mmove-max=256"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mmove-max=256"
+        ],
+        "group": "move_store_width",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "move_max_512": {
+        "binary_sha256": "df96a3bcd3033cef456c7247ee7a2c1eac9ba52c0a4e3130855e1093e1905b6e",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mmove-max=512"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mmove-max=512"
+        ],
+        "group": "move_store_width",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "move_store_max_128": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mmove-max=128",
+          "-mstore-max=128"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mmove-max=128",
+          "-mstore-max=128"
+        ],
+        "group": "move_store_width_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "move_store_max_256": {
+        "binary_sha256": "df96a3bcd3033cef456c7247ee7a2c1eac9ba52c0a4e3130855e1093e1905b6e",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mmove-max=256",
+          "-mstore-max=256"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mmove-max=256",
+          "-mstore-max=256"
+        ],
+        "group": "move_store_width_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "move_store_max_512": {
+        "binary_sha256": "df96a3bcd3033cef456c7247ee7a2c1eac9ba52c0a4e3130855e1093e1905b6e",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mmove-max=512",
+          "-mstore-max=512"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mmove-max=512",
+          "-mstore-max=512"
+        ],
+        "group": "move_store_width_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "no_tree_loop_vectorize": {
+        "binary_sha256": "3e3e2dd103f425b3731ba4132086f0c5c483d3f613ed56eea4aa2e72c929ed36",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-fno-tree-loop-vectorize"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-fno-tree-loop-vectorize"
+        ],
+        "group": "vector_pass_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 24,
+          "start_mod_64": 24
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "no_tree_slp_vectorize": {
+        "binary_sha256": "1d429ebb3e2e3db590f03fa2d0900fba3a16675950892005d6e76e5a2c252a5f",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-fno-tree-slp-vectorize"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-fno-tree-slp-vectorize"
+        ],
+        "group": "vector_pass_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 48
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "no_tree_vectorize": {
+        "binary_sha256": "a7ad10ad72a5db025e09337fb6b448188b9dbe7163ab25f500df1c22cb985cbd",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-fno-tree-vectorize"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-fno-tree-vectorize"
+        ],
+        "group": "vector_pass_control",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 0,
+          "start_mod_64": 0
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "prefer128_very_cheap": {
+        "binary_sha256": "902f88f2cd99ae16106c7594ca7be8195e6a2ff6cb6cfe882bec775fedd7fb33",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mprefer-vector-width=128",
+          "-fvect-cost-model=very-cheap"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mprefer-vector-width=128",
+          "-fvect-cost-model=very-cheap"
+        ],
+        "group": "small_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 40
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "prefer256_unlimited": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mprefer-vector-width=256",
+          "-fvect-cost-model=unlimited"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mprefer-vector-width=256",
+          "-fvect-cost-model=unlimited"
+        ],
+        "group": "small_cross",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "prefer_avx128_alias": {
+        "binary_sha256": "b6adb98c5e7ed7e85ca186a7d5a85c06f076c6ac975e64e4c14248a5865ab8d9",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mprefer-avx128"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mprefer-avx128"
+        ],
+        "group": "preferred_vector_width",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 40
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "prefer_width_128": {
+        "binary_sha256": "b6adb98c5e7ed7e85ca186a7d5a85c06f076c6ac975e64e4c14248a5865ab8d9",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mprefer-vector-width=128"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mprefer-vector-width=128"
+        ],
+        "group": "preferred_vector_width",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 40
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "prefer_width_256": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mprefer-vector-width=256"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mprefer-vector-width=256"
+        ],
+        "group": "preferred_vector_width",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "prefer_width_512": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mprefer-vector-width=512"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mprefer-vector-width=512"
+        ],
+        "group": "preferred_vector_width",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "prefer_width_none": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mprefer-vector-width=none"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mprefer-vector-width=none"
+        ],
+        "group": "preferred_vector_width",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "reference_alderlake": {
+        "binary_sha256": "3011ca99a19b4270c55bfba0dabd979920b7d8e05200e7b9b6ddb0501534ad61",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mtune=alderlake"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mtune=alderlake"
+        ],
+        "group": "reference",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "8f1903a036aa9c2ba9bd066459e20fa43fea44ea5454d0a4a4bffe00f5358fa8",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 16,
+          "start_mod_64": 16
+        },
+        "loop_artifact_sha256": "9cd431f703e1bc04a8ba3cb7dc3d71c7ff21fd0495eb2b34411214d203ac116a",
+        "reference": true,
+        "status": "PASS"
+      },
+      "reference_generic": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [],
+        "group": "reference",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": true,
+        "status": "PASS"
+      },
+      "simd_cost_cheap": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-fsimd-cost-model=cheap"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-fsimd-cost-model=cheap"
+        ],
+        "group": "simd_cost_model",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "simd_cost_dynamic": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-fsimd-cost-model=dynamic"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-fsimd-cost-model=dynamic"
+        ],
+        "group": "simd_cost_model",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "simd_cost_unlimited": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-fsimd-cost-model=unlimited"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-fsimd-cost-model=unlimited"
+        ],
+        "group": "simd_cost_model",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "split_both_off": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mno-avx256-split-unaligned-load",
+          "-mno-avx256-split-unaligned-store"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mno-avx256-split-unaligned-load",
+          "-mno-avx256-split-unaligned-store"
+        ],
+        "group": "avx256_unaligned_split",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "split_both_on": {
+        "binary_sha256": "981322bbd2b0c6c5a61566bc258c8f9bbe72c9bf32cc5926d3737c5018177c94",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mavx256-split-unaligned-load",
+          "-mavx256-split-unaligned-store"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mavx256-split-unaligned-load",
+          "-mavx256-split-unaligned-store"
+        ],
+        "group": "avx256_unaligned_split",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "split_load_off": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mno-avx256-split-unaligned-load"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mno-avx256-split-unaligned-load"
+        ],
+        "group": "avx256_unaligned_split",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "split_load_on": {
+        "binary_sha256": "585e5365a402d55f081c3729432584601e983aba114e583d2921e47e24d20898",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mavx256-split-unaligned-load"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mavx256-split-unaligned-load"
+        ],
+        "group": "avx256_unaligned_split",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "split_store_off": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mno-avx256-split-unaligned-store"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mno-avx256-split-unaligned-store"
+        ],
+        "group": "avx256_unaligned_split",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "split_store_on": {
+        "binary_sha256": "e15ef11952421ddaae162a67229df184b8714de85bad646fbb065ccc7a6bfeef",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mavx256-split-unaligned-store"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mavx256-split-unaligned-store"
+        ],
+        "group": "avx256_unaligned_split",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "sse2avx_off": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mno-sse2avx"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mno-sse2avx"
+        ],
+        "group": "x86_encoding_policy",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "sse2avx_on": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-msse2avx"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-msse2avx"
+        ],
+        "group": "x86_encoding_policy",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "store_max_128": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mstore-max=128"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mstore-max=128"
+        ],
+        "group": "move_store_width",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "store_max_256": {
+        "binary_sha256": "df96a3bcd3033cef456c7247ee7a2c1eac9ba52c0a4e3130855e1093e1905b6e",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mstore-max=256"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mstore-max=256"
+        ],
+        "group": "move_store_width",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "store_max_512": {
+        "binary_sha256": "df96a3bcd3033cef456c7247ee7a2c1eac9ba52c0a4e3130855e1093e1905b6e",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mstore-max=512"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mstore-max=512"
+        ],
+        "group": "move_store_width",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "vect_cost_cheap": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-fvect-cost-model=cheap"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-fvect-cost-model=cheap"
+        ],
+        "group": "vector_cost_model",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "vect_cost_dynamic": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-fvect-cost-model=dynamic"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-fvect-cost-model=dynamic"
+        ],
+        "group": "vector_cost_model",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "vect_cost_unlimited": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-fvect-cost-model=unlimited"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-fvect-cost-model=unlimited"
+        ],
+        "group": "vector_cost_model",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "vect_cost_very_cheap": {
+        "binary_sha256": "c71d7fabd73fc2bb87131793b125e6af6dcd1fe74b84d2cb3c8e43a1d62e1a66",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-fvect-cost-model=very-cheap"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-fvect-cost-model=very-cheap"
+        ],
+        "group": "vector_cost_model",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "vzeroupper_off": {
+        "binary_sha256": "eb8408d22087dca52d662f6229f063ca295103ae8b485a85df3888eff95fd297",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mno-vzeroupper"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mno-vzeroupper"
+        ],
+        "group": "x86_encoding_policy",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 0,
+          "start_mod_32": 0,
+          "start_mod_64": 0
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      },
+      "vzeroupper_on": {
+        "binary_sha256": "f5b60a2544acefbbde0995c38f5dbe1868d236ad0339bd056844ff32ac354a01",
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000",
+          "-mvzeroupper"
+        ],
+        "exact_lanewise_audit_errors": [],
+        "extra_flags": [
+          "-mvzeroupper"
+        ],
+        "group": "x86_encoding_policy",
+        "llvm_mca": {
+          "alderlake_p_core_proxy": {
+            "block_rthroughput": 20.3,
+            "cycles_per_iteration": 100.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "alderlake",
+            "uops_per_iteration": 122.0
+          },
+          "znver2_cross_architecture_proxy": {
+            "block_rthroughput": 80.0,
+            "cycles_per_iteration": 180.03,
+            "instructions_per_iteration": 122.0,
+            "iterations": 100,
+            "model": "znver2",
+            "uops_per_iteration": 122.0
+          }
+        },
+        "loop": {
+          "bytes": 579,
+          "calls": 0,
+          "hot_memory_operands_excluding_lea": 0,
+          "instructions": 122,
+          "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+          "push_pop": 0,
+          "selected_mnemonics": {
+            "jne": 1,
+            "sub": 1,
+            "vpaddq": 20,
+            "vpor": 20,
+            "vpshufb": 20,
+            "vpsllvq": 20,
+            "vpsrlvq": 20,
+            "vpxor": 20
+          },
+          "start_mod_16": 8,
+          "start_mod_32": 8,
+          "start_mod_64": 8
+        },
+        "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+        "reference": false,
+        "status": "PASS"
+      }
+    },
+    "counts": {
+      "PASS": 65
+    },
+    "unique_complete_loop_alignment_classes": 8,
+    "unique_complete_loop_hashes": 2
+  },
+  "toolchain": {
+    "binutils": "GNU objdump (GNU Binutils for Debian) 2.40",
+    "compiler": "gcc (GCC) 13.3.0",
+    "container": {
+      "image": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "local_image_id": "sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "manifest_digest_sha256": "1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+      "network": "none",
+      "repository_mount": "read-only"
+    }
+  },
+  "unique_stream_representatives": [
+    "reference_generic",
+    "reference_alderlake"
+  ],
+  "verification": {
+    "alder_backend_128": {
+      "build_stderr": "",
+      "candidate_compile_returncode": 0,
+      "execution_returncode": 0,
+      "link_returncode": 0,
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+      "verifier_compile_returncode": 0
+    },
+    "alder_tune_no_emit_vzeroupper": {
+      "build_stderr": "",
+      "candidate_compile_returncode": 0,
+      "execution_returncode": 0,
+      "link_returncode": 0,
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+      "verifier_compile_returncode": 0
+    },
+    "no_tree_loop_vectorize": {
+      "build_stderr": "",
+      "candidate_compile_returncode": 0,
+      "execution_returncode": 0,
+      "link_returncode": 0,
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+      "verifier_compile_returncode": 0
+    },
+    "no_tree_slp_vectorize": {
+      "build_stderr": "",
+      "candidate_compile_returncode": 0,
+      "execution_returncode": 0,
+      "link_returncode": 0,
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+      "verifier_compile_returncode": 0
+    },
+    "no_tree_vectorize": {
+      "build_stderr": "",
+      "candidate_compile_returncode": 0,
+      "execution_returncode": 0,
+      "link_returncode": 0,
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+      "verifier_compile_returncode": 0
+    },
+    "prefer128_very_cheap": {
+      "build_stderr": "",
+      "candidate_compile_returncode": 0,
+      "execution_returncode": 0,
+      "link_returncode": 0,
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+      "verifier_compile_returncode": 0
+    },
+    "reference_alderlake": {
+      "build_stderr": "",
+      "candidate_compile_returncode": 0,
+      "execution_returncode": 0,
+      "link_returncode": 0,
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+      "verifier_compile_returncode": 0
+    },
+    "reference_generic": {
+      "build_stderr": "",
+      "candidate_compile_returncode": 0,
+      "execution_returncode": 0,
+      "link_returncode": 0,
+      "random_cases": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3",
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n",
+      "verifier_compile_returncode": 0
+    }
+  }
+}

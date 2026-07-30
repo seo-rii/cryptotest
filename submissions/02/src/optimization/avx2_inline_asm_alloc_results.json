@@ -1,0 +1,1809 @@
+{
+  "cases": {
+    "asm_allocator_one_scratch_constants_first": {
+      "commutative_modrm_value": false,
+      "compile": {
+        "candidate_object_build_returncode": 0,
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "full_build_returncode": 0,
+        "link_returncode": 0
+      },
+      "delta_vs_intrinsics_baseline": {
+        "alderlake_proxy_cycles": 0.060000000000002274,
+        "bytes": 26,
+        "instructions": 2,
+        "memory_operands_excluding_lea": 2,
+        "znver2_proxy_cycles": 0.020000000000010232
+      },
+      "description": "allocator-chosen registers, one destructive-shift scratch, constants listed before controls",
+      "input_order": [
+        "xor_forward",
+        "add_reverse",
+        "xor_reverse",
+        "add_forward",
+        "left_forward",
+        "right_forward",
+        "left_reverse",
+        "right_reverse",
+        "byte_swap"
+      ],
+      "kind": "asm",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.7,
+          "cycles_per_iteration": 100.09,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 124.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.05,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 124.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "84334dbe6900209bd8c5ca1a7c599d793852a628dde21d1eaedd7d680ced4540",
+        "bytes": 605,
+        "calls": 0,
+        "instructions": 124,
+        "memory_operands_excluding_lea": 2,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vmovdqa": 2,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalized_sha256": "6af471b374bd9dce5abe926997e2d5c6e170ff103d97e097c81e70d7233c0aac",
+        "push_pop": 0,
+        "start_mod_16": 8,
+        "start_mod_32": 24,
+        "start_mod_64": 56,
+        "text_bytes": 6278
+      },
+      "loop_artifact_sha256": "1b20f4083ae4f440a5058b6588cebc1ca7464bb83181b87378d6d56681532a9f",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+        "returncode": 0,
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_cases": 1,
+        "validated_stdout_markers": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ]
+      },
+      "pins": {},
+      "scratch_count": 1,
+      "sha256": "ca9fdd9a1b854011669767b1912ee67ae4a093ca05312f4cb23cb542ae38e282",
+      "status": "AUDIT_FAIL",
+      "structural_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2",
+        "loop_instructions: expected 122, got 124"
+      ],
+      "supplied_default_gcc": {
+        "build_returncode": 0,
+        "build_stderr": "",
+        "flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra"
+        ],
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+          "returncode": 0,
+          "status": "PASS",
+          "stderr": "",
+          "twenty_round_cases": 1,
+          "validated_stdout_markers": [
+            "one-round testvector verification: OK (1000 pairs checked)",
+            "20-round testvector verification: OK"
+          ]
+        }
+      },
+      "temporary_path": "<temporary>/variants/asm_allocator_one_scratch_constants_first.c",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "returncode": 0,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stderr": "",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      }
+    },
+    "asm_allocator_one_scratch_controls_first": {
+      "commutative_modrm_value": false,
+      "compile": {
+        "candidate_object_build_returncode": 0,
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "full_build_returncode": 0,
+        "link_returncode": 0
+      },
+      "delta_vs_intrinsics_baseline": {
+        "alderlake_proxy_cycles": 0.060000000000002274,
+        "bytes": 26,
+        "instructions": 2,
+        "memory_operands_excluding_lea": 2,
+        "znver2_proxy_cycles": 0.020000000000010232
+      },
+      "description": "allocator-chosen registers, one destructive-shift scratch, controls listed before constants",
+      "input_order": [
+        "left_forward",
+        "right_forward",
+        "left_reverse",
+        "right_reverse",
+        "byte_swap",
+        "xor_forward",
+        "add_reverse",
+        "xor_reverse",
+        "add_forward"
+      ],
+      "kind": "asm",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.7,
+          "cycles_per_iteration": 100.09,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 124.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.05,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 124.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "7b4be9464b07f3d74f63e7e30b5bbccffc9473e568be61bca0f22dddf65fce56",
+        "bytes": 605,
+        "calls": 0,
+        "instructions": 124,
+        "memory_operands_excluding_lea": 2,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vmovdqa": 2,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalized_sha256": "6af471b374bd9dce5abe926997e2d5c6e170ff103d97e097c81e70d7233c0aac",
+        "push_pop": 0,
+        "start_mod_16": 8,
+        "start_mod_32": 24,
+        "start_mod_64": 56,
+        "text_bytes": 6298
+      },
+      "loop_artifact_sha256": "1b20f4083ae4f440a5058b6588cebc1ca7464bb83181b87378d6d56681532a9f",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+        "returncode": 0,
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_cases": 1,
+        "validated_stdout_markers": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ]
+      },
+      "pins": {},
+      "scratch_count": 1,
+      "sha256": "1087e4a53c38fc34a63d530f7ff3e71f88bf1e00097eeecff027cdb98ef66ce7",
+      "status": "AUDIT_FAIL",
+      "structural_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2",
+        "loop_instructions: expected 122, got 124"
+      ],
+      "supplied_default_gcc": {
+        "build_returncode": 0,
+        "build_stderr": "",
+        "flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra"
+        ],
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+          "returncode": 0,
+          "status": "PASS",
+          "stderr": "",
+          "twenty_round_cases": 1,
+          "validated_stdout_markers": [
+            "one-round testvector verification: OK (1000 pairs checked)",
+            "20-round testvector verification: OK"
+          ]
+        }
+      },
+      "temporary_path": "<temporary>/variants/asm_allocator_one_scratch_controls_first.c",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "returncode": 0,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stderr": "",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      }
+    },
+    "asm_allocator_two_scratch": {
+      "commutative_modrm_value": false,
+      "compile": {
+        "candidate_object_build_returncode": 0,
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "full_build_returncode": 0,
+        "link_returncode": 0
+      },
+      "delta_vs_intrinsics_baseline": {
+        "alderlake_proxy_cycles": 0.060000000000002274,
+        "bytes": 26,
+        "instructions": 2,
+        "memory_operands_excluding_lea": 2,
+        "znver2_proxy_cycles": 0.020000000000010232
+      },
+      "description": "let GCC allocate every operand while preserving the original two-scratch dataflow",
+      "input_order": [
+        "xor_forward",
+        "add_reverse",
+        "xor_reverse",
+        "add_forward",
+        "left_forward",
+        "right_forward",
+        "left_reverse",
+        "right_reverse",
+        "byte_swap"
+      ],
+      "kind": "asm",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.7,
+          "cycles_per_iteration": 100.09,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 124.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.05,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 124.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "ac2d359d1ff07a05f6f7b470c2bdf002550e2a47a828d830669eb107269a229a",
+        "bytes": 605,
+        "calls": 0,
+        "instructions": 124,
+        "memory_operands_excluding_lea": 2,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vmovdqa": 2,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalized_sha256": "66441dcf51dde2d9f999c1c311c0c5ff159968fb360ba44d16a3dd82248febf8",
+        "push_pop": 0,
+        "start_mod_16": 8,
+        "start_mod_32": 24,
+        "start_mod_64": 56,
+        "text_bytes": 6278
+      },
+      "loop_artifact_sha256": "f2964c88e345b9aa83511f1ebd1670109e0b4cb822c21031e2fc88faf781c780",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+        "returncode": 0,
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_cases": 1,
+        "validated_stdout_markers": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ]
+      },
+      "pins": {},
+      "scratch_count": 2,
+      "sha256": "62a486ab53712019cd51c795fdbf06f6f7646d3339801370d1219d9a9dadae7b",
+      "status": "AUDIT_FAIL",
+      "structural_errors": [
+        "memory_operands_excluding_lea: expected 0, got 2",
+        "loop_instructions: expected 122, got 124"
+      ],
+      "supplied_default_gcc": {
+        "build_returncode": 0,
+        "build_stderr": "",
+        "flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra"
+        ],
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+          "returncode": 0,
+          "status": "PASS",
+          "stderr": "",
+          "twenty_round_cases": 1,
+          "validated_stdout_markers": [
+            "one-round testvector verification: OK (1000 pairs checked)",
+            "20-round testvector verification: OK"
+          ]
+        }
+      },
+      "temporary_path": "<temporary>/variants/asm_allocator_two_scratch.c",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "returncode": 0,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stderr": "",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      }
+    },
+    "asm_fixed_low_constants_high_value_one_scratch": {
+      "commutative_modrm_value": false,
+      "compile": {
+        "candidate_object_build_returncode": 0,
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "full_build_returncode": 0,
+        "link_returncode": 0
+      },
+      "delta_vs_intrinsics_baseline": {
+        "alderlake_proxy_cycles": 0.060000000000002274,
+        "bytes": -16,
+        "instructions": 2,
+        "memory_operands_excluding_lea": 1,
+        "znver2_proxy_cycles": 0.020000000000010232
+      },
+      "description": "one scratch; keep simple-op ModRM sources low while moving the read/write state to ymm15",
+      "input_order": [
+        "xor_forward",
+        "add_reverse",
+        "xor_reverse",
+        "add_forward",
+        "left_forward",
+        "right_forward",
+        "left_reverse",
+        "right_reverse",
+        "byte_swap"
+      ],
+      "kind": "asm",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.7,
+          "cycles_per_iteration": 100.09,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 124.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.05,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 124.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "9af7b32f2574ccb52b3330318fff66cdd40ebcb877536543e69d10929be4bd83",
+        "bytes": 563,
+        "calls": 0,
+        "instructions": 124,
+        "memory_operands_excluding_lea": 1,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vmovdqa": 1,
+          "vpaddq": 20,
+          "vpermq": 1,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalized_sha256": "3e1c954cd41b4dd0a0f6a0be3705867d61155e81d1c770e9f5ba77fab0fe2a0c",
+        "push_pop": 0,
+        "start_mod_16": 0,
+        "start_mod_32": 16,
+        "start_mod_64": 48,
+        "text_bytes": 6198
+      },
+      "loop_artifact_sha256": "4808267fa2224a02c669cdef71235fc9d6ce958b8dc9dc593dd054db2bee7952",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+        "returncode": 0,
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_cases": 1,
+        "validated_stdout_markers": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ]
+      },
+      "pins": {
+        "add_forward": 3,
+        "add_reverse": 1,
+        "byte_swap": 12,
+        "left_forward": 8,
+        "left_reverse": 10,
+        "right_forward": 9,
+        "right_reverse": 11,
+        "scratch": 4,
+        "value": 15,
+        "xor_forward": 0,
+        "xor_reverse": 2
+      },
+      "scratch_count": 1,
+      "sha256": "4ddfed9449b4e36166235eb70f518c04a0de5e5d0dc0021647a65c893b037d54",
+      "status": "AUDIT_FAIL",
+      "structural_errors": [
+        "memory_operands_excluding_lea: expected 0, got 1",
+        "loop_instructions: expected 122, got 124"
+      ],
+      "supplied_default_gcc": {
+        "build_returncode": 0,
+        "build_stderr": "",
+        "flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra"
+        ],
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+          "returncode": 0,
+          "status": "PASS",
+          "stderr": "",
+          "twenty_round_cases": 1,
+          "validated_stdout_markers": [
+            "one-round testvector verification: OK (1000 pairs checked)",
+            "20-round testvector verification: OK"
+          ]
+        }
+      },
+      "temporary_path": "<temporary>/variants/asm_fixed_low_constants_high_value_one_scratch.c",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "returncode": 0,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stderr": "",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      }
+    },
+    "asm_fixed_low_constants_mid_value_one_scratch": {
+      "commutative_modrm_value": false,
+      "compile": {
+        "candidate_object_build_returncode": 0,
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "full_build_returncode": 0,
+        "link_returncode": 0
+      },
+      "delta_vs_intrinsics_baseline": {
+        "alderlake_proxy_cycles": 0.060000000000002274,
+        "bytes": -16,
+        "instructions": 2,
+        "memory_operands_excluding_lea": 1,
+        "znver2_proxy_cycles": 0.020000000000010232
+      },
+      "description": "same encoding-aware layout with state in the last low register",
+      "input_order": [
+        "xor_forward",
+        "add_reverse",
+        "xor_reverse",
+        "add_forward",
+        "left_forward",
+        "right_forward",
+        "left_reverse",
+        "right_reverse",
+        "byte_swap"
+      ],
+      "kind": "asm",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.7,
+          "cycles_per_iteration": 100.09,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 124.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.05,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 124.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "780ebb81bd5afc5a56de31a451e1ea6a040ed019bd7712db9e8642f22727d0b8",
+        "bytes": 563,
+        "calls": 0,
+        "instructions": 124,
+        "memory_operands_excluding_lea": 1,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vmovdqa": 1,
+          "vpaddq": 20,
+          "vpermq": 1,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalized_sha256": "b9ccf122a1a726b5868c8633be1700e12f28a2cd7f312b64a56c5e2a5a2ab0ce",
+        "push_pop": 0,
+        "start_mod_16": 0,
+        "start_mod_32": 16,
+        "start_mod_64": 48,
+        "text_bytes": 6198
+      },
+      "loop_artifact_sha256": "a4c9d9e27faa525ee3f88856b2439b2024d92d7f7177ac206cd409b027c8a4db",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+        "returncode": 0,
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_cases": 1,
+        "validated_stdout_markers": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ]
+      },
+      "pins": {
+        "add_forward": 3,
+        "add_reverse": 1,
+        "byte_swap": 12,
+        "left_forward": 8,
+        "left_reverse": 10,
+        "right_forward": 9,
+        "right_reverse": 11,
+        "scratch": 4,
+        "value": 7,
+        "xor_forward": 0,
+        "xor_reverse": 2
+      },
+      "scratch_count": 1,
+      "sha256": "62a144f7090bbe97dd50466766a1762a980cc4c2d774c83c675198650a4a798c",
+      "status": "AUDIT_FAIL",
+      "structural_errors": [
+        "memory_operands_excluding_lea: expected 0, got 1",
+        "loop_instructions: expected 122, got 124"
+      ],
+      "supplied_default_gcc": {
+        "build_returncode": 0,
+        "build_stderr": "",
+        "flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra"
+        ],
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+          "returncode": 0,
+          "status": "PASS",
+          "stderr": "",
+          "twenty_round_cases": 1,
+          "validated_stdout_markers": [
+            "one-round testvector verification: OK (1000 pairs checked)",
+            "20-round testvector verification: OK"
+          ]
+        }
+      },
+      "temporary_path": "<temporary>/variants/asm_fixed_low_constants_mid_value_one_scratch.c",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "returncode": 0,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stderr": "",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      }
+    },
+    "asm_fixed_low_data_high_controls_one_scratch": {
+      "commutative_modrm_value": false,
+      "compile": {
+        "candidate_object_build_returncode": 0,
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "full_build_returncode": 0,
+        "link_returncode": 0
+      },
+      "delta_vs_intrinsics_baseline": {
+        "alderlake_proxy_cycles": 0.060000000000002274,
+        "bytes": -16,
+        "instructions": 2,
+        "memory_operands_excluding_lea": 1,
+        "znver2_proxy_cycles": 0.020000000000010232
+      },
+      "description": "one scratch; keep ModRM sources of VPOR/VPXOR/VPADDQ low and put VEX3-only shift/shuffle controls high",
+      "input_order": [
+        "xor_forward",
+        "add_reverse",
+        "xor_reverse",
+        "add_forward",
+        "left_forward",
+        "right_forward",
+        "left_reverse",
+        "right_reverse",
+        "byte_swap"
+      ],
+      "kind": "asm",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.7,
+          "cycles_per_iteration": 100.09,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 124.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.05,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 124.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "dcb43cb82ea71357e42fb177ae5c1f582db2e81267ea626644cbbab73decd077",
+        "bytes": 563,
+        "calls": 0,
+        "instructions": 124,
+        "memory_operands_excluding_lea": 1,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vmovdqa": 1,
+          "vpaddq": 20,
+          "vpermq": 1,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalized_sha256": "c2a963dd3c779a72e2252b603b3668a2df8914a8c9a708f4f3e836b4d709a37b",
+        "push_pop": 0,
+        "start_mod_16": 0,
+        "start_mod_32": 16,
+        "start_mod_64": 48,
+        "text_bytes": 6194
+      },
+      "loop_artifact_sha256": "112c2abe52c35dfc521aee093d5f5de0af30a6be0ef4993137affb21bf89d52f",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+        "returncode": 0,
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_cases": 1,
+        "validated_stdout_markers": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ]
+      },
+      "pins": {
+        "add_forward": 4,
+        "add_reverse": 2,
+        "byte_swap": 12,
+        "left_forward": 8,
+        "left_reverse": 10,
+        "right_forward": 9,
+        "right_reverse": 11,
+        "scratch": 5,
+        "value": 0,
+        "xor_forward": 1,
+        "xor_reverse": 3
+      },
+      "scratch_count": 1,
+      "sha256": "0ee729d75bab976ca9d11ef6f9d581b1aec231b56698ad65f4b24015b9ecaacf",
+      "status": "AUDIT_FAIL",
+      "structural_errors": [
+        "memory_operands_excluding_lea: expected 0, got 1",
+        "loop_instructions: expected 122, got 124"
+      ],
+      "supplied_default_gcc": {
+        "build_returncode": 0,
+        "build_stderr": "",
+        "flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra"
+        ],
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+          "returncode": 0,
+          "status": "PASS",
+          "stderr": "",
+          "twenty_round_cases": 1,
+          "validated_stdout_markers": [
+            "one-round testvector verification: OK (1000 pairs checked)",
+            "20-round testvector verification: OK"
+          ]
+        }
+      },
+      "temporary_path": "<temporary>/variants/asm_fixed_low_data_high_controls_one_scratch.c",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "returncode": 0,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stderr": "",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      }
+    },
+    "asm_fixed_original_two_scratch": {
+      "commutative_modrm_value": false,
+      "compile": {
+        "candidate_object_build_returncode": 0,
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "full_build_returncode": 0,
+        "link_returncode": 0
+      },
+      "delta_vs_intrinsics_baseline": {
+        "alderlake_proxy_cycles": 0.060000000000002274,
+        "bytes": -16,
+        "instructions": 2,
+        "memory_operands_excluding_lea": 1,
+        "znver2_proxy_cycles": 0.020000000000010232
+      },
+      "description": "exact two-scratch low-data/high-control fixed-register shape; reproduces the reload that motivated this screen",
+      "input_order": [
+        "xor_forward",
+        "add_reverse",
+        "xor_reverse",
+        "add_forward",
+        "left_forward",
+        "right_forward",
+        "left_reverse",
+        "right_reverse",
+        "byte_swap"
+      ],
+      "kind": "asm",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.7,
+          "cycles_per_iteration": 100.09,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 124.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.05,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 124.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "d097199a9ee076f8d7083c04c60e9abf26a23673cd8f164c44512c9f8260fab8",
+        "bytes": 563,
+        "calls": 0,
+        "instructions": 124,
+        "memory_operands_excluding_lea": 1,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vmovdqa": 1,
+          "vpaddq": 20,
+          "vpermq": 1,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalized_sha256": "5259e834952cc48ec02dc0126c2088120818e950858b7e15a7fb97c29157cae4",
+        "push_pop": 0,
+        "start_mod_16": 0,
+        "start_mod_32": 16,
+        "start_mod_64": 48,
+        "text_bytes": 6194
+      },
+      "loop_artifact_sha256": "bb162e7aaedb1619b5ee2c76b49344c2ea059f5b1a2d8629220e7b71e4ff2d67",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+        "returncode": 0,
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_cases": 1,
+        "validated_stdout_markers": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ]
+      },
+      "pins": {
+        "add_forward": 4,
+        "add_reverse": 2,
+        "byte_swap": 12,
+        "left_forward": 8,
+        "left_reverse": 10,
+        "right_forward": 9,
+        "right_reverse": 11,
+        "shift_left": 5,
+        "shift_right": 6,
+        "value": 0,
+        "xor_forward": 1,
+        "xor_reverse": 3
+      },
+      "scratch_count": 2,
+      "sha256": "9820b819d3c5552e88f3d22ded3b85551f30ffba680b328a932ee89fe45b432d",
+      "status": "AUDIT_FAIL",
+      "structural_errors": [
+        "memory_operands_excluding_lea: expected 0, got 1",
+        "loop_instructions: expected 122, got 124"
+      ],
+      "supplied_default_gcc": {
+        "build_returncode": 0,
+        "build_stderr": "",
+        "flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra"
+        ],
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+          "returncode": 0,
+          "status": "PASS",
+          "stderr": "",
+          "twenty_round_cases": 1,
+          "validated_stdout_markers": [
+            "one-round testvector verification: OK (1000 pairs checked)",
+            "20-round testvector verification: OK"
+          ]
+        }
+      },
+      "temporary_path": "<temporary>/variants/asm_fixed_original_two_scratch.c",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "returncode": 0,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stderr": "",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      }
+    },
+    "asm_pin_low_data_one_scratch": {
+      "commutative_modrm_value": false,
+      "compile": {
+        "candidate_object_build_returncode": 0,
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "full_build_returncode": 0,
+        "link_returncode": 0
+      },
+      "delta_vs_intrinsics_baseline": {
+        "alderlake_proxy_cycles": 0.060000000000002274,
+        "bytes": 4,
+        "instructions": 2,
+        "memory_operands_excluding_lea": 1,
+        "znver2_proxy_cycles": 0.020000000000010232
+      },
+      "description": "pin state and XOR/add constants low; allocate scratch and shift/shuffle controls",
+      "input_order": [
+        "xor_forward",
+        "add_reverse",
+        "xor_reverse",
+        "add_forward",
+        "left_forward",
+        "right_forward",
+        "left_reverse",
+        "right_reverse",
+        "byte_swap"
+      ],
+      "kind": "asm",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.7,
+          "cycles_per_iteration": 100.09,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 124.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.05,
+          "instructions_per_iteration": 124.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 124.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "27da8993c833e7038a920494fd32245f9ba3c4209bb6b25b2b5261bb831183fd",
+        "bytes": 583,
+        "calls": 0,
+        "instructions": 124,
+        "memory_operands_excluding_lea": 1,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vmovdqa": 1,
+          "vpaddq": 20,
+          "vpermq": 1,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalized_sha256": "021b5cdd193914156942c8acbc247aa2c83a6c00e23011ff086ce6e1677b0576",
+        "push_pop": 0,
+        "start_mod_16": 0,
+        "start_mod_32": 16,
+        "start_mod_64": 48,
+        "text_bytes": 6246
+      },
+      "loop_artifact_sha256": "9bb57bd0b2163bc0635ffc917d730d899ebb3c36aa084db363bb0247f9717658",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+        "returncode": 0,
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_cases": 1,
+        "validated_stdout_markers": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ]
+      },
+      "pins": {
+        "add_forward": 4,
+        "add_reverse": 2,
+        "value": 0,
+        "xor_forward": 1,
+        "xor_reverse": 3
+      },
+      "scratch_count": 1,
+      "sha256": "1a847ebe643306a988ab535e011872326272a992b1f2f61d5e285ecf3a18c05b",
+      "status": "AUDIT_FAIL",
+      "structural_errors": [
+        "memory_operands_excluding_lea: expected 0, got 1",
+        "loop_instructions: expected 122, got 124"
+      ],
+      "supplied_default_gcc": {
+        "build_returncode": 0,
+        "build_stderr": "",
+        "flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra"
+        ],
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+          "returncode": 0,
+          "status": "PASS",
+          "stderr": "",
+          "twenty_round_cases": 1,
+          "validated_stdout_markers": [
+            "one-round testvector verification: OK (1000 pairs checked)",
+            "20-round testvector verification: OK"
+          ]
+        }
+      },
+      "temporary_path": "<temporary>/variants/asm_pin_low_data_one_scratch.c",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "returncode": 0,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stderr": "",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      }
+    },
+    "asm_pin_value_one_scratch": {
+      "commutative_modrm_value": false,
+      "compile": {
+        "candidate_object_build_returncode": 0,
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "full_build_returncode": 0,
+        "link_returncode": 0
+      },
+      "delta_vs_intrinsics_baseline": {
+        "alderlake_proxy_cycles": 0.0,
+        "bytes": -10,
+        "instructions": 0,
+        "memory_operands_excluding_lea": 0,
+        "znver2_proxy_cycles": 0.0
+      },
+      "description": "pin only the changing state to ymm0",
+      "input_order": [
+        "xor_forward",
+        "add_reverse",
+        "xor_reverse",
+        "add_forward",
+        "left_forward",
+        "right_forward",
+        "left_reverse",
+        "right_reverse",
+        "byte_swap"
+      ],
+      "kind": "asm",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.3,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 122.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 122.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "8a590f139843b63c096a85f19739dff6d77afaa041803970fee8df6f59882af7",
+        "bytes": 569,
+        "calls": 0,
+        "instructions": 122,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalized_sha256": "0ada8ea58890adea7e23cdf2226754737ee9e7a05a2f9b238d25d1bad9577af1",
+        "push_pop": 0,
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6246
+      },
+      "loop_artifact_sha256": "6b1a78086fd1e74b56c93d286395d3ece9fef183d2f8c16c9f5ce3d68b434206",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+        "returncode": 0,
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_cases": 1,
+        "validated_stdout_markers": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ]
+      },
+      "pins": {
+        "value": 0
+      },
+      "scratch_count": 1,
+      "sha256": "778187b61a0a769cb012e5205edb5782df2c25418681651cb76d05739198307c",
+      "status": "PASS",
+      "structural_errors": [],
+      "supplied_default_gcc": {
+        "build_returncode": 0,
+        "build_stderr": "",
+        "flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra"
+        ],
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+          "returncode": 0,
+          "status": "PASS",
+          "stderr": "",
+          "twenty_round_cases": 1,
+          "validated_stdout_markers": [
+            "one-round testvector verification: OK (1000 pairs checked)",
+            "20-round testvector verification: OK"
+          ]
+        }
+      },
+      "temporary_path": "<temporary>/variants/asm_pin_value_one_scratch.c",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "returncode": 0,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stderr": "",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      }
+    },
+    "asm_pin_value_one_scratch_commutative": {
+      "commutative_modrm_value": true,
+      "compile": {
+        "candidate_object_build_returncode": 0,
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "full_build_returncode": 0,
+        "link_returncode": 0
+      },
+      "delta_vs_intrinsics_baseline": {
+        "alderlake_proxy_cycles": 0.0,
+        "bytes": -30,
+        "instructions": 0,
+        "memory_operands_excluding_lea": 0,
+        "znver2_proxy_cycles": 0.0
+      },
+      "description": "pin only the changing state to ymm0, then commute VPOR/VPXOR/VPADDQ so that state occupies the ModRM source",
+      "input_order": [
+        "xor_forward",
+        "add_reverse",
+        "xor_reverse",
+        "add_forward",
+        "left_forward",
+        "right_forward",
+        "left_reverse",
+        "right_reverse",
+        "byte_swap"
+      ],
+      "kind": "asm",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.3,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 122.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 122.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "f8f9f7a6dc0d7376448cd89e870fe53578f24a361b63a606402b45217476a57d",
+        "bytes": 549,
+        "calls": 0,
+        "instructions": 122,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalized_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+        "push_pop": 0,
+        "start_mod_16": 0,
+        "start_mod_32": 0,
+        "start_mod_64": 0,
+        "text_bytes": 6210
+      },
+      "loop_artifact_sha256": "ae85e5b3d92ff3e61ee58b2d4b90b5a2d59b150bbb67a4cd3765fe66ab18be1a",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+        "returncode": 0,
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_cases": 1,
+        "validated_stdout_markers": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ]
+      },
+      "pins": {
+        "value": 0
+      },
+      "scratch_count": 1,
+      "sha256": "c6f43f26dcf1bb0cd83d51dd52495e264c6b8303c0b06e89cb84b1cae62d45dc",
+      "status": "PASS",
+      "structural_errors": [],
+      "supplied_default_gcc": {
+        "build_returncode": 0,
+        "build_stderr": "",
+        "flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra"
+        ],
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+          "returncode": 0,
+          "status": "PASS",
+          "stderr": "",
+          "twenty_round_cases": 1,
+          "validated_stdout_markers": [
+            "one-round testvector verification: OK (1000 pairs checked)",
+            "20-round testvector verification: OK"
+          ]
+        }
+      },
+      "temporary_path": "<temporary>/variants/asm_pin_value_one_scratch_commutative.c",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "returncode": 0,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stderr": "",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      }
+    },
+    "intrinsics_baseline": {
+      "commutative_modrm_value": false,
+      "compile": {
+        "candidate_object_build_returncode": 0,
+        "effective_flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-mavx2",
+          "-DCH2_SIMD_INLINE",
+          "-finline-limit=2000"
+        ],
+        "full_build_returncode": 0,
+        "link_returncode": 0
+      },
+      "delta_vs_intrinsics_baseline": {
+        "alderlake_proxy_cycles": 0.0,
+        "bytes": 0,
+        "instructions": 0,
+        "memory_operands_excluding_lea": 0,
+        "znver2_proxy_cycles": 0.0
+      },
+      "description": "unchanged lane-wise AVX2 intrinsic implementation",
+      "input_order": [],
+      "kind": "baseline",
+      "llvm_mca": {
+        "alderlake_p_core_proxy": {
+          "block_rthroughput": 20.3,
+          "cycles_per_iteration": 100.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "alderlake",
+          "uops_per_iteration": 122.0
+        },
+        "znver2_cross_architecture_proxy": {
+          "block_rthroughput": 80.0,
+          "cycles_per_iteration": 180.03,
+          "instructions_per_iteration": 122.0,
+          "iterations": 100,
+          "model": "znver2",
+          "uops_per_iteration": 122.0
+        }
+      },
+      "loop": {
+        "binary_sha256": "020769d5d8450c5a6291200f4c5b5f3aa0329a8be7a2cafc30963171ca42a7e3",
+        "bytes": 579,
+        "calls": 0,
+        "instructions": 122,
+        "memory_operands_excluding_lea": 0,
+        "mnemonics": {
+          "jne": 1,
+          "sub": 1,
+          "vpaddq": 20,
+          "vpor": 20,
+          "vpshufb": 20,
+          "vpsllvq": 20,
+          "vpsrlvq": 20,
+          "vpxor": 20
+        },
+        "normalized_sha256": "08dba77a6d64345cec916aba4cc24f03b97e688e0da88cf476a9271ef896c10d",
+        "push_pop": 0,
+        "start_mod_16": 8,
+        "start_mod_32": 8,
+        "start_mod_64": 8,
+        "text_bytes": 6253
+      },
+      "loop_artifact_sha256": "a9d737bd7616cc5e3e22d233eea2cdc5496c5fd96ba162b5ad60d65b6e6f0b1e",
+      "official_vectors": {
+        "one_round_pairs": 1000,
+        "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+        "returncode": 0,
+        "status": "PASS",
+        "stderr": "",
+        "twenty_round_cases": 1,
+        "validated_stdout_markers": [
+          "one-round testvector verification: OK (1000 pairs checked)",
+          "20-round testvector verification: OK"
+        ]
+      },
+      "pins": {},
+      "scratch_count": null,
+      "sha256": "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751",
+      "status": "PASS",
+      "structural_errors": [],
+      "supplied_default_gcc": {
+        "build_returncode": 1,
+        "build_stderr": "/variants/intrinsics_baseline.c: In function \u2018keep_in_vector_register\u2019:\n/variants/intrinsics_baseline.c:114:1: warning: AVX vector return without AVX enabled changes the ABI [-Wpsabi]\n  114 | static inline __m256i keep_in_vector_register(__m256i value) {\n      | ^~~~~~\n/variants/intrinsics_baseline.c:114:23: note: the ABI for passing parameters with 32-byte alignment has changed in GCC 4.6\n  114 | static inline __m256i keep_in_vector_register(__m256i value) {\n      |                       ^~~~~~~~~~~~~~~~~~~~~~~\nIn file included from /usr/local/lib/gcc/x86_64-linux-gnu/13.3.0/include/immintrin.h:51,\n                 from /variants/intrinsics_baseline.c:1:\n/usr/local/lib/gcc/x86_64-linux-gnu/13.3.0/include/avx2intrin.h: In function \u2018rotl64_lanes_avx2\u2019:\n/usr/local/lib/gcc/x86_64-linux-gnu/13.3.0/include/avx2intrin.h:574:1: error: inlining failed in call to \u2018always_inline\u2019 \u2018_mm256_or_si256\u2019: target specific option mismatch\n  574 | _mm256_or_si256 (__m256i __A, __m256i __B)\n      | ^~~~~~~~~~~~~~~\n/variants/intrinsics_baseline.c:122:12: note: called from here\n  122 |     return _mm256_or_si256(_mm256_sllv_epi64(value, left),\n      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n  123 |                            _mm256_srlv_epi64(value, right));\n      |                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/usr/local/lib/gcc/x86_64-linux-gnu/13.3.0/include/avx2intrin.h:1195:1: error: inlining failed in call to \u2018always_inline\u2019 \u2018_mm256_sllv_epi64\u2019: target specific option mismatch\n 1195 | _mm256_sllv_epi64 (__m256i __X, __m256i __Y)\n      | ^~~~~~~~~~~~~~~~~\n/variants/intrinsics_baseline.c:122:12: note: called from here\n  122 |     return _mm256_or_si256(_mm256_sllv_epi64(value, left),\n      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n  123 |                            _mm256_srlv_epi64(value, right));\n      |                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/usr/local/lib/gcc/x86_64-linux-gnu/13.3.0/include/avx2intrin.h:1237:1: error: inlining failed in call to \u2018always_inline\u2019 \u2018_mm256_srlv_epi64\u2019: target specific option mismatch\n 1237 | _mm256_srlv_epi64 (__m256i __X, __m256i __Y)\n      | ^~~~~~~~~~~~~~~~~\n/variants/intrinsics_baseline.c:122:12: note: called from here\n  122 |     return _mm256_or_si256(_mm256_sllv_epi64(value, left),\n      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n  123 |                            _mm256_srlv_epi64(value, right));\n      |                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n",
+        "flags": [
+          "-O3",
+          "-Wall",
+          "-Wextra"
+        ],
+        "official_vectors": {
+          "one_round_pairs": 1000,
+          "qualification": "the contest harness's timing line was discarded; this single execution is correctness evidence, not a timing campaign",
+          "returncode": null,
+          "status": "FAIL",
+          "stderr": "",
+          "twenty_round_cases": 1,
+          "validated_stdout_markers": [
+            "one-round testvector verification: OK (1000 pairs checked)",
+            "20-round testvector verification: OK"
+          ]
+        }
+      },
+      "temporary_path": "<temporary>/variants/intrinsics_baseline.c",
+      "verification": {
+        "random_cases": 100000,
+        "random_state_and_constants": true,
+        "returncode": 0,
+        "round_counts": [
+          1,
+          20
+        ],
+        "seed": "0x243f6a8885a308d3",
+        "status": "PASS",
+        "stderr": "",
+        "stdout": "candidate_random_differential_cases=100000\ncandidate_random_seed=0x243f6a8885a308d3\ncandidate_random_state_and_constants=PASS\ncandidate_round_counts=1,20\ncandidate_differential=PASS\n"
+      }
+    }
+  },
+  "decision": {
+    "baseline": "intrinsics_baseline",
+    "baseline_loop": {
+      "bytes": 579,
+      "instructions": 122,
+      "memory_operands_excluding_lea": 0
+    },
+    "best_generated_variant": "asm_pin_value_one_scratch_commutative",
+    "comparison_to_prior_gcc_ira_one": {
+      "generated_normalized_loop_sha256": "0b4f2686a2a19ce4fe96d12b89d01e38092c088794252c8e1d8460c75bb8ae4b",
+      "interpretation": "the generated source keeps 122 instructions, zero hot memory, and both proxy cycle counts, while commuting three operations per stage cuts a further 20 bytes below the 569-byte gcc_ira_one stream",
+      "prior_normalized_loop_sha256": "7fd0b713734b306301d0d73102ad98160139da908d0f9c66bd1e26d619a728af",
+      "same_normalized_loop": false
+    },
+    "encoding_lower_bound": {
+      "bytes_per_transform": 27,
+      "derivation": "20*27 + 3 + 6",
+      "incdec_target_only_loop_bytes": 548,
+      "near_jne_bytes": 6,
+      "qualification": "the bound is for this six-instruction AVX2 dataflow and current outer counter, not for all equivalent algorithms",
+      "sub_counter_bytes": 3,
+      "total_loop_bytes": 549,
+      "transform_count": 20
+    },
+    "promotion_limit": "two AMD affinities measured only a statistical tie, and static code shape and proxy scheduling are not 255H timing; the candidate requires independent P/E/LP-E timing before submission promotion",
+    "reason": "asm_pin_value_one_scratch_commutative removed the loop reload, retained 122 instructions and zero hot-loop memory operands, and reduced the loop from 579 to 549 bytes.",
+    "retained_candidate_path": "submissions/02/src/optimization/contest_simd_avx2_inline_asm.c",
+    "retained_candidate_source_sha256": "c6f43f26dcf1bb0cd83d51dd52495e264c6b8303c0b06e89cb84b1cae62d45dc",
+    "retained_candidate_supplied_default_gcc": {
+      "build_passed": true,
+      "official_vectors_passed": true
+    },
+    "strict_winners": [
+      "asm_pin_value_one_scratch_commutative",
+      "asm_pin_value_one_scratch"
+    ]
+  },
+  "failed_strategy_summary": [
+    {
+      "name": "asm_fixed_original_two_scratch",
+      "reason": "memory_operands_excluding_lea: expected 0, got 1; loop_instructions: expected 122, got 124"
+    },
+    {
+      "name": "asm_allocator_two_scratch",
+      "reason": "memory_operands_excluding_lea: expected 0, got 2; loop_instructions: expected 122, got 124"
+    },
+    {
+      "name": "asm_allocator_one_scratch_constants_first",
+      "reason": "memory_operands_excluding_lea: expected 0, got 2; loop_instructions: expected 122, got 124"
+    },
+    {
+      "name": "asm_allocator_one_scratch_controls_first",
+      "reason": "memory_operands_excluding_lea: expected 0, got 2; loop_instructions: expected 122, got 124"
+    },
+    {
+      "name": "asm_pin_low_data_one_scratch",
+      "reason": "memory_operands_excluding_lea: expected 0, got 1; loop_instructions: expected 122, got 124"
+    },
+    {
+      "name": "asm_fixed_low_data_high_controls_one_scratch",
+      "reason": "memory_operands_excluding_lea: expected 0, got 1; loop_instructions: expected 122, got 124"
+    },
+    {
+      "name": "asm_fixed_low_constants_high_value_one_scratch",
+      "reason": "memory_operands_excluding_lea: expected 0, got 1; loop_instructions: expected 122, got 124"
+    },
+    {
+      "name": "asm_fixed_low_constants_mid_value_one_scratch",
+      "reason": "memory_operands_excluding_lea: expected 0, got 1; loop_instructions: expected 122, got 124"
+    }
+  ],
+  "host_measurement": {
+    "cpu1": {
+      "affinity": [
+        1
+      ],
+      "baseline": "old569",
+      "baseline_median_ns": 36.681,
+      "candidates": {
+        "block2": {
+          "median_ns": 36.714,
+          "paired_bootstrap_ci95": [
+            0.9970607446113652,
+            1.0019978652946167
+          ],
+          "paired_median_speedup": 0.9992630601750334
+        },
+        "comm548_incdec": {
+          "median_ns": 36.733000000000004,
+          "paired_bootstrap_ci95": [
+            0.997869143559623,
+            1.0006272209900962
+          ],
+          "paired_median_speedup": 0.9995547808196781
+        },
+        "comm549": {
+          "median_ns": 36.7085,
+          "paired_bootstrap_ci95": [
+            0.999294034592305,
+            1.00189362182285
+          ],
+          "paired_median_speedup": 1.0004514551927504
+        },
+        "comm549_align32": {
+          "median_ns": 36.721500000000006,
+          "paired_bootstrap_ci95": [
+            0.994844844618464,
+            1.0022191307966892
+          ],
+          "paired_median_speedup": 0.9986794331644048
+        },
+        "current579": {
+          "median_ns": 36.7305,
+          "paired_bootstrap_ci95": [
+            0.99570495323271,
+            0.9998927885168882
+          ],
+          "paired_median_speedup": 0.997425095237533
+        }
+      },
+      "compiler": "gcc (Debian 12.2.0-14+deb12u1) 12.2.0",
+      "host_cpu": "AMD EPYC 7B12",
+      "path": "submissions/02/src/optimization/ninth_wave_timing_cpu1.json",
+      "protocol": {
+        "iterations": 3000000,
+        "order": "balanced-cyclic-reversed",
+        "random_cases": 100000,
+        "samples_per_case": 32,
+        "warmups": 6
+      },
+      "sha256": "dae9a7d5b2d0df8160dbbcea018cd63b4bff0344d59b9d74ba1f36fb2c8ee20b"
+    },
+    "cpu3": {
+      "affinity": [
+        3
+      ],
+      "baseline": "old569",
+      "baseline_median_ns": 36.6835,
+      "candidates": {
+        "block2": {
+          "median_ns": 36.694500000000005,
+          "paired_bootstrap_ci95": [
+            0.9976348412353198,
+            1.0023213064388647
+          ],
+          "paired_median_speedup": 0.9992777480322317
+        },
+        "comm548_incdec": {
+          "median_ns": 36.6075,
+          "paired_bootstrap_ci95": [
+            0.9976201548267088,
+            1.0042074684487905
+          ],
+          "paired_median_speedup": 1.001879817656792
+        },
+        "comm549": {
+          "median_ns": 36.735,
+          "paired_bootstrap_ci95": [
+            0.9981641951883744,
+            1.0023945578231293
+          ],
+          "paired_median_speedup": 1.0004664551263018
+        },
+        "comm549_align32": {
+          "median_ns": 36.6475,
+          "paired_bootstrap_ci95": [
+            0.9955637308192165,
+            1.003437138410877
+          ],
+          "paired_median_speedup": 1.0003286882631737
+        },
+        "current579": {
+          "median_ns": 36.696,
+          "paired_bootstrap_ci95": [
+            0.9986117160278747,
+            1.0019720084358137
+          ],
+          "paired_median_speedup": 1.0006798210252525
+        }
+      },
+      "compiler": "gcc (Debian 12.2.0-14+deb12u1) 12.2.0",
+      "host_cpu": "AMD EPYC 7B12",
+      "path": "submissions/02/src/optimization/ninth_wave_timing_cpu3.json",
+      "protocol": {
+        "iterations": 3000000,
+        "order": "balanced-cyclic-reversed",
+        "random_cases": 100000,
+        "samples_per_case": 32,
+        "warmups": 6
+      },
+      "sha256": "67b5576228a5bccdc94d20304c5521272492e62089898f0d9fd0ad83b565cba6"
+    }
+  },
+  "host_tools": {
+    "llvm_mca": {
+      "path": "/usr/bin/llvm-mca-16",
+      "sha256": "e7f38b12a3c228c8b0bcea0bf63cc56939286adf9ae5397a43d408322e3c6fbf"
+    },
+    "objdump": {
+      "path": "/usr/bin/x86_64-linux-gnu-objdump",
+      "sha256": "19717049e8ecd98cfbb17fd9eb25e9fd896ecec2fc4af6b931f3dd0bc4e903de"
+    },
+    "size": {
+      "path": "/usr/bin/x86_64-linux-gnu-size",
+      "sha256": "d2dc6eb962bfc841403cc8b72191bfd829b50d8796b611689e92cfb051cf10ee"
+    }
+  },
+  "inputs": {
+    "problems/2_\uc554\ud638\uad6c\ud604.zip": {
+      "sha256": "d0c3158adda8ba258becfc0e347267c0f2f0112738ec732be6dcb5477342e88e"
+    },
+    "submissions/02/src/optimization/avx2_codegen_screen.json": {
+      "sha256": "addbc4e937f5fad6ea2bb22508476b7fc185db07eabde9e010549f072e7dd800"
+    },
+    "submissions/02/src/optimization/contest_simd_avx2_inline_asm.c": {
+      "sha256": "c6f43f26dcf1bb0cd83d51dd52495e264c6b8303c0b06e89cb84b1cae62d45dc"
+    },
+    "submissions/02/src/optimization/contest_simd_avx2_lanewise.c": {
+      "sha256": "3a8273cb6f381efb30fb4e104a9741acf158307714216f2a2b2d8c1756b9d751"
+    },
+    "submissions/02/src/optimization/verify_contest_candidate.c": {
+      "sha256": "8245f1baf23fe82e1a1b22dc7c25e5e1fd5b102ca833f26d4c88342088c80b35"
+    }
+  },
+  "protocol": {
+    "common_flags": [
+      "-O3",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-mavx2",
+      "-DCH2_SIMD_INLINE",
+      "-finline-limit=2000"
+    ],
+    "compiler": "gcc (GCC) 13.3.0",
+    "compiler_image": "gcc@sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+    "compiler_image_id": "sha256:1d71f0f3450214bef38fe09e6f610fb6cca90cf97b43f4ce845bfc32a4168818",
+    "complete_binary_clock_delimited_loop_audit": true,
+    "llvm_mca": {
+      "iterations": 100,
+      "models": {
+        "alderlake_p_core_proxy": "alderlake",
+        "znver2_cross_architecture_proxy": "znver2"
+      },
+      "qualification": "static scheduling proxies only; neither model is the unavailable Intel 255H target"
+    },
+    "official_vectors": {
+      "one_round_pairs": 1000,
+      "twenty_round_cases": 1
+    },
+    "random_differential": {
+      "cases_per_variant": 100000,
+      "random_state_and_constants": true,
+      "round_counts": [
+        1,
+        20
+      ],
+      "seed": "0x243f6a8885a308d3"
+    },
+    "supplied_default_command": [
+      "gcc",
+      "-O3",
+      "-Wall",
+      "-Wextra",
+      "-o",
+      "contest",
+      "contest.c"
+    ]
+  },
+  "schema_version": 1,
+  "scope": {
+    "challenge": 2,
+    "contest_edit_scope": "generated candidates change only the single contest C source; the public API, vector checks, timing loop, state, and dynamic constants remain unchanged",
+    "host_timing_performed": true,
+    "question": "Can a bounded single-block AVX2 inline-assembly allocation and commutative operand encoding remove reloads and shrink the exact GCC 13 loop without changing its dependency graph?",
+    "search_policy": "enumerated allocator-chosen, partial-pinning, two encoding-aware low/high layouts, and one commutative ModRM/VEX operand order; no register-map brute force",
+    "variants_attempted": 11
+  }
+}
