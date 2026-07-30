@@ -1,5 +1,5 @@
 \documentclass[10pt,a4paper]{article}
-\usepackage[margin=19mm]{geometry}
+\usepackage[margin=20mm]{geometry}
 \usepackage{fontspec}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
@@ -15,16 +15,11 @@
 \setmonofont{D2Coding}
 \hypersetup{
   colorlinks=true,
-  linkcolor=blue!55!black,
-  urlcolor=blue!65!black,
-  citecolor=blue!55!black,
-  pdftitle={7번 소인수분해: RSA 부분 비트 유출 복원},
-  pdfauthor={암호분석경진대회 제출 보고서},
-  pdfsubject={부분 비트가 유출된 RSA 소인수의 이변수 Herrmann--May 복원},
-  pdfkeywords={RSA, partial key exposure, Coppersmith, Herrmann--May, FLATTER}
+  linkcolor=blue,
+  urlcolor=blue
 }
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{4pt}
+\setlength{\parskip}{5pt}
 \setlength{\emergencystretch}{3em}
 \setlist{nosep,leftmargin=6mm}
 \lstset{
@@ -39,14 +34,17 @@
 \newcommand{\evidence}[1]{\textbf{배제 증거:} #1}
 \newcommand{\observed}[1]{\textbf{실제 관측:} #1}
 
-\title{7번 소인수분해\\RSA 부분 비트 유출 복원}
-\author{암호분석경진대회 제출 보고서}
-\date{2026년 7월 28일}
+\input{../../templates/answer_coversheet.sty}
+\SetProblemNumber{7}
+
+\title{소인수분해}
+\author{RSA 부분 비트 유출 복원}
+\date{2026년 7월}
 
 \begin{document}
 \maketitle
 
-\section{결과 요약}
+\section*{결과 요약}
 
 복원한 big-endian 평문 바이트열은 다음 ASCII 문자열이다.
 
@@ -284,11 +282,11 @@ runner 역시 timeout/error가 하나라도 있거나 검증된 서로 다른 fa
 
 \subsection{결과 검증과 복호화}
 
-저장소 루트에서 다음 명령은 저장된 factor를 이용해 \(pq=N\), mask 일치,
+다음 명령은 저장된 factor를 이용해 \(pq=N\), mask 일치,
 RSA 재암호화를 검사하고 평문을 출력한다.
 
 \begin{lstlisting}
-python3 solutions/solve_07_final.py
+python3 solve_final.py
 \end{lstlisting}
 
 \subsection{격자 공격 재실행}
@@ -308,14 +306,14 @@ FLATTER를 해당 revision에서 Release build하고 설치 prefix를
 g++ -O3 -std=c++17 \
   -DFLATTER_GIT_COMMIT='"d2b8026f29b4a69e987b15d4b240f8a5053275d3"' \
   -I"$FLATTER_PREFIX/include" \
-  solutions/solve_07_grouped_hm_flatter.cpp \
+  solve_grouped_hm_flatter.cpp \
   -L"$FLATTER_PREFIX/lib" -Wl,-rpath,"$FLATTER_PREFIX/lib" \
   -lflatter -lflint -lgmpxx -lgmp -lopenblas -pthread \
-  -o /tmp/solve_07_grouped_hm_flatter
+  -o /tmp/solve_grouped_hm_flatter
 
-/tmp/solve_07_grouped_hm_flatter --modular-selftest
+/tmp/solve_grouped_hm_flatter --modular-selftest
 
-OPENBLAS_NUM_THREADS=1 /tmp/solve_07_grouped_hm_flatter \
+OPENBLAS_NUM_THREADS=1 /tmp/solve_grouped_hm_flatter \
   --challenge --cid 155 --m 17 --t 5 --rhf 1.15 \
   --threads 4 --lead x --centered
 \end{lstlisting}
@@ -325,9 +323,9 @@ OPENBLAS_NUM_THREADS=1 /tmp/solve_07_grouped_hm_flatter \
 상태의 전체 탐색 진입점은 다음과 같다.
 
 \begin{lstlisting}
-python3 solutions/run_07_grouped_hm_scan.py \
-  /tmp/solve_07_grouped_hm_flatter \
-  --output-dir /tmp/challenge07-full-scan \
+python3 run_grouped_hm_scan.py \
+  /tmp/solve_grouped_hm_flatter \
+  --output-dir /tmp/challenge-full-scan \
   --jobs 2 --solver-threads 4 \
   --flatter-commit d2b8026f29b4a69e987b15d4b240f8a5053275d3
 \end{lstlisting}
@@ -348,7 +346,8 @@ factor와 mask 검증을 JSON으로 남기고 binary/source SHA-256, compiler,
 \texttt{no-root}, heuristic \texttt{no-root},
 \texttt{UNKNOWN}/timeout을 구분했다.
 
-\subsection{1. 352비트 전수조사}
+
+\subsection{352비트 전수조사}
 
 \textbf{아이디어.} 숨은 비트를 모두 열거하고 각 후보에 대해 \(p\mid N\)을
 검사하는 가장 직접적인 기준선이다 \cite{rsa}.
@@ -361,7 +360,7 @@ factor와 mask 검증을 JSON으로 남기고 binary/source SHA-256, compiler,
 \evidence{열거하지 않은 공간을 배제하는 증거는 전혀 없으며, 단순한
 복잡도 평가다.}
 
-\subsection{2. 전체 2048비트 곱셈 SMT}
+\subsection{전체 2048비트 곱셈 SMT}
 
 \textbf{아이디어.} 1024비트 \(p,q\)와 \(pq=N\)을 bit-vector로 한 번에
 표현하고 누출 bit 및 유도한 \(q\) prefix를 함께 전파한다. Z3의 bit-vector
@@ -373,7 +372,7 @@ SMT를 사용했다 \cite{z3}.
 \evidence{\texttt{UNKNOWN}은 \texttt{UNSAT}이 아니므로 어떤 branch도
 배제하지 못한다.}
 
-\subsection{3. 하위 곱셈 exact-tail CP-SAT}
+\subsection{하위 곱셈 exact-tail CP-SAT}
 
 \textbf{아이디어.} 전체 곱 대신 \(pq=N\bmod2^T\)의 limb 부분곱과 carry만
 정확히 모델링해 상태를 줄인다. 사용한 solver 계열은 CP-SAT-LP다
@@ -387,7 +386,7 @@ SMT를 사용했다 \cite{z3}.
 \evidence{CP-SAT의 \texttt{INFEASIBLE}만 안전한 배제인데 실제로는
 \texttt{UNKNOWN}뿐이었다.}
 
-\subsection{4. Hensel-prefix 분기}
+\subsection{Hensel-prefix 분기}
 
 \textbf{아이디어.} \(pq=N\bmod2^k\)를 만족하는 하위 prefix에 bit를 하나씩
 붙이고 새 known bit와 충돌하는 가지만 버린다. RSA key-bit
@@ -402,7 +401,7 @@ UNKNOWN이었다.}
 관측되지 않았다. SAT은 완전 factor의 존재를 뜻하지 않고 UNKNOWN도
 결론을 주지 않는다.}
 
-\subsection{5. Exact 다변수 Herrmann--May}
+\subsection{Exact 다변수 Herrmann--May}
 
 \textbf{아이디어.} 일곱 미지 구간을 각각 변수로 보존해 unknown divisor
 modulo의 선형 작은 근을 직접 찾는다 \cite{herrmann-may}.
@@ -415,7 +414,7 @@ modulo의 선형 작은 근을 직접 찾는다 \cite{herrmann-may}.
 \evidence{낮은 파라미터의 no-factor와 timeout은 격자 휴리스틱의
 관측이며 branch의 \texttt{UNSAT} 증명이 아니다.}
 
-\subsection{6. 얕은 grouped Herrmann--May}
+\subsection{얕은 grouped Herrmann--May}
 
 \textbf{아이디어.} known-bit island 일부를 완화해 변수 수를 둘로 낮추되
 각 변수 bound를 키운다. Herrmann--May의 다중-block 관점에 기반한다
@@ -429,7 +428,7 @@ modulo의 선형 작은 근을 직접 찾는다 \cite{herrmann-may}.
 \(m=17,t=5\)의 강한 basis로 바꾸어 최종 성공 경로가 되었다.
 \evidence{얕은 sweep의 no-factor는 branch 배제가 아니다.}
 
-\subsection{7. cuso mixed-shape}
+\subsection{cuso mixed-shape}
 
 \textbf{아이디어.} grouped, exact, mixed 변수 shape를 한 실행기에 넣고
 자동 shift 구성과 graph heuristic으로 격자 크기를 줄이려 했다. cuso
@@ -442,7 +441,7 @@ root-extraction soundness gate를 통과한 완료 sweep까지 진행하지 못�
 \evidence{검증된 no-root가 없으므로 hard clause는 물론 soft
 no-root로도 사용하지 않았다.}
 
-\subsection{8. 단변수 two-sided \texorpdfstring{\(p\)}{p} window}
+\subsection{단변수 two-sided \texorpdfstring{\(p\)}{p} window}
 
 \textbf{아이디어.} 알려진 하위와 상위 비트 사이를 하나의 연속 변수로
 두어 단변수 Coppersmith/Howgrave--Graham 공격을 적용한다
@@ -454,7 +453,7 @@ no-root로도 사용하지 않았다.}
 넓은 candidate oracle로 쓰기에는 너무 비쌌다.
 \evidence{timeout은 window에 근이 없다는 증거가 아니다.}
 
-\subsection{9. Residual partial-\texorpdfstring{\(p\)}{p} 격자}
+\subsection{Residual partial-\texorpdfstring{\(p\)}{p} 격자}
 
 \textbf{아이디어.} 선행 ranker가 외부 비트를 맞혔다고 가정하고 남은
 2--3개 구간에만 작은 Herrmann--May 격자를 적용한다
@@ -468,7 +467,7 @@ no-root로도 사용하지 않았다.}
 \evidence{선정 후보의 no-factor 또는 timeout일 뿐, 미선정 공간이나
 해당 branch를 배제하지 않는다.}
 
-\subsection{10. Folded \texorpdfstring{\(p/q\)}{p/q} Coron 격자}
+\subsection{Folded \texorpdfstring{\(p/q\)}{p/q} Coron 격자}
 
 \textbf{아이디어.} \(p\)와 \(q\)의 gap을 각각 변수로 두고 정수
 이변수식 \(p(x)q(y)-N=0\)에서 두 번째 관계를 찾는다
@@ -481,7 +480,7 @@ no-root로도 사용하지 않았다.}
 \evidence{작은 \(k\)의 no-factor는 선택한 basis가 근을 드러내지
 못했다는 뜻이며 무근 증명이 아니다.}
 
-\subsection{11. q-gap 단변수 oracle}
+\subsection{q-gap 단변수 oracle}
 
 \textbf{아이디어.} 일부 \(p\) 비트로 유도한 \(q\)의 연속 하위·상위
 prefix 사이를 하나의 변수로 두고 단변수 small-root oracle을 적용한다
@@ -494,7 +493,7 @@ API의 divisor 조건 \(b\ge N^\beta\)가 실제 작은 소인수 \(q\)에
 \evidence{기록된 q-gap no-root는 모두 heuristic이며 hard branch
 배제에 쓰지 않았다.}
 
-\subsection{12. q-gap SAT learned clause}
+\subsection{q-gap SAT learned clause}
 
 \textbf{아이디어.} SAT가 partial assignment를 만들고 q-gap oracle이
 모든 completion을 부정하면 외부 loop가 no-good clause를 추가한다.
@@ -506,7 +505,7 @@ oracle의 음성 판정이 sound하지 않으므로 completion을 모두 검사�
 clause가 hard 증거가 되지 못했고, 정답 방향을 주는 목적 함수도 없었다.
 \evidence{이 실행의 q-gap clause는 heuristic only다.}
 
-\subsection{13. low600 \texorpdfstring{\(p\)}{p}-Coppersmith clause}
+\subsection{low600 \texorpdfstring{\(p\)}{p}-Coppersmith clause}
 
 \textbf{아이디어.} 하위 600비트를 고정해
 \(p=p_0+2^{600}x\), \(0\le x<2^{424}\)인 단변수 문제를 만들고,
@@ -524,7 +523,7 @@ clause를, 256/256 completion과 273회 oracle 호출 및 약 451초로
 clause의 범위 안에서만 hard 배제다. 불완전한 후속 로그는 증거로 쓰지
 않았다.}
 
-\subsection{14. SAT ranker와 다양성 샘플링}
+\subsection{SAT ranker와 다양성 샘플링}
 
 \textbf{아이디어.} deep-prefix/부분곱 점수, guarded cycle, projection
 novelty와 compacted ledger로 다음 SAT 모델의 순서와 다양성을 개선한다.
@@ -538,7 +537,7 @@ factor 확률과의 상관은 확인되지 않았다.}
 \evidence{순위와 다양성은 확률적 heuristic이며 어떤 branch도
 배제하지 않는다.}
 
-\subsection{15. Jochemsz--May low-lift}
+\subsection{Jochemsz--May low-lift}
 
 \textbf{아이디어.} monomial별 bound를 반영한 다변수 shift를 감축해
 12항 2차 다항식의 공통 작은 근을 찾는다
