@@ -18,9 +18,7 @@
 \hypersetup{
   colorlinks=true,
   linkcolor=blue!45!black,
-  urlcolor=blue!45!black,
-  pdftitle={문제 6 Dual EC DRBG 백도어 복원과 최적화},
-  pdfauthor={암호분석경진대회 제출 보고서}
+  urlcolor=blue!45!black
 }
 \urlstyle{same}
 \setlist{nosep,leftmargin=5mm}
@@ -29,46 +27,31 @@
 \setlength{\emergencystretch}{3em}
 \pagestyle{fancy}
 \fancyhf{}
-\lhead{2026 암호분석경진대회 문제 6}
-\rhead{Dual\_EC\_DRBG 분석 및 최적화}
 \cfoot{\thepage}
 
-\definecolor{codebg}{HTML}{F4F6F8}
-\definecolor{accent}{HTML}{174A7E}
-\definecolor{note}{HTML}{F7F3E8}
 \lstset{
   basicstyle=\ttfamily\small,
-  backgroundcolor=\color{codebg},
   frame=single,
-  rulecolor=\color{black!15},
-  breaklines=true,
   columns=fullflexible,
-  keepspaces=true,
-  showstringspaces=false,
-  aboveskip=5pt,
-  belowskip=5pt
+  breaklines=true,
+  keepspaces=true
 }
 
-\newcommand{\resultbox}[1]{%
-  \begin{center}
-  \fcolorbox{accent}{blue!4}{\parbox{0.92\linewidth}{\centering
-  \large\bfseries\ttfamily #1}}
-  \end{center}
-}
-\newcommand{\notebox}[1]{%
-  \begin{center}
-  \fcolorbox{orange!55!black}{note}{\parbox{0.92\linewidth}{#1}}
-  \end{center}
-}
+\input{../../templates/answer_coversheet.sty}
+\SetProblemNumber{6}
+
+\title{PRNG}
+\author{telemetry 백도어 복원, 다음 출력 예측과 구현 최적화}
+\date{2026년 7월}
 
 \begin{document}
+\maketitle
+
+\section*{결과 요약}
 
 \begin{center}
-  {\LARGE\bfseries 문제 6 Dual\_EC\_DRBG}\\[2mm]
-  {\large telemetry 백도어 복원, 다음 출력 예측과 구현 최적화}\\[3mm]
+\fbox{\texttt{r3 = 0x2443c8daf1a9d52b09}}
 \end{center}
-
-\resultbox{r3 = 0x2443c8daf1a9d52b09}
 
 \begin{tabularx}{\linewidth}{@{}lX@{}}
 \toprule
@@ -105,10 +88,10 @@ telemetry의 여섯 행은 같은 비밀 스칼라 \(d\)에 대한 affine residu
   \item 유일한 상태에서 \(r_3\)를 계산한다.
 \end{enumerate}
 
-\notebox{\textbf{상태 표기.}
+\textbf{상태 표기.}
 \(r_0\)을 lift한 점은 \(s_1Q\)이고 \(X(d(s_1Q))=X(s_1P)=s_2\)다.
 같은 공격을 \(r_1\)에 적용하면 직접 복원되는 값은 \(s_3\)다.
-제출 답과 모든 검증에서 이 index를 구분했다.}
+제출 답과 모든 검증에서 이 index를 구분했다.
 
 \section{telemetry에서 비밀 스칼라 복원}
 
@@ -126,7 +109,7 @@ u_i&=(\operatorname{scale}_i d+\operatorname{offset}_i)\bmod n,\\
 \operatorname{summary}_i&=\left\lfloor u_i/B\right\rfloor.
 \end{aligned}
 \]
-이는 문제에서 식으로 주어진 사실이 아니라 검증해야 하는 가설이다.
+문제는 정확한 식을 주지 않으므로, 이는 검증이 필요한 가설로 다룬다.
 여섯 \(\operatorname{scale}_i\)가 모두 \(n\)과 서로소이므로 역원이 존재한다.
 첫 행에 대해
 \[
@@ -175,9 +158,8 @@ d=\texttt{0x1c3cdd6b221806db0a7b28}
  ((\operatorname{scale}_i d+\operatorname{offset}_i)\bmod n)\gg20
   =\operatorname{summary}_i
 \]
-를 만족한다. 또한 전체 좌표를 사용한 독립 검증 \(P=dQ\)도 성립한다.
-따라서 알려지지 않은 누설식을 telemetry 내부 일치만으로 순환 검증한 것이
-아니다.
+를 만족한다. 또한 전체 좌표를 사용한 독립 검증 \(P=dQ\)도 성립해, 추정한
+\(d\)를 telemetry 외부에서도 확인했다.
 
 기존 \(2^{20}\) 전수조사는 warm 반복 중앙값 1,453.475ms였고,
 \texttt{floor\_sum} 경로는 0.750ms였다. 이 인스턴스에서는 약 1,938배
@@ -379,8 +361,8 @@ C++/GMP/OpenMP 8 threads & 0.447919s & \(31.92\times\) & \(30.75\times\)\\
 
 위 표는 언어/backend 전환 당시의 동일 campaign 결과이며, 후속 Jacobi,
 부분군 trace/PRAC, shifted-square와 adaptive 정책까지 포함한 현재
-source의 절대 시간표가 아니다. 서로 다른 host 부하의 시간을 나눠 더 큰
-속도 향상으로 소급하지 않았다.
+source의 절대 시간표는 아니다. 각 배수는 같은 host 부하 조건에서 측정한
+값만으로 계산했다.
 
 안정적으로 stationarity gate를 통과한 구성요소 효과는
 \(r_1,r_2\) window \(1.3428\times\),
@@ -399,8 +381,9 @@ cubic recurrence와 post-subgroup \(x^2\) 지연도 wall-clock
 stationarity를 통과하지 못했다. 이들은 각각 direct cubic multiplication과
 실제로 버려지는 후보의 square를 제거하는 진부분집합 최적화이며,
 전수 등가 검사와 기존 경로를 재현하는 ablation macro를 함께 남겼다.
-따라서 이 보고서에서 ``stationarity 실패''는 정확성 실패가 아니라 해당
-공유 VM 측정으로 작은 성능 차이를 확정하지 못했다는 뜻이다.
+이 보고서에서 ``stationarity 실패''는 해당 공유 VM 측정에서 작은 성능
+차이를 통계적으로 확정하지 못했다는 뜻이며, 정확성은 앞선 정확성 검증
+절에서 별도로 확인했다.
 
 \section{복잡도와 메모리}
 
@@ -421,26 +404,23 @@ stationarity를 통과하지 못했다. 이들은 각각 direct cubic multiplica
 
 \section{재현}
 
-저장소 루트에서 다음처럼 최종 native source를 빌드한다.
+다음처럼 최종 native source를 빌드한다.
 
 \begin{lstlisting}
+cd src
 g++ -O3 -DNDEBUG -march=native -std=c++20 -fopenmp \
-  solutions/06_optimization/deep_native_06.cpp \
-  -o /tmp/deep_native_06
+  deep_native.cpp -o /tmp/deep_native
 
-/tmp/deep_native_06 --self-test --json
-/tmp/deep_native_06 --threads 1 --schedule adaptive --json
+/tmp/deep_native --self-test --json
+/tmp/deep_native --threads 1 --schedule adaptive --json
 \end{lstlisting}
 
 PRAC schedule과 부분군 수학의 독립 감사는 다음 명령으로 재현한다.
 
 \begin{lstlisting}
-python3 solutions/06_optimization/generate_06_prac_schedule.py \
-  --json
-sage -python solutions/06_optimization/audit_06_subgroup.py \
-  --json
-sage -python solutions/06_optimization/audit_06_subgroup.py \
-  --samples 0 --full-prefix --json
+python3 generate_prac_schedule.py --json
+sage -python audit_subgroup.py --json
+sage -python audit_subgroup.py --samples 0 --full-prefix --json
 \end{lstlisting}
 
 PRAC 생성기는 \texttt{source\_match=true},
