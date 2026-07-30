@@ -111,7 +111,6 @@ non-zero low nibbles = 345
 
 분석용 코드는 스캔 중 후보 텐서가 발견되면 라인 번호, 바이트 오프셋, 라인/레코드 SHA-256, 매칭 키워드, 복호화 질문 및 답변 등을 포함한 무결성 보고서(\texttt{log-evidence.jsonl})를 즉시 생성한다. 또한 최대 라인 길이를 제한하여 임의의 대형 로그 입력 상황에서도 메모리 점유율을 일정하게 관리한다.
 
-\newpage
 \section{페이로드 추출}
 
 SafeTensors의 \texttt{data\_offsets}는 절대 오프셋이 아닌 JSON 헤더 종료 지점(data buffer 시작점) 기준의 상대 오프셋이다. 페이로드 추출은 다음 절차로 수행된다.
