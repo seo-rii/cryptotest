@@ -57,5 +57,25 @@ BGV DAILY STATUS CORE-A LINK OK TEMP NORMAL POWER STABLE
 ```
 
 비밀 다항식과 padding을 제외한 State 계수는 각각 `02_secret_s.txt`,
-`03_state.txt`에 $x^0$부터 차수 오름차순으로 기록했다. solver는 복원
-결과와 두 제출 TXT의 완전 일치까지 검사한다.
+`03_state.txt`에 $x^0$부터 차수 오름차순으로 기록했다.
+
+## 파일 구성
+
+- [`report.pdf`](report.pdf): 최종 제출용 방법론 보고서
+- [`report.tex`](report.tex): PDF 생성 원본 LaTeX
+- [`src.zip`](src.zip): 재현용 코드가 압축된 ZIP 파일
+- `src/`: 재현 및 제출용 디렉터리
+  - [`src/solve_bgv.py`](src/solve_bgv.py): 복원 및 무결성 검증 solver 스크립트
+  - `src/5_동형암호.zip`: 문제 데이터 ZIP 파일
+  - [`src/02_secret_s.txt`](src/02_secret_s.txt): 복원된 비밀 다항식 계수 파일
+  - [`src/03_state.txt`](src/03_state.txt): 복원된 고정 보고문 State 계수 파일
+
+## 실행 방법
+
+`src/` 디렉터리 내부로 이동한 뒤 Python으로 solver를 실행하여 모든 복원 과정과 무결성 검증을 수행할 수 있습니다.
+
+```bash
+cd submissions/05/src
+python3 solve_bgv.py
+```
+
